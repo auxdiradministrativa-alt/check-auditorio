@@ -189,6 +189,11 @@ flujo completo llegó hasta «Esperando validación» y luego **cayó por latenc
 (`asignacion.listar` > 30 s). **Pendiente:** medir cada acción en frío/caliente (arranque del
 script, espera de `LockService`, lectura de hojas completas) antes de optimizar.
 
+**Actualización (mismo día):** producción desplegada en `https://check-auditorio-web.vercel.app`
+(redirect OAuth agregado) y prueba de uso completa **pasada en producción** con Sheet, Drive y
+Apps Script reales. Con el cliente GAS robusto y el refresco corregido, la latencia ya no rompe el
+flujo; se mantiene la medición pendiente (escrituras 13–20 s).
+
 ## 6. Lo que queda para Vercel (fase 3)
 
 - Las mismas 6 variables en el proyecto de Vercel (Root Directory `apps/web`), con

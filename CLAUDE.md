@@ -41,11 +41,13 @@ Navegador ─► Vercel · Next.js 16 (UI + auth + validación + sello)
 ## 3. Estado actual del repo (Bloque 1 terminado: mecanismo completo sin credenciales)
 
 La Fase 2 está **escrita y probada en modo local**: el flujo entero corre contra el mismo núcleo que
-irá a Apps Script, sobre un libro en memoria. **Google conectado el 2026-09-15** con la cuenta dueña
-(script, libro, web app, OAuth Interno; estado y pendientes en
-[`docs/google-workspace.md`](docs/google-workspace.md) §5.bis): **bloqueo abierto, latencia de Apps
-Script** (> 30 s en `asignacion.listar`) sin medir aún. Después, Vercel. n8n/correo quedan fuera
-del MVP.
+irá a Apps Script, sobre un libro en memoria. **Google conectado y producción desplegada el
+2026-09-15** en `https://check-auditorio-web.vercel.app`: prueba de uso completa en producción con
+la sesión real (REC-000001). Guía y estado de Google en
+[`docs/google-workspace.md`](docs/google-workspace.md). **Siguiente capítulo: n8n** — punto de
+partida y decisiones a preguntar en
+[`docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md`](docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md).
+Latencia medida de Apps Script: páginas 2–4 s, escrituras 13–20 s.
 
 ```
 packages/shared/          contrato, sin build (se consume como TS fuente)
@@ -166,6 +168,12 @@ La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esque
 
 ## 7. Fase 3 — Deploy
 
+- **Desplegado (2026-09-15)**: cuenta de Vercel de la auxiliar (GitHub `auxdiradministrativa-alt`), proyecto con dominio `check-auditorio-web.vercel.app`, región `iad1`, despliega solo con push a `main`. Trampas medidas:
+  - `NEXT_PUBLIC_APP_URL` **no puede ser Secret** (Vercel lo rechaza) → tipo **Config**. Se fija al compilar: cambiarla exige redeploy. Con `http://localhost:3001` el login de Google vuelve a localhost.
+  - **Editar una variable Secret la guarda vacía** (el campo Value aparece en blanco): para cambiarle el entorno se borra y se crea de nuevo.
+  - Variables **solo en Production**: las previews corren con `NODE_ENV=production` y escribirían en el Sheet real.
+  - Pegar `.env.local` en el campo Key crea todas las variables de una vez (incluida la de localhost: quitarla).
+  - Si en producción `/api/auth/*` da 404, la app cree estar en modo local: falta una variable de Google o `BETTER_AUTH_SECRET` (el 500 de las páginas nombra cuáles en el log).
 - Vercel: Root Directory `apps/web`, pnpm detectado por lockfile, Node 24. Variables: `NEXT_PUBLIC_APP_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET`, `GAS_WEBAPP_URL`, `GAS_HMAC_SECRET` (ver `apps/web/.env.example`).
 - Google Cloud: cliente OAuth con redirect `https://<dominio>/api/auth/callback/google` y el de localhost.
 - Vercel Hobby = solo uso personal no comercial; confirmar plan/cuenta institucional antes de producción. Cron de Hobby: 1 vez/día → los recordatorios los hace n8n.
