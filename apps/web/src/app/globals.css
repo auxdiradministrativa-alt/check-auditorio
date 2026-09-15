@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
+
+/*
+ * Identidad: azul navy · blanco perla · dorado oro.
+ * Contraste verificado (WCAG AA texto normal ≥ 4.5):
+ *   navy-900 sobre pearl-100 = 15.05 · ink-600 sobre pearl-100 = 5.45
+ *   gold-500 sobre navy-900 = 6.83   · gold-700 sobre pearl-100 = 5.22
+ * gold-600 (3.14 sobre perla) es solo decorativo: bordes, íconos grandes, líneas.
+ */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+
+  --color-navy-950: #081528;
+  --color-navy-900: #0b1f3a;
+  --color-navy-800: #12305a;
+  --color-navy-700: #1b3f6e;
+  --color-navy-600: #2a5590;
+  --color-navy-500: #4a73ad;
+  --color-navy-100: #e4eaf3;
+  --color-navy-50: #f1f4f9;
+
+  --color-pearl-50: #fdfcf9;
+  --color-pearl-100: #f7f4ee;
+  --color-pearl-200: #ede8de;
+  --color-pearl-300: #dcd4c4;
+
+  --color-gold-300: #e9d08a;
+  --color-gold-400: #ddb955;
+  --color-gold-500: #c9a227;
+  --color-gold-600: #a8861c;
+  --color-gold-700: #7d6315;
+  --color-gold-800: #5e4a10;
+  --color-gold-50: #fbf6e6;
+
+  --color-ink-900: #111827;
+  --color-ink-600: #5b6472;
+  --color-ink-500: #6b7380;
+
+  --color-ok-700: #1e6b45;
+  --color-ok-50: #e8f3ec;
+  --color-danger-700: #a8261b;
+  --color-danger-50: #fbeceb;
+
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px rgb(11 31 58 / 0.04), 0 8px 24px -12px rgb(11 31 58 / 0.12);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-pearl-100 font-sans text-navy-900 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-gold-500;
+  }
+
+  ::selection {
+    @apply bg-gold-300 text-navy-950;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

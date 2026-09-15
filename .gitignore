@@ -1,0 +1,30 @@
+# dependencias
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# entorno
+.env
+.env*.local
+!.env.example
+
+# vercel
+.vercel/
+
+# apps script (credenciales locales de clasp)
+.clasprc.json
+
+# sistema / editor
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
