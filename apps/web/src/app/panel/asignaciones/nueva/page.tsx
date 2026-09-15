@@ -4,13 +4,13 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormNuevaAsignacion } from '@/features/panel/form-nueva-asignacion'
 import { ResumenCatalogo } from '@/features/panel/resumen-catalogo'
-import { listarEspacios, obtenerCatalogo } from '@/lib/datos/repositorio'
+import { registro } from '@/servidor/registro'
 
 export const metadata: Metadata = { title: 'Programar entrega' }
 
 export default async function NuevaAsignacion() {
-  const espacios = await listarEspacios()
-  const catalogo = await obtenerCatalogo(espacios[0]?.id ?? '')
+  const { espacios, elementos } = await registro('catalogo.listar', {})
+  const catalogo = elementos.filter((e) => e.espacioId === espacios[0]?.id)
 
   return (
     <>

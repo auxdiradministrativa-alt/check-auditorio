@@ -1,12 +1,15 @@
 import { ClipboardCheck, QrCode, ShieldCheck } from 'lucide-react'
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { DOMINIO_INSTITUCIONAL } from '@check-auditorio/shared'
 
 import { AvisoDemo } from '@/components/layout/aviso-demo'
 import { Marca } from '@/components/layout/marca'
-import { GoogleButton } from '@/components/ui/google-button'
+import { Button } from '@/components/ui/button'
+import { cerrarSesion } from '@/features/auth/acciones'
+import { Ingreso } from '@/features/auth/ingreso'
+import { esEntregador, obtenerSesion } from '@/servidor/auth/sesion'
 
 export const metadata: Metadata = { title: 'Ingresar' }
 
@@ -28,7 +31,15 @@ const PASOS = [
   },
 ] as const
 
-export default function Ingreso() {
+type Props = { searchParams: Promise<{ destino?: string; error?: string }> }
+
+export default async function PaginaIngreso({ searchParams }: Props) {
+  const { destino, error } = await searchParams
+  const destinoInterno = destino?.startsWith('/') && !destino.startsWith('//') ? destino : null
+  const sesion = await obtenerSesion()
+  if (sesion && destinoInterno) redirect(destinoInterno)
+  if (sesion && (await esEntregador(sesion))) redirect('/panel')
+
   return (
     <div className="flex min-h-dvh flex-col">
       <AvisoDemo />
@@ -77,36 +88,33 @@ export default function Ingreso() {
                 Usa tu cuenta <strong className="text-navy-900">@{DOMINIO_INSTITUCIONAL}</strong>.
               </p>
             </div>
-            <GoogleButton href="/panel">Continuar con Google</GoogleButton>
-            <div className="flex flex-col gap-3 rounded-xl border border-pearl-200 bg-pearl-50 p-4 text-sm text-ink-600">
-              <p>
-                <strong className="text-navy-900">¿Vas a recibir un espacio?</strong> No necesitas
-                entrar aquí: escanea el QR que te muestra Infraestructura.
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border border-danger-700/25 bg-danger-50 p-3 text-sm text-danger-700"
+              >
+                No se pudo iniciar sesión. Usa una cuenta @{DOMINIO_INSTITUCIONAL}.
               </p>
-              <p className="border-t border-pearl-200 pt-3 text-xs">
-                Vista previa del flujo:{' '}
-                <Link
-                  href="/r/demo"
-                  className="font-semibold text-navy-700 underline underline-offset-2"
-                >
-                  recepción
-                </Link>{' '}
-                ·{' '}
-                <Link
-                  href="/devolucion/asg-001"
-                  className="font-semibold text-navy-700 underline underline-offset-2"
-                >
-                  devolución
-                </Link>{' '}
-                ·{' '}
-                <Link
-                  href="/verificar/REC-000123"
-                  className="font-semibold text-navy-700 underline underline-offset-2"
-                >
-                  verificación
-                </Link>
-              </p>
-            </div>
+            )}
+            {sesion ? (
+              <div className="flex flex-col gap-3 rounded-xl border border-pearl-200 bg-pearl-50 p-4 text-sm text-ink-600">
+                <p>
+                  Entraste como <strong className="text-navy-900">{sesion.correo}</strong>, pero
+                  esta cuenta no está autorizada para el panel de Infraestructura.
+                </p>
+                <form action={cerrarSesion}>
+                  <Button type="submit" variante="secundario" tamano="sm">
+                    Cambiar de cuenta
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <Ingreso destino={destinoInterno ?? '/panel'} />
+            )}
+            <p className="rounded-xl border border-pearl-200 bg-pearl-50 p-4 text-sm text-ink-600">
+              <strong className="text-navy-900">¿Vas a recibir un espacio?</strong> No necesitas
+              entrar aquí: escanea el QR que te muestra Infraestructura.
+            </p>
           </div>
         </section>
       </div>

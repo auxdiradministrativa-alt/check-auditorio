@@ -141,7 +141,9 @@ Siempre IDs estables (uuid/consecutivo), **nunca número de fila**. Límite: 20 
 1. ¿Infraestructura hace revisión previa del checklist al programar?
 2. ¿Más espacios además del Auditorio Principal?
 3. Vigencia del QR y plazo para declarar devolución.
-4. Correo/cuenta de Infraestructura dueña del sistema.
+4. ~~Correo/cuenta de Infraestructura dueña del sistema.~~ **Cerrada (2026-09-15):** `auxdiradministrativa@americana.edu.co` es dueña de Sheet, script, Drive, Gmail, OAuth y repo; a esa persona se le entrega el proyecto. Las keys/credenciales de Google Workspace las configura Leonardo: avisarle al llegar a ese punto, no crearlas.
+   **MVP 2026-09-15 (confirmado por Leonardo):** sale **sin correo** (n8n después; la constancia vive en la hoja + `/verificar` y el enlace de devolución se muestra en la pantalla de confirmación). Nº 3 por defecto en `CFG_General`: QR vigente desde **30 min** antes del inicio; devolución hasta **24 h** tras el fin. Nº 7: términos de ejemplo marcados **borrador** hasta el texto de Jurídica.
+
 5. n8n: ¿expuesto a internet por HTTPS? versión (1.x/2.x).
 6. ¿Control Interno exige PDF archivado?
 7. Texto final de términos (Jurídica).

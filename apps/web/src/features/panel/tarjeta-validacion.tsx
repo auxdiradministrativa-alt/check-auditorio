@@ -1,26 +1,35 @@
 'use client'
 
-import { Check, ShieldAlert, X } from 'lucide-react'
-import { useState } from 'react'
+import { Check, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 
 import type { Persona } from '@check-auditorio/shared'
 
-import { Alert } from '@/components/ui/alert'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
-type Decision = 'PENDIENTE' | 'CONFIRMADA' | 'RECHAZADA'
+import { decidirValidacion } from './acciones'
 
 /** Quien entrega confirma que la cuenta que escaneó el QR es la persona que tiene en frente. */
 export function TarjetaValidacion({
+  asignacionId,
   solicitante,
-  escaneadoA,
 }: {
+  asignacionId: string
   solicitante: Persona
-  escaneadoA: string
 }) {
-  const [decision, setDecision] = useState<Decision>('PENDIENTE')
+  const router = useRouter()
+  const [pendiente, iniciar] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  const decidir = (decision: 'CONFIRMAR' | 'RECHAZAR') =>
+    iniciar(async () => {
+      const r = await decidirValidacion(asignacionId, decision)
+      if (!r.ok) setError(r.mensaje)
+      router.refresh()
+    })
 
   return (
     <Card className="border-gold-500/50 ring-4 ring-gold-500/10">
@@ -40,32 +49,34 @@ export function TarjetaValidacion({
           <div className="min-w-0">
             <p className="truncate font-semibold text-navy-900">{solicitante.nombre}</p>
             <p className="truncate text-sm text-ink-600">{solicitante.correo}</p>
-            <p className="text-xs text-ink-500">Escaneó el QR a las {escaneadoA}</p>
           </div>
         </div>
-        {decision === 'CONFIRMADA' && (
-          <Alert tono="ok" icono={<Check />} titulo="Identidad confirmada">
-            {solicitante.nombre.split(' ')[0]} ya puede diligenciar la constancia en su celular.
-          </Alert>
-        )}
-        {decision === 'RECHAZADA' && (
-          <Alert tono="peligro" icono={<ShieldAlert />} titulo="Solicitud rechazada">
-            El QR quedó libre para que lo escanee la persona correcta.
-          </Alert>
+        {error && (
+          <p role="alert" className="text-sm font-medium text-danger-700">
+            {error}
+          </p>
         )}
       </CardBody>
-      {decision === 'PENDIENTE' && (
-        <CardFooter className="justify-stretch">
-          <Button variante="peligro" className="flex-1" onClick={() => setDecision('RECHAZADA')}>
-            <X aria-hidden />
-            No es
-          </Button>
-          <Button variante="primario" className="flex-1" onClick={() => setDecision('CONFIRMADA')}>
-            <Check aria-hidden />
-            Sí, confirmar
-          </Button>
-        </CardFooter>
-      )}
+      <CardFooter className="justify-stretch">
+        <Button
+          variante="peligro"
+          className="flex-1"
+          disabled={pendiente}
+          onClick={() => decidir('RECHAZAR')}
+        >
+          <X aria-hidden />
+          No es
+        </Button>
+        <Button
+          variante="primario"
+          className="flex-1"
+          disabled={pendiente}
+          onClick={() => decidir('CONFIRMAR')}
+        >
+          <Check aria-hidden />
+          Sí, confirmar
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

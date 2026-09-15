@@ -1,22 +1,31 @@
-import { CalendarDays, Clock, MapPin } from 'lucide-react'
+import { CalendarDays, CircleCheckBig, Clock, MapPin } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { FormDevolucion } from '@/features/devolucion/form-devolucion'
-import { obtenerAsignacion, obtenerCatalogo, obtenerEspacio } from '@/lib/datos/repositorio'
-import { formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { exigirSesion } from '@/servidor/auth/sesion'
+import { registro } from '@/servidor/registro'
+import { tokenDevolucionValido } from '@/servidor/tokens'
 
 export const metadata: Metadata = { title: 'Declarar devolución' }
 
-type Props = { params: Promise<{ id: string }> }
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ t?: string }> }
 
-export default async function Devolucion({ params }: Props) {
-  const asignacion = await obtenerAsignacion((await params).id)
+export default async function Devolucion({ params, searchParams }: Props) {
+  const [{ id }, { t }] = await Promise.all([params, searchParams])
+  if (!tokenDevolucionValido(id, t)) notFound()
+  const sesion = await exigirSesion(`/devolucion/${id}?t=${t}`)
+
+  const asignacion = await registro('asignacion.obtener', { id })
   if (!asignacion?.consecutivo) notFound()
-  const [espacio, catalogo] = await Promise.all([
-    obtenerEspacio(asignacion.espacioId),
-    obtenerCatalogo(asignacion.espacioId),
+  if (asignacion.receptor?.correo.toLowerCase() !== sesion.correo.toLowerCase()) notFound()
+
+  const [{ espacios, elementos }, constancia] = await Promise.all([
+    registro('catalogo.listar', {}),
+    registro('constancia.obtener', { consecutivo: asignacion.consecutivo }),
   ])
+  const espacio = espacios.find((e) => e.id === asignacion.espacioId)
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,7 +55,21 @@ export default async function Devolucion({ params }: Props) {
           </div>
         </dl>
       </div>
-      <FormDevolucion catalogo={catalogo} evento={asignacion.evento} />
+      {constancia?.devolucion ? (
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <CircleCheckBig className="size-12 text-ok-700" aria-hidden />
+          <p className="max-w-sm text-ink-600">
+            Ya declaraste la devolución el {formatearFechaHora(constancia.devolucion.declaradaEn)}.
+          </p>
+        </div>
+      ) : (
+        <FormDevolucion
+          asignacionId={id}
+          token={t!}
+          catalogo={elementos.filter((e) => e.espacioId === asignacion.espacioId)}
+          evento={asignacion.evento}
+        />
+      )}
     </div>
   )
 }

@@ -3,8 +3,12 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // El paquete compartido se consume como TypeScript fuente dentro del monorepo.
-  transpilePackages: ['@check-auditorio/shared'],
+  // Los paquetes del monorepo se consumen como TypeScript fuente.
+  transpilePackages: ['@check-auditorio/shared', '@check-auditorio/gas'],
+  experimental: {
+    // Fotos ya comprimidas en el cliente (≤1600 px, JPEG): holgura para base64 y multipart.
+    serverActions: { bodySizeLimit: '4mb' },
+  },
   async headers() {
     return [
       {

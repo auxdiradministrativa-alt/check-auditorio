@@ -2,38 +2,52 @@ import { ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-import { Card, CardBody } from '@/components/ui/card'
+import { ETIQUETAS_ROL } from '@check-auditorio/shared'
+
+import { EstadoBadge } from '@/components/ui/badge'
+import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
 import { BotonImprimir } from '@/features/verificacion/boton-imprimir'
-import { obtenerAsignacionPorConsecutivo, obtenerEspacio } from '@/lib/datos/repositorio'
 import { cn } from '@/lib/cn'
 import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { exigirSesion } from '@/servidor/auth/sesion'
+import { registro } from '@/servidor/registro'
 
 export const metadata: Metadata = { title: 'Verificar constancia' }
 
 type Props = { params: Promise<{ consecutivo: string }> }
 
-// Ejemplo: REC-000122 simula una constancia alterada en el Sheet.
-const HASH_EJEMPLO = '9f2c4e81b7d05a3c6e19f4b2d8a07c55e3b91d64a2f08c7e5b13d9a4c6f2e801'
-
+/** Recalcula el sello desde lo que hoy dice el registro: cualquier edición posterior la marca «Alterada». */
 export default async function Verificar({ params }: Props) {
-  const { consecutivo } = await params
-  const asignacion = await obtenerAsignacionPorConsecutivo(decodeURIComponent(consecutivo))
-  if (!asignacion?.receptor) notFound()
-  const espacio = await obtenerEspacio(asignacion.espacioId)
-  const integra = asignacion.consecutivo !== 'REC-000122'
+  const consecutivo = decodeURIComponent((await params).consecutivo)
+  await exigirSesion(`/verificar/${consecutivo}`)
+  const c = await registro('constancia.obtener', { consecutivo })
+  if (!c) notFound()
 
+  const { sello, asignacion, espacio, integra } = c
   const filas: [string, string][] = [
-    ['Consecutivo', asignacion.consecutivo ?? ''],
+    ['Consecutivo', sello.consecutivo],
+    ['Código', sello.codigoVerificacion],
     ['Evento', asignacion.evento],
-    ['Espacio', `${espacio?.nombre} · ${espacio?.ubicacion}`],
+    ['Espacio', `${espacio.nombre} · ${espacio.ubicacion}`],
     [
       'Fecha',
       `${formatearFechaLarga(asignacion.inicio)} · ${formatearFranja(asignacion.inicio, asignacion.fin)}`,
     ],
-    ['Recibió', `${asignacion.receptor.nombre} (${asignacion.receptor.correo})`],
+    ['Recibió', `${c.receptor.nombre} (${c.receptor.correo})`],
+    [
+      'Rol y dependencia',
+      `${ETIQUETAS_ROL[c.rol]} · ${c.dependencia}${c.cargo ? ` · ${c.cargo}` : ''}`,
+    ],
+    ['Asistentes', String(c.asistentes)],
     ['Entregó', `${asignacion.entregadoPor.nombre} (${asignacion.entregadoPor.correo})`],
-    ['Sellada', formatearFechaHora('2026-09-15T07:52:31-05:00')],
-    ['Términos', 'v0.1-borrador'],
+    ['Sellada', formatearFechaHora(sello.selladaEn)],
+    ['Términos', c.terminosVersion],
+    [
+      'Devolución',
+      c.devolucion
+        ? `${c.devolucion.resultado === 'BUENAS_CONDICIONES' ? 'Buenas condiciones' : 'Con novedades'} · ${formatearFechaHora(c.devolucion.declaradaEn)}`
+        : 'Pendiente',
+    ],
   ]
 
   return (
@@ -61,7 +75,7 @@ export default async function Verificar({ params }: Props) {
           <p className="text-sm text-navy-900">
             {integra
               ? 'Los datos registrados coinciden con el sello generado al momento de la firma.'
-              : 'Los datos actuales no coinciden con el sello original. Alguien modificó el registro después de la firma. Infraestructura fue notificada.'}
+              : 'Los datos actuales no coinciden con el sello original: el registro se modificó después de la firma.'}
           </p>
         </div>
       </div>
@@ -69,17 +83,50 @@ export default async function Verificar({ params }: Props) {
       <Card>
         <CardBody>
           <dl className="flex flex-col divide-y divide-pearl-200 text-sm">
+            <div className="grid gap-1 pb-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
+              <dt className="text-ink-600">Estado</dt>
+              <dd>
+                <EstadoBadge estado={asignacion.estado} />
+              </dd>
+            </div>
             {filas.map(([k, v]) => (
-              <div key={k} className="grid gap-1 py-3 first:pt-0 sm:grid-cols-[9rem_1fr] sm:gap-4">
+              <div key={k} className="grid gap-1 py-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
                 <dt className="text-ink-600">{k}</dt>
                 <dd className="font-medium text-navy-900 first-letter:uppercase">{v}</dd>
               </div>
             ))}
             <div className="grid gap-1 pt-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
               <dt className="text-ink-600">Sello SHA-256</dt>
-              <dd className="font-mono text-xs break-all text-navy-800">{HASH_EJEMPLO}</dd>
+              <dd className="font-mono text-xs break-all text-navy-800">{sello.sha256}</dd>
             </div>
           </dl>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Elementos recibidos</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <ul className="flex flex-col divide-y divide-pearl-200 text-sm">
+            {c.detalle.map((d) => (
+              <li key={d.elementoId} className="flex flex-col gap-0.5 py-2.5 first:pt-0 last:pb-0">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium text-navy-900">{d.elementoNombre}</span>
+                  <span
+                    className={cn(
+                      'text-xs font-semibold tabular',
+                      d.estado === 'CONFORME' ? 'text-ok-700' : 'text-danger-700',
+                    )}
+                  >
+                    {d.categoria !== 'ESPACIO' && `${d.cantidadRecibida}/${d.cantidadEsperada} · `}
+                    {d.estado === 'CONFORME' ? 'Conforme' : 'Novedad'}
+                  </span>
+                </div>
+                {d.observacion && <span className="text-ink-600">{d.observacion}</span>}
+              </li>
+            ))}
+          </ul>
         </CardBody>
       </Card>
 

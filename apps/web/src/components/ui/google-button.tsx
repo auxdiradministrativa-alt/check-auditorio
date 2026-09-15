@@ -3,9 +3,10 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
 
 /** Botón con el logotipo "G" de Google según sus lineamientos de marca para Sign in with Google. */
-export function GoogleButton({ className, children, ...props }: ComponentProps<'a'>) {
+export function GoogleButton({ className, children, ...props }: ComponentProps<'button'>) {
   return (
-    <a
+    <button
+      type="submit"
       className={cn(
         'inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-pearl-300 bg-white px-5 text-[0.9375rem] font-semibold text-navy-900 transition-colors hover:border-navy-500/40 hover:bg-navy-50',
         className,
@@ -31,6 +32,6 @@ export function GoogleButton({ className, children, ...props }: ComponentProps<'
         />
       </svg>
       {children}
-    </a>
+    </button>
   )
 }

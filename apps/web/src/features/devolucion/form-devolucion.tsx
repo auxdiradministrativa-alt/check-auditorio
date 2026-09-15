@@ -11,10 +11,12 @@ import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/compon
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/field'
 import { Segmented } from '@/components/ui/segmented'
-import { SelectorFotos } from '@/features/recepcion/selector-fotos'
-import type { FotoLocal } from '@/features/recepcion/tipos'
+import { SelectorFotos } from '@/features/fotos/selector-fotos'
+import { haySubidasPendientes, idsSubidos, type FotoLocal } from '@/features/fotos/tipos'
 import { cn } from '@/lib/cn'
 import { uuid } from '@/lib/uuid'
+
+import { declararDevolucion } from './acciones'
 
 type Novedad = { observacion: string; fotos: FotoLocal[] }
 
@@ -24,9 +26,13 @@ const OPCIONES = [
 ] as const
 
 export function FormDevolucion({
+  asignacionId,
+  token,
   catalogo,
   evento,
 }: {
+  asignacionId: string
+  token: string
   catalogo: ElementoCatalogo[]
   evento: string
 }) {
@@ -52,6 +58,10 @@ export function FormDevolucion({
   }
 
   async function enviar() {
+    if (Object.values(novedades).some((n) => haySubidasPendientes(n.fotos))) {
+      setErrores(['Espera a que terminen de subir las fotos.'])
+      return
+    }
     const r = devolucionInputSchema.safeParse({
       claveIdempotencia,
       resultado,
@@ -60,7 +70,7 @@ export function FormDevolucion({
           ? Object.entries(novedades).map(([elementoId, n]) => ({
               elementoId,
               observacion: n.observacion,
-              fotoIds: n.fotos.map((f) => f.id),
+              fotoIds: idsSubidos(n.fotos),
             }))
           : [],
       declaracion,
@@ -71,7 +81,12 @@ export function FormDevolucion({
     }
     setErrores([])
     setEnviando(true)
-    await new Promise((res) => setTimeout(res, 900))
+    const respuesta = await declararDevolucion(asignacionId, token, r.data)
+    setEnviando(false)
+    if (!respuesta.ok) {
+      setErrores([respuesta.mensaje])
+      return
+    }
     setEnviada(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -152,9 +167,17 @@ export function FormDevolucion({
                         }
                       />
                       <SelectorFotos
+                        asignacionId={asignacionId}
                         fotos={n.fotos}
-                        onCambio={(fotos) =>
-                          setNovedades((prev) => ({ ...prev, [el.id]: { ...n, fotos } }))
+                        onCambio={(actualizar) =>
+                          setNovedades((prev) => {
+                            const actual = prev[el.id]
+                            if (!actual) return prev
+                            return {
+                              ...prev,
+                              [el.id]: { ...actual, fotos: actualizar(actual.fotos) },
+                            }
+                          })
                         }
                       />
                     </div>

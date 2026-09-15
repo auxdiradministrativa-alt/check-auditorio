@@ -2,8 +2,8 @@ import {
   ArrowLeft,
   CalendarDays,
   Clock,
+  ExternalLink,
   MapPin,
-  QrCode,
   ShieldCheck,
   UserRound,
 } from 'lucide-react'
@@ -11,35 +11,44 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { RefrescoAutomatico } from '@/components/refresco-automatico'
 import { EstadoBadge } from '@/components/ui/badge'
 import { ButtonLink } from '@/components/ui/button'
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BotonAnular } from '@/features/panel/boton-anular'
 import { LineaTiempo } from '@/features/panel/linea-tiempo'
 import { ResumenCatalogo } from '@/features/panel/resumen-catalogo'
 import { TarjetaValidacion } from '@/features/panel/tarjeta-validacion'
-import { obtenerAsignacion, obtenerCatalogo, obtenerEspacio } from '@/lib/datos/repositorio'
 import { formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { qrSvg } from '@/servidor/qr'
+import { registro } from '@/servidor/registro'
+import { urlRecepcion } from '@/servidor/tokens'
 
 type Props = { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const asignacion = await obtenerAsignacion((await params).id)
+  const asignacion = await registro('asignacion.obtener', { id: (await params).id })
   return { title: asignacion?.evento ?? 'Asignación' }
 }
 
 export default async function DetalleAsignacion({ params }: Props) {
-  const asignacion = await obtenerAsignacion((await params).id)
+  const asignacion = await registro('asignacion.obtener', { id: (await params).id })
   if (!asignacion) notFound()
 
-  const [espacio, catalogo] = await Promise.all([
-    obtenerEspacio(asignacion.espacioId),
-    obtenerCatalogo(asignacion.espacioId),
-  ])
-  const { evento, inicio, fin, estado, receptor, consecutivo, entregadoPor } = asignacion
-  const muestraQr = estado === 'PROGRAMADA' || estado === 'EN_VALIDACION'
+  const { espacios, elementos } = await registro('catalogo.listar', {})
+  const espacio = espacios.find((e) => e.id === asignacion.espacioId)
+  const catalogo = elementos.filter((e) => e.espacioId === asignacion.espacioId)
+  const { id, evento, inicio, fin, estado, receptor, consecutivo, entregadoPor } = asignacion
+  const muestraQr = estado === 'PROGRAMADA'
+  const enlace = urlRecepcion(id)
+  const svg = muestraQr ? await qrSvg(enlace) : null
+  const anulable = ['PROGRAMADA', 'EN_VALIDACION', 'EN_DILIGENCIAMIENTO'].includes(estado)
 
   return (
     <>
+      {(estado === 'EN_VALIDACION' ||
+        estado === 'EN_DILIGENCIAMIENTO' ||
+        estado === 'PROGRAMADA') && <RefrescoAutomatico />}
       <Link
         href="/panel/asignaciones"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-600 hover:text-navy-900"
@@ -89,31 +98,53 @@ export default async function DetalleAsignacion({ params }: Props) {
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
           {estado === 'EN_VALIDACION' && receptor && (
-            <TarjetaValidacion solicitante={receptor} escaneadoA="1:52 p. m." />
+            <TarjetaValidacion asignacionId={id} solicitante={receptor} />
           )}
 
-          {muestraQr && (
+          {estado === 'EN_DILIGENCIAMIENTO' && receptor && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Diligenciando la constancia</CardTitle>
+                <CardDescription>
+                  {receptor.nombre} ({receptor.correo}) está revisando los elementos en su celular.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+
+          {svg && (
             <Card>
               <CardHeader>
                 <CardTitle>QR de recepción</CardTitle>
                 <CardDescription>
-                  Muéstralo a la persona que recibe. Es de un solo uso y vence al iniciar el evento.
+                  Muéstralo a la persona que recibe. Es de un solo uso y funciona desde 30 minutos
+                  antes del inicio hasta el fin del evento.
                 </CardDescription>
               </CardHeader>
-              <CardBody className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                <div className="grid aspect-square w-56 shrink-0 place-items-center rounded-2xl border-2 border-dashed border-gold-500/50 bg-white">
-                  <div className="flex flex-col items-center gap-2 px-6 text-center">
-                    <QrCode className="size-12 text-navy-800" aria-hidden />
-                    <span className="text-xs font-medium text-ink-600">
-                      El QR real se genera en la fase 2 (mecanismo).
-                    </span>
-                  </div>
+              <CardBody className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+                <div
+                  role="img"
+                  aria-label={`Código QR para recibir ${evento}`}
+                  className="aspect-square w-60 shrink-0 rounded-2xl border border-pearl-200 bg-white p-3 [&_svg]:size-full"
+                  // SVG generado en servidor a partir de una URL propia.
+                  dangerouslySetInnerHTML={{ __html: svg }}
+                />
+                <div className="flex min-w-0 flex-col gap-3 text-sm text-ink-600">
+                  <ul className="flex flex-col gap-2">
+                    <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
+                    <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
+                    <li>• Si rechazas, el QR queda libre de nuevo.</li>
+                  </ul>
+                  <a
+                    href={enlace}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 font-semibold break-all text-navy-700 hover:text-navy-900"
+                  >
+                    <ExternalLink className="size-4 shrink-0" aria-hidden />
+                    Abrir enlace de recepción
+                  </a>
                 </div>
-                <ul className="flex flex-col gap-2 text-sm text-ink-600">
-                  <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
-                  <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
-                  <li>• Si rechazas, el QR queda libre de nuevo.</li>
-                </ul>
               </CardBody>
             </Card>
           )}
@@ -145,14 +176,17 @@ export default async function DetalleAsignacion({ params }: Props) {
           </Card>
         </div>
 
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Seguimiento</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <LineaTiempo estado={estado} />
-          </CardBody>
-        </Card>
+        <div className="flex flex-col gap-6">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Seguimiento</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <LineaTiempo estado={estado} />
+            </CardBody>
+          </Card>
+          {anulable && <BotonAnular asignacionId={id} />}
+        </div>
       </div>
     </>
   )

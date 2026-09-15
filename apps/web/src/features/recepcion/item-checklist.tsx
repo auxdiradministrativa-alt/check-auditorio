@@ -9,8 +9,9 @@ import { Segmented } from '@/components/ui/segmented'
 import { Textarea } from '@/components/ui/field'
 import { cn } from '@/lib/cn'
 
-import { SelectorFotos } from './selector-fotos'
-import type { ErroresItem, ItemEstado } from './tipos'
+import { SelectorFotos } from '@/features/fotos/selector-fotos'
+
+import type { CambioItem, ErroresItem, ItemEstado } from './tipos'
 
 const OPCIONES = [
   { valor: 'CONFORME', etiqueta: 'Conforme', tono: 'ok' },
@@ -18,18 +19,20 @@ const OPCIONES = [
 ] as const satisfies readonly { valor: EstadoElemento; etiqueta: string; tono: 'ok' | 'peligro' }[]
 
 export function ItemChecklist({
+  asignacionId,
   elemento,
   valor,
   errores,
   onCambio,
 }: {
+  asignacionId: string
   elemento: ElementoCatalogo
   valor: ItemEstado
   errores?: ErroresItem | undefined
-  onCambio: (valor: ItemEstado) => void
+  onCambio: CambioItem
 }) {
   const cuantificable = elemento.categoria !== 'ESPACIO'
-  const set = (parcial: Partial<ItemEstado>) => onCambio({ ...valor, ...parcial })
+  const set = (parcial: Partial<ItemEstado>) => onCambio((previo) => ({ ...previo, ...parcial }))
   const idObs = `obs-${elemento.id}`
 
   return (
@@ -128,8 +131,11 @@ export function ItemChecklist({
             )}
           </div>
           <SelectorFotos
+            asignacionId={asignacionId}
             fotos={valor.fotos}
-            onCambio={(fotos) => set({ fotos })}
+            onCambio={(actualizar) =>
+              onCambio((previo) => ({ ...previo, fotos: actualizar(previo.fotos) }))
+            }
             error={errores?.fotoIds}
           />
         </div>

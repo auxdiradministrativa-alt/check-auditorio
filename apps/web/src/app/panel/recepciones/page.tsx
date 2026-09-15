@@ -5,13 +5,15 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/layout/page-header'
 import { EstadoBadge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { listarAsignaciones } from '@/lib/datos/repositorio'
 import { formatearFechaCorta, formatearFranja } from '@/lib/fechas'
+import { registro } from '@/servidor/registro'
 
 export const metadata: Metadata = { title: 'Recepciones' }
 
 export default async function Recepciones() {
-  const recepciones = (await listarAsignaciones()).filter((a) => a.consecutivo)
+  const recepciones = (await registro('asignacion.listar', {}))
+    .filter((a) => a.consecutivo)
+    .sort((a, b) => (b.consecutivo ?? '').localeCompare(a.consecutivo ?? ''))
   return (
     <>
       <PageHeader
@@ -44,6 +46,13 @@ export default async function Recepciones() {
             </tr>
           </thead>
           <tbody className="divide-y divide-pearl-200">
+            {recepciones.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-ink-600">
+                  Aún no hay constancias firmadas.
+                </td>
+              </tr>
+            )}
             {recepciones.map((r) => (
               <tr key={r.id} className="hover:bg-pearl-100">
                 <td className="px-6 py-4 font-semibold text-navy-900 tabular">{r.consecutivo}</td>

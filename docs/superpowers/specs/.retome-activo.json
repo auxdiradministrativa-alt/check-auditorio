@@ -1,0 +1,22 @@
+{
+  "retome": "C:\\Users\\Leonardo Reales\\check-auditorio\\docs\\superpowers\\specs\\2026-09-15-bloque1-punto-de-retome.md",
+  "completo": false,
+  "faltan": [
+    "falta §1 (Modo cerrado y su evidencia)",
+    "falta §2 (Mediciones con su entorno)",
+    "falta §3 (Lo que NO hay que rehacer)",
+    "falta §4 (Falsos positivos ya descartados)",
+    "falta §5 (Decisiones abiertas)",
+    "falta §6 (Ficheros vivos)",
+    "falta §7 (Siguiente modo y su puerta)",
+    "hay 0 hechos-ancla y hacen falta 3"
+  ],
+  "frontera": "aterrizaje forzoso",
+  "anclas": 0,
+  "ventana": 376199,
+  "rama": "main",
+  "head": "86e8e01",
+  "hora": "2026-09-15T16:44:11.680Z",
+  "session_id": "cec12146-c975-4e00-95e2-c382a995bcff",
+  "consumido": false
+}

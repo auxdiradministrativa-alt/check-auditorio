@@ -10,7 +10,11 @@ import { LIMITES, nuevaAsignacionInputSchema } from '@check-auditorio/shared'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/field'
 
-type Errores = Partial<Record<'espacioId' | 'evento' | 'fecha' | 'inicio' | 'fin', string>>
+import { programarAsignacion } from './acciones'
+
+type Errores = Partial<
+  Record<'espacioId' | 'evento' | 'fecha' | 'inicio' | 'fin' | 'servidor', string>
+>
 
 /** Convierte fecha (AAAA-MM-DD) y hora (HH:MM) locales de Bogotá a ISO con offset. */
 const aIsoBogota = (fecha: string, hora: string) => `${fecha}T${hora}:00-05:00`
@@ -20,7 +24,7 @@ export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
   const [errores, setErrores] = useState<Errores>({})
   const [enviando, setEnviando] = useState(false)
 
-  function onSubmit(ev: FormEvent<HTMLFormElement>) {
+  async function onSubmit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     const datos = new FormData(ev.currentTarget)
     const fecha = String(datos.get('fecha') ?? '')
@@ -55,8 +59,13 @@ export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
 
     setErrores({})
     setEnviando(true)
-    // Fase 1: sin guardado real. Se muestra la asignación de ejemplo con su QR.
-    router.push('/panel/asignaciones/asg-003')
+    const r = await programarAsignacion(resultado.data)
+    if (!r.ok) {
+      setErrores({ servidor: r.mensaje })
+      setEnviando(false)
+      return
+    }
+    router.push(`/panel/asignaciones/${r.datos.id}`)
   }
 
   return (
@@ -102,6 +111,12 @@ export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
           <Input id="fin" name="fin" type="time" step={300} aria-invalid={!!errores.fin} />
         </Field>
       </div>
+
+      {errores.servidor && (
+        <p role="alert" className="text-sm font-medium text-danger-700">
+          {errores.servidor}
+        </p>
+      )}
 
       <div className="flex justify-end border-t border-pearl-200 pt-5">
         <Button type="submit" variante="primario" tamano="lg" disabled={enviando}>

@@ -18,8 +18,10 @@ next-env.d.ts
 # vercel
 .vercel/
 
-# apps script (credenciales locales de clasp)
+# apps script (credenciales locales de clasp y salidas de build/pruebas)
 .clasprc.json
+apps/gas/.clasp.json
+dist-pruebas/
 
 # sistema / editor
 .DS_Store

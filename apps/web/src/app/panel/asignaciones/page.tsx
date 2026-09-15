@@ -5,12 +5,12 @@ import { PageHeader } from '@/components/layout/page-header'
 import { ButtonLink } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FilaAsignacion } from '@/features/panel/fila-asignacion'
-import { listarAsignaciones } from '@/lib/datos/repositorio'
+import { registro } from '@/servidor/registro'
 
 export const metadata: Metadata = { title: 'Asignaciones' }
 
 export default async function Asignaciones() {
-  const asignaciones = await listarAsignaciones()
+  const asignaciones = (await registro('asignacion.listar', {})).reverse()
   return (
     <>
       <PageHeader
@@ -25,11 +25,17 @@ export default async function Asignaciones() {
         }
       />
       <Card className="overflow-hidden">
-        <ul className="divide-y divide-pearl-200">
-          {asignaciones.map((a) => (
-            <FilaAsignacion key={a.id} asignacion={a} conFecha />
-          ))}
-        </ul>
+        {asignaciones.length ? (
+          <ul className="divide-y divide-pearl-200">
+            {asignaciones.map((a) => (
+              <FilaAsignacion key={a.id} asignacion={a} conFecha />
+            ))}
+          </ul>
+        ) : (
+          <p className="px-6 py-8 text-center text-sm text-ink-600">
+            Aún no hay asignaciones. Programa la primera entrega.
+          </p>
+        )}
       </Card>
     </>
   )

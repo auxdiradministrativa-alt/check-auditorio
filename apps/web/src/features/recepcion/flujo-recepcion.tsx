@@ -14,7 +14,13 @@ import {
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-import type { Asignacion, ElementoCatalogo, Espacio, Persona } from '@check-auditorio/shared'
+import type {
+  Asignacion,
+  ElementoCatalogo,
+  Espacio,
+  Persona,
+  Terminos,
+} from '@check-auditorio/shared'
 import {
   ETIQUETAS_ROL,
   LIMITES,
@@ -33,13 +39,14 @@ import { Stepper } from '@/components/ui/stepper'
 import { formatearFechaLarga, formatearFranja } from '@/lib/fechas'
 import { uuid } from '@/lib/uuid'
 
+import { cerrarSesion } from '@/features/auth/acciones'
+
+import { firmarRecepcion } from './acciones'
 import { ItemChecklist } from './item-checklist'
 import type { DatosReceptor, ErroresItem, ItemEstado } from './tipos'
 import { aItemInput, validarDatos, validarItems, type ErroresDatos } from './validacion'
 
 const PASOS = ['Identidad', 'Tus datos', 'Elementos', 'Condiciones', 'Términos', 'Revisar'] as const
-
-type Terminos = { version: string; clausulas: readonly string[]; tratamientoDatos: string }
 
 export function FlujoRecepcion({
   token,
@@ -80,6 +87,7 @@ export function FlujoRecepcion({
   const [erroresItems, setErroresItems] = useState<Record<string, ErroresItem>>({})
   const [errorTerminos, setErrorTerminos] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const [reautenticar, setReautenticar] = useState(false)
 
   const elementos = catalogo.filter((e) => e.categoria !== 'ESPACIO')
   const condiciones = catalogo.filter((e) => e.categoria === 'ESPACIO')
@@ -104,8 +112,8 @@ export function FlujoRecepcion({
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function actualizarItem(id: string, valor: ItemEstado) {
-    setItems((prev) => ({ ...prev, [id]: valor }))
+  function actualizarItem(id: string, cambio: (previo: ItemEstado) => ItemEstado) {
+    setItems((prev) => ({ ...prev, [id]: cambio(prev[id]!) }))
     if (erroresItems[id]) {
       setErroresItems((prev) => {
         const resto = { ...prev }
@@ -176,9 +184,15 @@ export function FlujoRecepcion({
       return
     }
     setEnviando(true)
-    // Fase 1: simulación. Fase 2: POST al servidor, que agrega identidad, hora y sello.
-    await new Promise((res) => setTimeout(res, 900))
-    router.push(`/r/${token}/confirmada`)
+    setErrorTerminos(null)
+    const resultado = await firmarRecepcion(token, r.data)
+    if (resultado.ok) {
+      router.push(`/r/${token}/confirmada`)
+      return
+    }
+    setEnviando(false)
+    setReautenticar(resultado.codigo === 'REAUTENTICAR' || resultado.codigo === 'SESION')
+    setErrorTerminos(resultado.mensaje)
   }
 
   const novedades = catalogo.filter((el) => items[el.id]?.estado === 'NOVEDAD')
@@ -367,10 +381,11 @@ export function FlujoRecepcion({
             {grupoActual.map((el) => (
               <ItemChecklist
                 key={el.id}
+                asignacionId={asignacion.id}
                 elemento={el}
                 valor={items[el.id]!}
                 errores={erroresItems[el.id]}
-                onCambio={(v) => actualizarItem(el.id, v)}
+                onCambio={(cambio) => actualizarItem(el.id, cambio)}
               />
             ))}
           </ul>
@@ -492,6 +507,13 @@ export function FlujoRecepcion({
             <p role="alert" className="text-sm font-medium text-danger-700">
               {errorTerminos}
             </p>
+          )}
+          {reautenticar && (
+            <form action={cerrarSesion}>
+              <Button type="submit" variante="secundario">
+                Volver a iniciar sesión
+              </Button>
+            </form>
           )}
         </>
       )}

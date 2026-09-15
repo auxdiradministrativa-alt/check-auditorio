@@ -1,43 +1,70 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { redirect } from 'next/navigation'
 
 import { FlujoRecepcion } from '@/features/recepcion/flujo-recepcion'
-import { PantallaEspera, PantallaExpirada } from '@/features/recepcion/pantallas-estado'
 import {
-  obtenerCatalogo,
-  obtenerEspacio,
-  obtenerSesionReceptor,
-  obtenerTerminosVigentes,
-  resolverToken,
-} from '@/lib/datos/repositorio'
+  PantallaAunNoVigente,
+  PantallaEspera,
+  PantallaExpirada,
+  PantallaIngresar,
+  PantallaSolicitar,
+} from '@/features/recepcion/pantallas-estado'
+import { obtenerSesion } from '@/servidor/auth/sesion'
+import { registro } from '@/servidor/registro'
+import { huella } from '@/servidor/tokens'
 
 export const metadata: Metadata = { title: 'Recepción del espacio' }
 
 type Props = { params: Promise<{ token: string }> }
 
+/** Máquina de pantallas del QR: cada estado de la asignación decide qué ve quien escanea. */
 export default async function Recepcion({ params }: Props) {
   const { token } = await params
-  const { estado, asignacion } = await resolverToken(token)
-  const sesion = await obtenerSesionReceptor()
+  const qr = await registro('qr.estado', { tokenSha256: huella(token) })
+  if (!qr) return <PantallaExpirada />
 
-  if (estado === 'EXPIRADO') return <PantallaExpirada />
-  if (estado === 'EN_ESPERA') return <PantallaEspera sesion={sesion} />
+  const { asignacion, vigencia } = qr
+  const sesion = await obtenerSesion()
+  const esSuya =
+    !!sesion && asignacion.receptor?.correo.toLowerCase() === sesion.correo.toLowerCase()
 
-  const [espacio, catalogo, terminos] = await Promise.all([
-    obtenerEspacio(asignacion.espacioId),
-    obtenerCatalogo(asignacion.espacioId),
-    obtenerTerminosVigentes(),
-  ])
-  if (!espacio) notFound()
+  switch (asignacion.estado) {
+    case 'PROGRAMADA':
+      if (vigencia === 'ANTES') return <PantallaAunNoVigente asignacion={asignacion} />
+      if (vigencia === 'VENCIDO') return <PantallaExpirada />
+      if (!sesion) return <PantallaIngresar asignacion={asignacion} token={token} />
+      return <PantallaSolicitar asignacion={asignacion} sesion={sesion} token={token} />
 
-  return (
-    <FlujoRecepcion
-      token={token}
-      asignacion={asignacion}
-      espacio={espacio}
-      catalogo={catalogo}
-      sesion={sesion}
-      terminos={terminos}
-    />
-  )
+    case 'EN_VALIDACION':
+      return esSuya ? <PantallaEspera sesion={sesion} /> : <PantallaExpirada />
+
+    case 'EN_DILIGENCIAMIENTO': {
+      if (!esSuya) return <PantallaExpirada />
+      const [{ espacios, elementos }, terminos] = await Promise.all([
+        registro('catalogo.listar', {}),
+        registro('terminos.vigentes', {}),
+      ])
+      const espacio = espacios.find((e) => e.id === asignacion.espacioId)
+      if (!espacio) return <PantallaExpirada />
+      return (
+        <FlujoRecepcion
+          token={token}
+          asignacion={asignacion}
+          espacio={espacio}
+          catalogo={elementos.filter((e) => e.espacioId === espacio.id)}
+          sesion={sesion}
+          terminos={terminos}
+        />
+      )
+    }
+
+    case 'RECIBIDA':
+    case 'DEVUELTA':
+    case 'DEVOLUCION_VENCIDA':
+      if (esSuya) redirect(`/r/${token}/confirmada`)
+      return <PantallaExpirada />
+
+    default:
+      return <PantallaExpirada />
+  }
 }

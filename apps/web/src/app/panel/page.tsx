@@ -6,16 +6,17 @@ import { ButtonLink } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FilaAsignacion } from '@/features/panel/fila-asignacion'
 import { Indicador } from '@/features/panel/indicador'
-import { listarAsignaciones } from '@/lib/datos/repositorio'
+import { isoBogota } from '@check-auditorio/shared'
+
+import { RefrescoAutomatico } from '@/components/refresco-automatico'
 import { formatearFechaLarga } from '@/lib/fechas'
+import { registro } from '@/servidor/registro'
 
 export const metadata: Metadata = { title: 'Hoy' }
 
-// Fecha fija mientras la interfaz usa datos de ejemplo.
-const HOY = '2026-09-15'
-
 export default async function PanelHoy() {
-  const asignaciones = await listarAsignaciones()
+  const HOY = isoBogota(new Date()).slice(0, 10)
+  const asignaciones = await registro('asignacion.listar', {})
   const deHoy = asignaciones.filter((a) => a.inicio.startsWith(HOY))
   const pendientes = asignaciones.filter((a) => a.estado === 'DEVOLUCION_VENCIDA')
 
@@ -23,6 +24,7 @@ export default async function PanelHoy() {
 
   return (
     <>
+      {contar('EN_VALIDACION') > 0 && <RefrescoAutomatico />}
       <PageHeader
         antetitulo={formatearFechaLarga(`${HOY}T12:00:00-05:00`)}
         titulo="Entregas de hoy"
@@ -56,13 +58,21 @@ export default async function PanelHoy() {
         <Card className="overflow-hidden">
           <CardHeader className="pb-4">
             <CardTitle>Agenda</CardTitle>
-            <CardDescription>{deHoy.length} entregas programadas para hoy.</CardDescription>
+            <CardDescription>
+              {deHoy.length === 1 ? '1 entrega para hoy.' : `${deHoy.length} entregas para hoy.`}
+            </CardDescription>
           </CardHeader>
-          <ul className="divide-y divide-pearl-200 border-t border-pearl-200">
-            {deHoy.map((a) => (
-              <FilaAsignacion key={a.id} asignacion={a} />
-            ))}
-          </ul>
+          {deHoy.length ? (
+            <ul className="divide-y divide-pearl-200 border-t border-pearl-200">
+              {deHoy.map((a) => (
+                <FilaAsignacion key={a.id} asignacion={a} />
+              ))}
+            </ul>
+          ) : (
+            <p className="border-t border-pearl-200 px-6 py-5 text-sm text-ink-600">
+              No hay entregas programadas para hoy.
+            </p>
+          )}
         </Card>
 
         <Card className="h-fit overflow-hidden border-danger-700/20">

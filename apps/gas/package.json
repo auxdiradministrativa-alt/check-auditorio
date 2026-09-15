@@ -1,0 +1,25 @@
+{
+  "name": "@check-auditorio/gas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./memoria": "./src/infraestructura/memoria/index.ts"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "prueba": "node build.mjs --pruebas && node --test \"dist-pruebas/*.test.mjs\"",
+    "push": "node build.mjs && clasp push -f"
+  },
+  "dependencies": {
+    "@check-auditorio/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@google/clasp": "3.4.1",
+    "@types/google-apps-script": "2.0.13",
+    "@types/node": "24.13.4",
+    "esbuild": "0.28.2",
+    "typescript": "6.0.3"
+  }
+}

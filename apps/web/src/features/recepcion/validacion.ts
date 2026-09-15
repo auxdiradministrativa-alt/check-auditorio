@@ -1,6 +1,8 @@
 import type { ElementoCatalogo } from '@check-auditorio/shared'
 import { checklistItemInputSchema, recepcionInputSchema } from '@check-auditorio/shared'
 
+import { haySubidasPendientes, idsSubidos } from '@/features/fotos/tipos'
+
 import type { DatosReceptor, ErroresItem, ItemEstado } from './tipos'
 
 const esquemaDatos = recepcionInputSchema.pick({
@@ -47,6 +49,9 @@ export function validarItems(
     ) {
       e.cantidadRecibida = 'La cantidad no coincide con lo entregado: marca Novedad y descríbela.'
     }
+    if (item.estado === 'NOVEDAD' && haySubidasPendientes(item.fotos)) {
+      e.fotoIds = 'Espera a que terminen de subir las fotos.'
+    }
     const r = checklistItemInputSchema.safeParse(aItemInput(el, item))
     if (!r.success) {
       for (const issue of r.error.issues) {
@@ -65,6 +70,6 @@ export function aItemInput(el: ElementoCatalogo, item: ItemEstado) {
     cantidadRecibida: el.categoria === 'ESPACIO' ? 1 : item.cantidadRecibida,
     estado: item.estado,
     observacion: item.estado === 'NOVEDAD' ? item.observacion : '',
-    fotoIds: item.estado === 'NOVEDAD' ? item.fotos.map((f) => f.id) : [],
+    fotoIds: item.estado === 'NOVEDAD' ? idsSubidos(item.fotos) : [],
   }
 }
