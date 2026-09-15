@@ -31,9 +31,21 @@ function cargar() {
   const auth =
     env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.BETTER_AUTH_SECRET ? 'google' : 'local'
 
+  // Solo nombres, nunca valores: es lo que se escribe en el log cuando falta configuración.
+  const faltantes = (
+    [
+      'GAS_WEBAPP_URL',
+      'GAS_HMAC_SECRET',
+      'GOOGLE_CLIENT_ID',
+      'GOOGLE_CLIENT_SECRET',
+      'BETTER_AUTH_SECRET',
+    ] as const
+  ).filter((k) => !env[k])
+
   return {
     /** En producción los modos locales están prohibidos; lo exige `exigirEntornoCompleto`. */
     incompletoEnProduccion: produccion && (registro !== 'gas' || auth !== 'google'),
+    faltantes,
     appUrl: env.NEXT_PUBLIC_APP_URL.replace(/\/$/, ''),
     registro,
     auth,
@@ -52,8 +64,7 @@ export const entorno = () => (cache ??= cargar())
 
 /** Se llama antes de tocar datos o sesión: en producción, falta de variables = error, no degradación. */
 export function exigirEntornoCompleto() {
-  if (entorno().incompletoEnProduccion)
-    throw new Error(
-      'Faltan variables de entorno de producción: GAS_WEBAPP_URL, GAS_HMAC_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, BETTER_AUTH_SECRET.',
-    )
+  const { incompletoEnProduccion, faltantes } = entorno()
+  if (incompletoEnProduccion)
+    throw new Error(`Faltan variables de entorno de producción: ${faltantes.join(', ')}.`)
 }
