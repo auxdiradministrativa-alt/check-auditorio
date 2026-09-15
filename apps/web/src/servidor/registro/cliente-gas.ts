@@ -14,8 +14,25 @@ import {
 import { entorno } from '../entorno'
 
 const TIEMPO_MAXIMO_MS = 30_000
+const LECTURAS_DEL_ECO = 4
+const ESPERA_ENTRE_LECTURAS_MS = 700
 
-/** POST firmado a la web app de Apps Script (la firma va en el cuerpo: doPost no expone headers). */
+const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms))
+
+/** Una respuesta de doPost, y no otra cosa (p. ej. la de doGet, que también trae `ok: true`). */
+function esRespuesta(valor: unknown): valor is Respuesta<unknown> {
+  if (typeof valor !== 'object' || valor === null || !('ok' in valor)) return false
+  return valor.ok === true ? 'datos' in valor : 'codigo' in valor
+}
+
+/**
+ * POST firmado a la web app de Apps Script (la firma va en el cuerpo: doPost no expone headers).
+ *
+ * Apps Script ejecuta doPost y responde 302 hacia un «eco» en googleusercontent que guarda el
+ * resultado. Medido con este despliegue: a veces ese eco da 404 o redirige a /exec (se leería la
+ * salida de doGet). Por eso la redirección se sigue a mano y **solo se reintenta la lectura del
+ * eco**: repetir el POST ejecutaría la acción dos veces.
+ */
 export async function enviarAGas<A extends NombreAccion>(
   accion: A,
   entrada: Entrada<A>,
@@ -30,26 +47,68 @@ export async function enviarAGas<A extends NombreAccion>(
     )
     .digest('hex')
   const sobre: Sobre = { accion, datos, ts, nonce, firma }
+  const limite = AbortSignal.timeout(TIEMPO_MAXIMO_MS)
 
   let res: Response
   try {
-    // Apps Script responde 302 hacia googleusercontent; fetch lo sigue con GET y trae el JSON.
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(sobre),
-      redirect: 'follow',
+      redirect: 'manual',
       cache: 'no-store',
-      signal: AbortSignal.timeout(TIEMPO_MAXIMO_MS),
+      signal: limite,
     })
-  } catch {
+  } catch (error) {
+    console.error(`[gas] ${accion} sin respuesta del POST:`, error)
     return { ok: false, codigo: 'INTERNO', mensaje: 'El registro no respondió. Intenta de nuevo.' }
   }
+
+  const eco = res.headers.get('location')
+  if (!eco) return leer<A>(accion, res)
+
+  let ultimo = ''
+  for (let intento = 1; intento <= LECTURAS_DEL_ECO; intento++) {
+    try {
+      const lectura = await fetch(eco, { redirect: 'manual', cache: 'no-store', signal: limite })
+      if (lectura.status === 200) {
+        const respuesta = await leer<A>(accion, lectura, intento < LECTURAS_DEL_ECO)
+        if (respuesta) return respuesta
+      }
+      ultimo = `HTTP ${lectura.status}`
+    } catch (error) {
+      ultimo = String(error)
+    }
+    if (intento < LECTURAS_DEL_ECO) await esperar(ESPERA_ENTRE_LECTURAS_MS * intento)
+  }
+  console.error(`[gas] ${accion} el eco no entregó la respuesta (${ultimo})`)
+  // La acción pudo ejecutarse: el mensaje no invita a repetir a ciegas.
+  return {
+    ok: false,
+    codigo: 'INTERNO',
+    mensaje: 'El registro no confirmó la operación. Recarga la página antes de reintentar.',
+  }
+}
+
+async function leer<A extends NombreAccion>(
+  accion: A,
+  res: Response,
+  toleraFallo?: false,
+): Promise<Respuesta<Salida<A>>>
+async function leer<A extends NombreAccion>(
+  accion: A,
+  res: Response,
+  toleraFallo: boolean,
+): Promise<Respuesta<Salida<A>> | null>
+async function leer<A extends NombreAccion>(accion: A, res: Response, toleraFallo = false) {
   const texto = await res.text()
   try {
-    return JSON.parse(texto) as Respuesta<Salida<A>>
+    const valor: unknown = JSON.parse(texto)
+    if (esRespuesta(valor)) return valor as Respuesta<Salida<A>>
   } catch {
-    console.error(`[gas] ${accion} respuesta no JSON (${res.status}):`, texto.slice(0, 300))
-    return { ok: false, codigo: 'INTERNO', mensaje: 'Respuesta inválida del registro.' }
+    // se trata abajo
   }
+  if (toleraFallo) return null
+  console.error(`[gas] ${accion} respuesta inesperada (${res.status}):`, texto.slice(0, 300))
+  return { ok: false, codigo: 'INTERNO', mensaje: 'Respuesta inválida del registro.' }
 }

@@ -41,8 +41,10 @@ Navegador ─► Vercel · Next.js 16 (UI + auth + validación + sello)
 ## 3. Estado actual del repo (Bloque 1 terminado: mecanismo completo sin credenciales)
 
 La Fase 2 está **escrita y probada en modo local**: el flujo entero corre contra el mismo núcleo que
-irá a Apps Script, sobre un libro en memoria. Siguiente: conectar Google (guía
-[`docs/google-workspace.md`](docs/google-workspace.md)) y después Vercel. n8n/correo quedan fuera
+irá a Apps Script, sobre un libro en memoria. **Google conectado el 2026-09-15** con la cuenta dueña
+(script, libro, web app, OAuth Interno; estado y pendientes en
+[`docs/google-workspace.md`](docs/google-workspace.md) §5.bis): **bloqueo abierto, latencia de Apps
+Script** (> 30 s en `asignacion.listar`) sin medir aún. Después, Vercel. n8n/correo quedan fuera
 del MVP.
 
 ```
@@ -82,6 +84,8 @@ Costuras que no se ven leyendo un solo fichero:
 - **Los esquemas zod usan camelCase y la hoja snake_case**: el mapeo vive en `apps/gas/src/infraestructura/hojas/repositorios.ts`, que lee y escribe por **nombre** de columna (reordenar columnas a mano no rompe nada).
 - **Regla «cantidad ≠ esperada con CONFORME»**: el esquema compartido no conoce el catálogo, así que está dos veces a propósito — `features/recepcion/validacion.ts` (cliente, para el mensaje) y el dominio del núcleo (servidor, contra el catálogo de la hoja). «Novedad exige observación y foto» sí está en el esquema compartido.
 - **`revalidatePath` dentro de una Server Action repinta la página actual**: un estado de éxito que solo vive en el cliente se pierde. Por eso las confirmaciones las pinta el servidor desde el registro (ver `/devolucion/[id]`).
+- **El POST a Apps Script no se reintenta; la lectura de su respuesta sí** (`registro/cliente-gas.ts`): doPost ejecuta y responde 302 a un eco en googleusercontent que a veces da 404 o redirige a `/exec` (se leería doGet). Se sigue la redirección a mano, se relee el eco hasta 4 veces y se valida la forma. Repetir el POST duplicaría la acción.
+- **`RefrescoAutomatico` espera a que termine el refresco anterior**: con GAS un refresco dura segundos; un `setInterval` de 4 s cancelaba cada uno y el panel no se enteraba de la solicitud del receptor. En memoria no se ve.
 - **Escritura no transaccional**: si Apps Script falla a mitad de `recepcion.registrar`, pueden quedar filas parciales. La clave de idempotencia permite reintentar; no hay rollback.
 
 ## 4. Reglas del código
@@ -189,12 +193,14 @@ pnpm check        # typecheck + lint + format:check
 pnpm build
 pnpm format       # prettier --write (incluye orden de clases Tailwind)
 pnpm e2e          # prueba de uso con Playwright (puerto 3100)
+pnpm --filter @check-auditorio/web e2e:gas   # la misma, contra el Sheet REAL (escribe filas de prueba)
 pnpm secretos     # imprime GAS_HMAC_SECRET y BETTER_AUTH_SECRET nuevos
 
 # Apps Script (con la cuenta dueña; guía completa en docs/google-workspace.md)
 pnpm --filter @check-auditorio/gas prueba    # núcleo en memoria (node:test)
 pnpm --filter @check-auditorio/gas build     # → apps/gas/dist/codigo.js
-pnpm --filter @check-auditorio/gas login     # clasp login (credencial en ~/.clasprc.json)
+pnpm --filter @check-auditorio/gas login     # clasp -u duena login (credencial nombrada en ~/.clasprc.json)
+pnpm --filter @check-auditorio/gas cuenta    # debe decir auxdiradministrativa@
 pnpm --filter @check-auditorio/gas crear     # una vez: crea el script independiente y .clasp.json
 pnpm --filter @check-auditorio/gas push      # build + clasp push (luego: nueva VERSIÓN de la implementación)
 pnpm --filter @check-auditorio/web probar-gas  # GET + POST firmado contra GAS_WEBAPP_URL de .env.local

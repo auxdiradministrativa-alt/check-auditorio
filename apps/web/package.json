@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
+    "e2e:gas": "playwright test -c playwright.gas.config.ts",
     "probar-gas": "node --env-file-if-exists=.env.local scripts/probar-gas.mjs"
   },
   "dependencies": {

@@ -17,6 +17,7 @@
     "src/**/*.tsx",
     "e2e/**/*.ts",
     "playwright.config.ts",
+    "playwright.gas.config.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],

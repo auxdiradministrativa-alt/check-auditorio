@@ -46,11 +46,13 @@ Script API**. Sin esto, `clasp` responde «User has not enabled the Apps Script 
 
 ```bash
 pnpm --filter @check-auditorio/gas login
-pnpm --filter @check-auditorio/gas exec clasp show-authorized-user
+pnpm --filter @check-auditorio/gas cuenta
 ```
 
 Se abre el navegador: **elige la cuenta dueña**. La credencial queda en `~/.clasprc.json` de tu
-usuario de Windows, fuera del repo. El segundo comando debe mostrar la cuenta dueña.
+usuario de Windows, fuera del repo, con el nombre **`duena`** (`clasp -u duena`): así no pisa otra
+sesión de clasp que ya tengas con tu cuenta personal. El segundo comando debe mostrar la cuenta
+dueña.
 
 ### 2.3 Crear el script (una sola vez)
 
@@ -74,10 +76,10 @@ Sube `dist/codigo.js` (≈42 KB) y `appsscript.json`. Repite este comando cada v
 ### 2.5 Propiedad del script
 
 ```bash
-pnpm --filter @check-auditorio/gas exec clasp open-script
+pnpm --filter @check-auditorio/gas exec clasp -u duena open-script
 ```
 
-En el editor: **Configuración del proyecto (⚙) → Propiedades del script → Agregar** →
+(o abre `https://script.google.com/d/<scriptId>/edit`, con el id de `apps/gas/.clasp.json`). En el editor: **Configuración del proyecto (⚙) → Propiedades del script → Agregar** →
 `GAS_HMAC_SECRET` = el valor del paso 1. `SHEET_ID` **no** se agrega a mano: lo crea `instalar()`.
 
 ### 2.6 Instalar el libro
@@ -174,7 +176,18 @@ pnpm dev     # http://localhost:3001 — la franja «Modo local» ya no debe apa
 | «Falta la propiedad del script SHEET_ID»            | No se ejecutó `instalar()`                                                                                       | Paso 2.6                                                                                                               |
 | «User has not enabled the Apps Script API»          | Paso 2.1 pendiente                                                                                               | Activarla y esperar 1–2 min                                                                                            |
 | Cambios del script no se ven en la web              | Se hizo `push` pero no nueva versión de la implementación                                                        | Paso 2.7, «Actualizar sin cambiar la URL»                                                                              |
+| `.env.local` pierde un valor recién escrito         | El editor tenía el archivo abierto con la versión anterior y lo guardó encima                                    | Cerrar la pestaña sin guardar y volver a abrir                                                                         |
+| «El registro no confirmó la operación»              | El eco de Apps Script (302 → googleusercontent) no entregó la respuesta tras 4 lecturas, o pasaron 30 s          | Recargar antes de reintentar: la acción pudo ejecutarse. Si es frecuente, ver «Pendiente» abajo                        |
 | QR o enlaces de devolución antiguos dejan de abrir  | Cambió `BETTER_AUTH_SECRET`                                                                                      | Restaurar el valor anterior; no rotarlo                                                                                |
+
+## 5.bis Estado al 2026-09-15
+
+Pasos 1–9 hechos con la cuenta dueña (script, libro, web app, cliente OAuth Interno; ingreso con
+Google verificado a mano). `pnpm --filter @check-auditorio/web e2e:gas` corre la prueba de uso
+contra el Sheet real con login local: pasan el rechazo de dominio y la cuenta no autorizada; el
+flujo completo llegó hasta «Esperando validación» y luego **cayó por latencia de Apps Script**
+(`asignacion.listar` > 30 s). **Pendiente:** medir cada acción en frío/caliente (arranque del
+script, espera de `LockService`, lectura de hojas completas) antes de optimizar.
 
 ## 6. Lo que queda para Vercel (fase 3)
 
