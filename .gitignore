@@ -23,6 +23,10 @@ next-env.d.ts
 apps/gas/.clasp.json
 dist-pruebas/
 
+# playwright (salidas de la prueba de uso)
+test-results/
+playwright-report/
+
 # sistema / editor
 .DS_Store
 Thumbs.db

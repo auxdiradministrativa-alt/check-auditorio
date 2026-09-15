@@ -10,6 +10,8 @@
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit",
     "prueba": "node build.mjs --pruebas && node --test \"dist-pruebas/*.test.mjs\"",
+    "login": "clasp login",
+    "crear": "node build.mjs && clasp create-script --type standalone --title \"Check Auditorio\" --rootDir dist",
     "push": "node build.mjs && clasp push -f"
   },
   "dependencies": {

@@ -13,7 +13,9 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check"
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check",
+    "e2e": "pnpm --filter @check-auditorio/web e2e",
+    "secretos": "node scripts/generar-secretos.mjs"
   },
   "devDependencies": {
     "prettier": "3.9.6",

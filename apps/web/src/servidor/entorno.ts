@@ -10,7 +10,7 @@ import { z } from 'zod'
  */
 
 const esquema = z.object({
-  NEXT_PUBLIC_APP_URL: z.url().default('http://localhost:3000'),
+  NEXT_PUBLIC_APP_URL: z.url().default('http://localhost:3001'),
   GAS_WEBAPP_URL: z.url().optional(),
   GAS_HMAC_SECRET: z.string().min(32).optional(),
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),

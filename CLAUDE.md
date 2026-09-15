@@ -38,29 +38,51 @@ Navegador ─► Vercel · Next.js 16 (UI + auth + validación + sello)
 - **Primero guardar, luego notificar.** El correo nunca es el registro.
 - n8n **no** está en la ruta crítica: si cae, la recepción ya existe y se reintenta (outbox).
 
-## 3. Estado actual del repo (Fase 1 terminada: interfaz con datos de ejemplo)
+## 3. Estado actual del repo (Bloque 1 terminado: mecanismo completo sin credenciales)
+
+La Fase 2 está **escrita y probada en modo local**: el flujo entero corre contra el mismo núcleo que
+irá a Apps Script, sobre un libro en memoria. Siguiente: conectar Google (guía
+[`docs/google-workspace.md`](docs/google-workspace.md)) y después Vercel. n8n/correo quedan fuera
+del MVP.
 
 ```
-apps/web/            Next.js 16.3.5 · React 19.3 · Tailwind 4.3 · lucide-react
-  src/app/           rutas: / · /panel · /panel/asignaciones(/nueva|/[id]) · /panel/recepciones
-                     /r/[token](/confirmada) · /devolucion/[id] · /verificar/[consecutivo]
-  src/components/    ui/ (primitivas propias, sin shadcn) · layout/ (shells, marca, aviso-demo)
-  src/features/      panel/ · recepcion/ · devolucion/ · verificacion/
-  src/lib/datos/repositorio.ts   ← ÚNICO acceso a datos (hoy mock; Fase 2 → cliente Apps Script)
-  src/lib/mock/datos.ts          ← catálogo, asignaciones y términos de ejemplo
-packages/shared/     zod 4: estados, constantes, esquemas (asignación, recepción, devolución)
-apps/gas/            vacío (Fase 2)
-n8n/workflows/       vacío (Fase 2)
+packages/shared/          contrato, sin build (se consume como TS fuente)
+  src/domain/             zod 4: estados, constantes, esquemas de entrada, fechas
+  src/protocolo.ts        Acciones {entrada, salida}, Respuesta, Sobre HMAC, cadenaAFirmar
+  src/sin-zod.ts          entrada `./sin-zod` para Apps Script (el bundle de GAS no lleva zod)
+apps/gas/                 núcleo del registro — Clean Architecture, esbuild → dist/codigo.js
+  src/dominio/            reglas puras: asignación, recepción, devolución, sello, errores
+  src/aplicacion/         puertos · enrutador (acción → caso) · sobre (HMAC, ventana, nonce)
+                          casos/ un módulo por caso de uso
+  src/infraestructura/
+    hojas/                esquema (columnas §5), semilla, repositorios sobre la interfaz Tabla
+    gas/                  tabla-gas, servicios-gas (Lock, Cache, Digest, Drive), instalar, main (doGet/doPost)
+    memoria/              Tabla y servicios en memoria (pruebas y desarrollo local)
+  src/nucleo.ts           raíz de composición: crearNucleo(tabla, servicios)
+  pruebas/                node:test contra el núcleo en memoria
+apps/web/                 Next.js 16.3.5 · React 19.3 · Tailwind 4.3 · lucide-react
+  src/app/                / · /panel(/asignaciones(/nueva|/[id]) | /recepciones)
+                          /r/[token](/confirmada) · /devolucion/[id]?t= · /verificar/[consecutivo]
+  src/features/<f>/       UI del caso + acciones.ts (Server Actions) en auth · panel · fotos · recepcion · devolucion; verificacion solo UI
+  src/servidor/           solo servidor (`server-only`)
+    entorno.ts            variables validadas; modos gas|memoria y google|local
+    registro/             ÚNICO puerto de datos: index → cliente-gas (POST firmado) | cliente-memoria
+    auth/                 better-auth (Google, sin BD) · sesion-local · sesion · permisos (guardas)
+    tokens.ts · qr.ts · accion.ts (ejecutarAccion → Resultado)
+  e2e/                    Playwright: prueba de uso entregador/receptor/intruso
+n8n/workflows/            vacío (después del MVP)
 ```
-
-Demo: `/r/demo` (flujo), `/r/espera`, `/r/expirado`, `/verificar/REC-000122` (alterada). Franja dorada "Modo interfaz" en `components/layout/aviso-demo.tsx` → quitar al conectar datos reales.
 
 Costuras que no se ven leyendo un solo fichero:
 
-- **`@check-auditorio/shared` se consume como TypeScript fuente** (`exports` → `src/index.ts`, `transpilePackages` en `next.config.ts`): no tiene build; un cambio ahí aplica directo en la web.
-- **Las páginas solo leen datos vía `repositorio.ts`** (`server-only`). Su firma es el contrato que la Fase 2 debe conservar al cambiar el mock por el cliente de Apps Script; `resolverToken` hoy decide el estado por el texto del token (`espera`/`expirado`).
-- **Los esquemas zod usan camelCase** (`espacioId`, `cantidadEsperada`) y la hoja usa snake_case: el mapeo va en la capa de acceso, no en los esquemas.
-- **La regla «cantidad recibida ≠ esperada con CONFORME» NO está en `checklistItemInputSchema`** (el esquema no conoce el catálogo): vive en `features/recepcion/validacion.ts`, solo en cliente. El servidor de la Fase 2 debe repetirla contra el catálogo. La de «novedad exige observación y foto» sí está en el esquema compartido.
+- **Dos modos por pieza, decididos por variables** (`servidor/entorno.ts`): registro `gas` si hay `GAS_WEBAPP_URL`+`GAS_HMAC_SECRET`, si no `memoria`; auth `google` si están las 3 de Google, si no `local` (formulario de nombre+correo, cookie firmada). **En producción, faltar cualquiera lanza** (`exigirEntornoCompleto`) — no degrada. La franja «Modo local» (`aviso-demo.tsx`) aparece sola mientras algún modo sea local.
+- **El mismo núcleo corre en Apps Script y en memoria.** `cliente-memoria` importa `@check-auditorio/gas/memoria` y lo guarda en `globalThis` (sobrevive al hot reload; se borra al reiniciar `next dev`). Probar el núcleo en local prueba la lógica de GAS, **no** el runtime V8 de Google ni `SpreadsheetApp`.
+- **Tokens derivados, no aleatorios almacenados** (`servidor/tokens.ts`): `token = HMAC(BETTER_AUTH_SECRET, 'qr'|'devolucion' + '|' + asignacionId)`; la hoja guarda solo el SHA-256 del de QR. El panel puede volver a mostrar el QR, pero **rotar `BETTER_AUTH_SECRET` invalida todos los QR y enlaces emitidos**, y local y Vercel deben compartirlo si usan el mismo Sheet.
+- **`@check-auditorio/shared` se consume como TypeScript fuente** (`exports` → `src/index.ts`, `transpilePackages` en `next.config.ts`): un cambio ahí aplica directo en la web y en el bundle de GAS.
+- **Los esquemas zod usan camelCase y la hoja snake_case**: el mapeo vive en `apps/gas/src/infraestructura/hojas/repositorios.ts`, que lee y escribe por **nombre** de columna (reordenar columnas a mano no rompe nada).
+- **Regla «cantidad ≠ esperada con CONFORME»**: el esquema compartido no conoce el catálogo, así que está dos veces a propósito — `features/recepcion/validacion.ts` (cliente, para el mensaje) y el dominio del núcleo (servidor, contra el catálogo de la hoja). «Novedad exige observación y foto» sí está en el esquema compartido.
+- **`revalidatePath` dentro de una Server Action repinta la página actual**: un estado de éxito que solo vive en el cliente se pierde. Por eso las confirmaciones las pinta el servidor desde el registro (ver `/devolucion/[id]`).
+- **Escritura no transaccional**: si Apps Script falla a mitad de `recepcion.registrar`, pueden quedar filas parciales. La clave de idempotencia permite reintentar; no hay rollback.
 
 ## 4. Reglas del código
 
@@ -88,16 +110,25 @@ Pestañas **protegidas (solo el script)** — nunca se editan ni borran; anular 
 
 | Hoja                 | Columnas clave                                                                                                                                                                                                                                                                                                               |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Asignaciones`       | id (uuid), espacio_id, evento, inicio, fin, estado, entregado_por, creada_en, token_sha256, token_vence, receptor_correo, receptor_sub, consecutivo                                                                                                                                                                          |
+| `Asignaciones`       | id (uuid), espacio_id, evento, inicio, fin, estado, entregado_por, creada_en, token_sha256, token_vence, receptor_correo, receptor_nombre, receptor_sub, consecutivo                                                                                                                                                         |
 | `Recepciones`        | consecutivo, asignacion_id, receptor_nombre, receptor_correo, receptor_sub, rol, dependencia, cargo, celular, asistentes, terminos_version, terminos_sha256, sellada_en, sha256, codigo_verificacion, clave_idempotencia, user_agent, notificacion (PENDIENTE/ENVIANDO/ENVIADO/FALLIDO), notif_intentos, notif_reserva_hasta |
-| `Recepcion_Detalle`  | consecutivo, elemento_id, elemento_nombre, cantidad_esperada, cantidad_recibida, estado, observacion, foto_ids                                                                                                                                                                                                               |
+| `Recepcion_Detalle`  | consecutivo, elemento_id, elemento_nombre, categoria, cantidad_esperada, cantidad_recibida, estado, observacion, foto_ids                                                                                                                                                                                                    |
 | `Devoluciones`       | consecutivo, resultado, declarada_en, sha256, clave_idempotencia, notificacion…                                                                                                                                                                                                                                              |
 | `Devolucion_Detalle` | consecutivo, elemento_id, observacion, foto_ids                                                                                                                                                                                                                                                                              |
 | `Bitacora`           | ts, evento, entidad_id, actor_correo, datos_json                                                                                                                                                                                                                                                                             |
 
 Siempre IDs estables (uuid/consecutivo), **nunca número de fila**. Límite: 20 M celdas por libro.
+La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esquema.ts` (la escribe `instalar()`); esta tabla la resume.
+`receptor_nombre` (Asignaciones) y `categoria` (Recepcion_Detalle) se añadieron en el Bloque 1: la tarjeta de validación y la constancia los necesitan sin cruzar hojas. Todas las celdas de las pestañas protegidas son texto plano. `DEVOLUCION_VENCIDA` no se escribe: se deriva al leer (`dominio/asignacion.ts`).
 
 ## 6. Fase 2 — Mecanismo (orden sugerido, criterios de aceptación)
+
+**Cómo quedó implementado (Bloque 1, 2026-09-15) — donde difiere de la spec de abajo, manda esto:**
+
+- **esbuild, no Rollup** (`apps/gas/build.mjs`): IIFE ES2019 + funciones globales `doGet`, `doPost`, `instalar`.
+- **QR vigente desde `inicio − 30 min` hasta el `fin`** del evento (no hasta `inicio`), y **token derivado** con HMAC del id (§3), no aleatorio almacenado.
+- Acciones implementadas: las de `packages/shared/src/protocolo.ts` (incluye `entregador.autorizado` y `terminos.vigentes`). **No existen** `outbox.*` ni `devoluciones.porVencer`: el MVP sale sin correo (§8) y el enlace de devolución se muestra en `/r/[token]/confirmada`.
+- ✅ verificados en local: los de 2.1, 2.3, 2.4 y 2.5 con `pnpm --filter @check-auditorio/gas prueba` y `pnpm e2e`. **Pendientes de verificar con Google real:** el claim `hd` de 2.2 (Better Auth sin BD), el runtime V8 de Apps Script y `SpreadsheetApp`/`LockService` bajo concurrencia real.
 
 **2.1 `apps/gas`** — TypeScript + Rollup → `clasp push` (clasp 3 **no** transpila TS). Script **independiente** (no vinculado: un script vinculado es visible para quien vea el libro). Web app: _Ejecutar como: yo_ (cuenta de Infraestructura), _Acceso: cualquiera_ + HMAC.
 
@@ -153,17 +184,29 @@ Siempre IDs estables (uuid/consecutivo), **nunca número de fila**. Límite: 20 
 
 ```bash
 corepack enable && pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev          # http://localhost:3001 (puerto fijo: debe coincidir con el redirect OAuth)
 pnpm check        # typecheck + lint + format:check
 pnpm build
 pnpm format       # prettier --write (incluye orden de clases Tailwind)
+pnpm e2e          # prueba de uso con Playwright (puerto 3100)
+pnpm secretos     # imprime GAS_HMAC_SECRET y BETTER_AUTH_SECRET nuevos
+
+# Apps Script (con la cuenta dueña; guía completa en docs/google-workspace.md)
+pnpm --filter @check-auditorio/gas prueba    # núcleo en memoria (node:test)
+pnpm --filter @check-auditorio/gas build     # → apps/gas/dist/codigo.js
+pnpm --filter @check-auditorio/gas login     # clasp login (credencial en ~/.clasprc.json)
+pnpm --filter @check-auditorio/gas crear     # una vez: crea el script independiente y .clasp.json
+pnpm --filter @check-auditorio/gas push      # build + clasp push (luego: nueva VERSIÓN de la implementación)
+pnpm --filter @check-auditorio/web probar-gas  # GET + POST firmado contra GAS_WEBAPP_URL de .env.local
 
 # Por paquete
 pnpm --filter @check-auditorio/web lint
 pnpm --filter @check-auditorio/shared typecheck
 ```
 
-- **No hay runner de pruebas** (ni Vitest ni Playwright instalados): los criterios ✅ de la Fase 2 hoy se verifican a mano. Añadir uno es una dependencia nueva y se justifica.
+- **Pruebas** (sin credenciales, todo en modo local):
+  - `pnpm --filter @check-auditorio/gas prueba` → núcleo en memoria con `node:test` (flujo, idempotencia, «Alterada», cantidades, QR, cruce, HMAC).
+  - `pnpm e2e` → Playwright (`apps/web/e2e/`): levanta su propio `next dev` en el **puerto 3100** y hace la prueba de uso con tres navegadores: entregador, receptor e intruso. **Falla si ya hay otro `next dev` corriendo en `apps/web`** (Next 16 no admite dos): detenlo antes. La franja del evento se calcula con la hora actual de Bogotá, así que no corre después de las 23:55.
 - Git: rama `main`, remoto `origin` = `github.com/auxdiradministrativa-alt/check-auditorio`.
 - `next dev` crea y vuelve a crear `apps/web/AGENTS.md` y `apps/web/CLAUDE.md` (reglas de Next para agentes): se versionan, no se borran.
-- En esta máquina el puerto 3000 suele estar ocupado; `next dev` pasa solo al 3001.
+- `pnpm dev` usa el puerto **3001 fijo** (`next dev -p 3001`): el redirect OAuth de localhost apunta ahí y `NEXT_PUBLIC_APP_URL` debe coincidir. Si está ocupado, falla en vez de moverse de puerto.

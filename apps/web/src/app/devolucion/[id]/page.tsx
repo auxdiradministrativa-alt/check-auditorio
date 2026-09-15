@@ -57,9 +57,13 @@ export default async function Devolucion({ params, searchParams }: Props) {
       </div>
       {constancia?.devolucion ? (
         <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <CircleCheckBig className="size-12 text-ok-700" aria-hidden />
+          <span className="grid size-20 place-items-center rounded-full bg-ok-50 ring-1 ring-ok-700/20">
+            <CircleCheckBig className="size-10 text-ok-700" aria-hidden />
+          </span>
+          <h2 className="font-display text-3xl font-semibold">Devolución registrada</h2>
           <p className="max-w-sm text-ink-600">
-            Ya declaraste la devolución el {formatearFechaHora(constancia.devolucion.declaradaEn)}.
+            Infraestructura recibió tu declaración del{' '}
+            {formatearFechaHora(constancia.devolucion.declaradaEn)}.
           </p>
         </div>
       ) : (
@@ -67,7 +71,6 @@ export default async function Devolucion({ params, searchParams }: Props) {
           asignacionId={id}
           token={t!}
           catalogo={elementos.filter((e) => e.espacioId === asignacion.espacioId)}
-          evento={asignacion.evento}
         />
       )}
     </div>

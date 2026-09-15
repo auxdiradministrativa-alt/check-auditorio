@@ -1,6 +1,7 @@
 'use client'
 
-import { CircleCheckBig, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import type { ElementoCatalogo, ResultadoDevolucion } from '@check-auditorio/shared'
@@ -29,19 +30,17 @@ export function FormDevolucion({
   asignacionId,
   token,
   catalogo,
-  evento,
 }: {
   asignacionId: string
   token: string
   catalogo: ElementoCatalogo[]
-  evento: string
 }) {
+  const router = useRouter()
   const [claveIdempotencia] = useState(uuid)
   const [resultado, setResultado] = useState<ResultadoDevolucion | null>(null)
   const [novedades, setNovedades] = useState<Record<string, Novedad>>({})
   const [declaracion, setDeclaracion] = useState(false)
   const [errores, setErrores] = useState<string[]>([])
-  const [enviada, setEnviada] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
   function alternar(id: string) {
@@ -82,27 +81,14 @@ export function FormDevolucion({
     setErrores([])
     setEnviando(true)
     const respuesta = await declararDevolucion(asignacionId, token, r.data)
-    setEnviando(false)
     if (!respuesta.ok) {
+      setEnviando(false)
       setErrores([respuesta.mensaje])
       return
     }
-    setEnviada(true)
+    // La página, ya con la devolución registrada, muestra la confirmación.
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  if (enviada) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-10 text-center">
-        <span className="grid size-20 place-items-center rounded-full bg-ok-50 ring-1 ring-ok-700/20">
-          <CircleCheckBig className="size-10 text-ok-700" aria-hidden />
-        </span>
-        <h1 className="font-display text-3xl font-semibold">Devolución registrada</h1>
-        <p className="max-w-sm text-ink-600">
-          Gracias. Infraestructura recibió tu declaración sobre «{evento}».
-        </p>
-      </div>
-    )
+    router.refresh()
   }
 
   return (
