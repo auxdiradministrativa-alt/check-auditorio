@@ -1,9 +1,10 @@
-import { AlarmClock, CalendarCheck, Plus, ScanLine, Users } from 'lucide-react'
+import { AlarmClock, CalendarCheck, CheckCircle2, Plus, ScanLine, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { PageHeader } from '@/components/layout/page-header'
 import { ButtonLink } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { EstadoVacio } from '@/components/ui/estado-vacio'
 import { FilaAsignacion } from '@/features/panel/fila-asignacion'
 import { Indicador } from '@/features/panel/indicador'
 import { isoBogota } from '@check-auditorio/shared'
@@ -69,9 +70,19 @@ export default async function PanelHoy() {
               ))}
             </ul>
           ) : (
-            <p className="border-t border-pearl-200 px-6 py-5 text-sm text-ink-600">
-              No hay entregas programadas para hoy.
-            </p>
+            <div className="border-t border-pearl-200">
+              <EstadoVacio
+                icono={CalendarCheck}
+                titulo="Sin entregas para hoy"
+                descripcion="Cuando programes una entrega aparecerá aquí, junto con su QR y el estado de la devolución."
+                accion={
+                  <ButtonLink href="/panel/asignaciones/nueva" variante="secundario" tamano="sm">
+                    <Plus aria-hidden />
+                    Programar entrega
+                  </ButtonLink>
+                }
+              />
+            </div>
           )}
         </Card>
 
@@ -87,7 +98,12 @@ export default async function PanelHoy() {
               ))}
             </ul>
           ) : (
-            <p className="border-t border-pearl-200 px-6 py-5 text-sm text-ink-600">Todo al día.</p>
+            <div className="flex items-center gap-3 border-t border-pearl-200 px-6 py-5">
+              <CheckCircle2 className="size-5 shrink-0 text-ok-700" aria-hidden />
+              <p className="text-sm text-ink-600">
+                Todo al día. Ninguna devolución pasó de su plazo.
+              </p>
+            </div>
           )}
         </Card>
       </div>

@@ -1,10 +1,11 @@
-import { ShieldCheck } from 'lucide-react'
+import { FileSignature, ShieldCheck } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { PageHeader } from '@/components/layout/page-header'
 import { EstadoBadge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { EstadoVacio } from '@/components/ui/estado-vacio'
 import { formatearFechaCorta, formatearFranja } from '@/lib/fechas'
 import { registro } from '@/servidor/registro'
 
@@ -48,8 +49,12 @@ export default async function Recepciones() {
           <tbody className="divide-y divide-pearl-200">
             {recepciones.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-ink-600">
-                  Aún no hay constancias firmadas.
+                <td colSpan={6} className="p-0">
+                  <EstadoVacio
+                    icono={FileSignature}
+                    titulo="Todavía no hay constancias"
+                    descripcion="Cada recepción firmada queda aquí con su consecutivo y su sello verificable."
+                  />
                 </td>
               </tr>
             )}

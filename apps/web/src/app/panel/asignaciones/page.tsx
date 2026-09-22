@@ -1,9 +1,10 @@
-import { Plus } from 'lucide-react'
+import { CalendarRange, Plus } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { PageHeader } from '@/components/layout/page-header'
 import { ButtonLink } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { EstadoVacio } from '@/components/ui/estado-vacio'
 import { FilaAsignacion } from '@/features/panel/fila-asignacion'
 import { registro } from '@/servidor/registro'
 
@@ -32,9 +33,17 @@ export default async function Asignaciones() {
             ))}
           </ul>
         ) : (
-          <p className="px-6 py-8 text-center text-sm text-ink-600">
-            Aún no hay asignaciones. Programa la primera entrega.
-          </p>
+          <EstadoVacio
+            icono={CalendarRange}
+            titulo="Todavía no hay asignaciones"
+            descripcion="Programa una entrega para generar su QR. Aquí quedará el historial completo: programadas, en curso y cerradas."
+            accion={
+              <ButtonLink href="/panel/asignaciones/nueva" variante="oro" tamano="sm">
+                <Plus aria-hidden />
+                Programar la primera
+              </ButtonLink>
+            }
+          />
         )}
       </Card>
     </>

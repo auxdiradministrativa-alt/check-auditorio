@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckCheck,
   Clock,
+  Loader2,
   MapPin,
   Send,
   TriangleAlert,
@@ -502,6 +503,16 @@ export function FlujoRecepcion({
                 </ul>
               </CardBody>
             </Card>
+          )}
+          {enviando && (
+            <Alert
+              tono="info"
+              icono={<Loader2 className="animate-spin" aria-hidden />}
+              titulo="Sellando la constancia"
+            >
+              Estamos guardando el registro y calculando su sello. Puede tardar unos segundos; no
+              cierres esta pantalla.
+            </Alert>
           )}
           {errorTerminos && (
             <p role="alert" className="text-sm font-medium text-danger-700">
