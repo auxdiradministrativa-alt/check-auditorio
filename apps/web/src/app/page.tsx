@@ -1,35 +1,17 @@
-import { ClipboardCheck, QrCode, ShieldCheck } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 
 import { DOMINIO_INSTITUCIONAL } from '@check-auditorio/shared'
 
 import { AvisoDemo } from '@/components/layout/aviso-demo'
-import { Marca } from '@/components/layout/marca'
 import { Button } from '@/components/ui/button'
 import { cerrarSesion } from '@/features/auth/acciones'
 import { Ingreso } from '@/features/auth/ingreso'
 import { esEntregador, obtenerSesion } from '@/servidor/auth/sesion'
 
 export const metadata: Metadata = { title: 'Ingresar' }
-
-const PASOS = [
-  {
-    icono: QrCode,
-    titulo: 'Escanea el QR',
-    texto: 'Infraestructura te lo muestra al entregarte el espacio.',
-  },
-  {
-    icono: ClipboardCheck,
-    titulo: 'Verifica lo que recibes',
-    texto: 'Revisa cada elemento y reporta novedades con foto.',
-  },
-  {
-    icono: ShieldCheck,
-    titulo: 'Confirma con tu cuenta',
-    texto: 'Tu cuenta institucional queda como firma de la constancia.',
-  },
-] as const
 
 type Props = { searchParams: Promise<{ destino?: string; error?: string }> }
 
@@ -41,63 +23,57 @@ export default async function PaginaIngreso({ searchParams }: Props) {
   if (sesion && (await esEntregador(sesion))) redirect('/panel')
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <AvisoDemo />
-      <div className="grid flex-1 lg:grid-cols-[1.1fr_1fr]">
-        <section className="relative flex flex-col justify-between gap-12 overflow-hidden bg-navy-900 px-6 py-8 sm:px-10 lg:px-14 lg:py-12">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-40 -right-40 size-[28rem] rounded-full border border-gold-500/15"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-24 -right-24 size-[20rem] rounded-full border border-gold-500/10"
-          />
-          <Marca variante="completa" />
-          <div className="relative flex max-w-lg flex-col gap-5">
-            <p className="text-xs font-semibold tracking-[0.18em] text-gold-400 uppercase">
-              Entrega temporal de espacios
-            </p>
-            <h1 className="font-display text-4xl leading-[1.1] font-semibold text-pearl-50 sm:text-5xl">
-              Recibe el espacio con constancia digital.
-            </h1>
-            <p className="text-base leading-relaxed text-navy-100/85">
-              Registro de entrega y devolución del auditorio, verificado elemento por elemento y
-              firmado con tu cuenta institucional.
-            </p>
-          </div>
-          <ol className="relative grid gap-4 sm:grid-cols-3">
-            {PASOS.map(({ icono: Icono, titulo, texto }, i) => (
-              <li key={titulo} className="flex flex-col gap-2 border-t border-gold-500/30 pt-4">
-                <span className="flex items-center gap-2 text-sm font-semibold text-pearl-50">
-                  <span className="text-gold-400 tabular">0{i + 1}</span>
-                  <Icono className="size-4 text-gold-400" aria-hidden />
-                </span>
-                <span className="text-sm font-semibold text-pearl-50">{titulo}</span>
-                <span className="text-sm text-navy-100/75">{texto}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
+    <div className="relative flex min-h-dvh flex-col bg-navy-900">
+      {/*
+       * Fondo en tres capas, todas en CSS: resplandor radial detrás de la tarjeta
+       * y dos arcos dorados en las esquinas opuestas. Van en una capa aparte con
+       * `overflow-hidden` para que los círculos no generen scroll horizontal; el
+       * contenedor que sí debe poder desplazarse (el de arriba) no lo recorta.
+       */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 size-168 max-w-[140vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-navy-600/35 blur-[120px]" />
+        <div className="absolute -top-56 -right-40 size-168 rounded-full border border-gold-500/25" />
+        <div className="absolute -top-32 -right-16 size-120 rounded-full border border-gold-500/15" />
+        <div className="absolute -bottom-64 -left-48 size-184 rounded-full border border-gold-500/25" />
+        <div className="absolute -bottom-40 -left-24 size-128 rounded-full border border-gold-500/15" />
+      </div>
 
-        <section className="flex items-center justify-center px-6 py-12 sm:px-10">
-          <div className="flex w-full max-w-sm flex-col gap-8">
-            <div className="flex flex-col gap-2">
-              <h2 className="font-display text-3xl font-semibold text-navy-900">Ingresar</h2>
-              <p className="text-[0.9375rem] text-ink-600">
-                Usa tu cuenta <strong className="text-navy-900">@{DOMINIO_INSTITUCIONAL}</strong>.
-              </p>
-            </div>
-            {error && (
-              <p
-                role="alert"
-                className="rounded-xl border border-danger-700/25 bg-danger-50 p-3 text-sm text-danger-700"
-              >
-                No se pudo iniciar sesión. Usa una cuenta @{DOMINIO_INSTITUCIONAL}.
-              </p>
-            )}
+      <AvisoDemo />
+
+      <main className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
+        <section className="w-full max-w-115 rounded-3xl border border-gold-500/40 bg-pearl-75 p-7 text-center shadow-[0_1px_2px_rgb(8_21_40/0.2),0_30px_60px_-24px_rgb(8_21_40/0.55)] sm:p-10">
+          <Image
+            src="/logo-americana-completo.png"
+            alt="Corporación Universitaria Americana"
+            width={748}
+            height={333}
+            priority
+            className="mx-auto h-auto w-full max-w-[16rem]"
+          />
+
+          <span aria-hidden className="mx-auto mt-7 block h-px w-12 bg-gold-600/60" />
+
+          <p className="mt-6 text-[0.6875rem] font-semibold tracking-[0.3em] text-gold-700 uppercase">
+            Infraestructura
+          </p>
+
+          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-navy-900">
+            Bienvenido
+          </h1>
+          <p className="mt-2 text-[0.9375rem] text-ink-600">Ingresa con tu cuenta institucional</p>
+
+          {error && (
+            <p
+              role="alert"
+              className="mt-6 rounded-xl border border-danger-700/25 bg-danger-50 p-3 text-sm text-danger-700"
+            >
+              No se pudo iniciar sesión. Usa una cuenta @{DOMINIO_INSTITUCIONAL}.
+            </p>
+          )}
+
+          <div className="mt-7 text-left">
             {sesion ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-pearl-200 bg-pearl-50 p-4 text-sm text-ink-600">
+              <div className="flex flex-col gap-3 rounded-xl border border-pearl-300 bg-pearl-50 p-4 text-sm text-ink-600">
                 <p>
                   Entraste como <strong className="text-navy-900">{sesion.correo}</strong>, pero
                   esta cuenta no está autorizada para el panel de Infraestructura.
@@ -111,13 +87,20 @@ export default async function PaginaIngreso({ searchParams }: Props) {
             ) : (
               <Ingreso destino={destinoInterno ?? '/panel'} />
             )}
-            <p className="rounded-xl border border-pearl-200 bg-pearl-50 p-4 text-sm text-ink-600">
-              <strong className="text-navy-900">¿Vas a recibir un espacio?</strong> No necesitas
-              entrar aquí: escanea el QR que te muestra Infraestructura.
-            </p>
           </div>
+
+          <p className="mt-4 text-sm text-ink-600">@{DOMINIO_INSTITUCIONAL}</p>
+
+          <p className="mt-7 flex items-center justify-center gap-2 border-t border-pearl-300 pt-5 text-sm text-ink-600">
+            <Lock className="size-4 text-ink-500" aria-hidden />
+            Acceso interno
+          </p>
         </section>
-      </div>
+      </main>
+
+      <footer className="relative px-4 pb-8 text-center text-xs tracking-wide text-navy-100/70">
+        Corporación Universitaria Americana
+      </footer>
     </div>
   )
 }

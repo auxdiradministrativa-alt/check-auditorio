@@ -1,14 +1,26 @@
+'use client'
+
+import { Loader2 } from 'lucide-react'
 import type { ComponentProps } from 'react'
+import { useFormStatus } from 'react-dom'
 
 import { cn } from '@/lib/cn'
 
-/** Botón con el logotipo "G" de Google según sus lineamientos de marca para Sign in with Google. */
+/**
+ * Botón con el logotipo "G" de Google según sus lineamientos de marca para Sign in with Google.
+ *
+ * El redirect a Google tarda: `useFormStatus` lo hace visible (y bloquea el segundo
+ * clic) mientras la Server Action del formulario que lo contiene está en vuelo.
+ */
 export function GoogleButton({ className, children, ...props }: ComponentProps<'button'>) {
+  const { pending } = useFormStatus()
   return (
     <button
       type="submit"
+      disabled={pending}
+      aria-busy={pending}
       className={cn(
-        'inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-pearl-300 bg-white px-5 text-[0.9375rem] font-semibold text-navy-900 transition-colors hover:border-navy-500/40 hover:bg-navy-50',
+        'inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-pearl-300 bg-white px-5 text-[0.9375rem] font-semibold text-navy-900 shadow-sm transition-[background-color,border-color,transform] duration-200 hover:border-navy-500/40 hover:bg-navy-50 active:translate-y-px disabled:cursor-progress disabled:opacity-80',
         className,
       )}
       {...props}
@@ -31,7 +43,14 @@ export function GoogleButton({ className, children, ...props }: ComponentProps<'
           d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"
         />
       </svg>
-      {children}
+      {pending ? (
+        <>
+          <Loader2 className="size-4 animate-spin text-ink-500" aria-hidden />
+          Conectando…
+        </>
+      ) : (
+        children
+      )}
     </button>
   )
 }
