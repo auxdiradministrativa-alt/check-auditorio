@@ -1,0 +1,1473 @@
+{
+  "name": "check-auditorio · notificaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## check-auditorio · notificaciones\nCada 15 min lee el libro y envía por Gmail las constancias de **recepción** y **devolución** con `notificacion = PENDIENTE`.\n\n**Estado en la hoja** (solo estas 3 columnas; no entran en el hash de /verificar):\n`PENDIENTE` → `ENVIANDO` (reserva `hasta|ejecución`, 90 min) → `ENVIADO`; fallo de Gmail → +1 intento, al 3.º `FALLIDO` + alerta.\nSheets no tiene bloqueo: se relee antes y después de reservar, y solo envía la ejecución que quedó escrita.\nRiesgo residual: si Gmail envía al receptor y falla a los fijos, el reintento repite el del receptor.\n\n**Destinatarios fijos (todos los eventos y alertas):** rbracho@, andresbermudez@, auxdiradministrativa@ (constante en «Armar pendientes» y «Armar alerta técnica»), más los activos de `CFG_Destinatarios`.\n**Errores en el mismo flujo:** fallo de Gmail → intentos/FALLIDO + alerta; fallo de Sheets → alerta técnica + Stop and Error.\n\n**Pendiente:** enlace de devolución (`enlaceDevolucion` en «Armar pendientes») · recordatorio 2 h y vencida (necesitan columnas de estado en `Asignaciones`).\n**Etapa 2 (app en producción):** 3 nodos «Etapa 2 · …» desactivados (dejan pasar los datos): entrada por webhook y avisos a la app tras ENVIADO y tras fallo.\nConfigurable en `CFG_General`: `url_app`, `minutos_reserva_notificacion`.",
+        "height": 360,
+        "width": 980
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000001",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000002",
+      "name": "Cada 15 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "CFG_General"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000003",
+      "name": "Leer CFG_General",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        224
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "CFG_Destinatarios"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000004",
+      "name": "Leer CFG_Destinatarios",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        288
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "CAT_Espacios"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000005",
+      "name": "Leer CAT_Espacios",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        368
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Asignaciones"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000006",
+      "name": "Leer Asignaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        432
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Recepciones"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000007",
+      "name": "Leer Recepciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        512
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Recepcion_Detalle"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000008",
+      "name": "Leer Recepcion_Detalle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        576
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Devoluciones"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000009",
+      "name": "Leer Devoluciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        656
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Devolucion_Detalle"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000010",
+      "name": "Leer Devolucion_Detalle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        720
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Une las pestañas leídas y arma una notificación por fila PENDIENTE (o reserva vencida).\n// n8n solo escribe notificacion / notif_intentos / notif_reserva_hasta: no entran en el hash de /verificar.\nconst txt = (v) => String(v ?? '').trim();\nconst filas = (nodo) => $(nodo).all().map((i) => i.json)\n  .filter((f) => f && Object.keys(f).some((k) => k !== 'row_number' && txt(f[k]) !== ''));\nconst activo = (v) => ['si', 'sí', 'true', 'verdadero', '1', 'x'].includes(txt(v).toLowerCase());\nconst esc = (v) => txt(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');\nconst fecha = (v) => { const t = Date.parse(txt(v)); return Number.isFinite(t)\n  ? new Date(t).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' }) : esc(v); };\n\nconst cfg = Object.fromEntries(filas('Leer CFG_General').map((f) => [txt(f.clave), txt(f.valor)]));\nconst URL_APP = (cfg.url_app || 'https://check-auditorio-web.vercel.app').replace(/\\/+$/, '');\nconst MAX_INTENTOS = 3;\nconst RESERVA_MIN = Number(cfg.minutos_reserva_notificacion) || 90;\nconst ahora = Date.now();\n\n// Destinatarios fijos de TODOS los eventos (recepción, devolución, novedad y alertas).\n// CFG_Destinatarios suma otros sin tocar el flujo.\nconst DESTINATARIOS_FIJOS = [\n  'rbracho@americana.edu.co',\n  'andresbermudez@americana.edu.co',\n  'auxdiradministrativa@americana.edu.co',\n];\nconst destinatarios = filas('Leer CFG_Destinatarios').filter((f) => activo(f.activo) && txt(f.correo));\nconst correosDe = (...eventos) => [...new Set([...DESTINATARIOS_FIJOS, ...destinatarios\n  .filter((d) => eventos.includes(txt(d.evento).toLowerCase())).map((d) => txt(d.correo).toLowerCase())])];\nconst alertaPara = correosDe('alerta', 'vencida');\n\nconst porId = (lista, clave) => Object.fromEntries(lista.map((f) => [txt(f[clave]), f]));\nconst agrupar = (lista) => lista.reduce((m, f) => ((m[txt(f.consecutivo)] ??= []).push(f), m), {});\nconst espacios = porId(filas('Leer CAT_Espacios'), 'id');\nconst asignaciones = porId(filas('Leer Asignaciones'), 'id');\nconst recepcionesLista = filas('Leer Recepciones');\nconst recepciones = porId(recepcionesLista, 'consecutivo');\nconst detRec = agrupar(filas('Leer Recepcion_Detalle'));\nconst detDev = agrupar(filas('Leer Devolucion_Detalle'));\n\nconst pendiente = (f) => {\n  const estado = txt(f.notificacion).toUpperCase();\n  const intentos = Number.parseInt(txt(f.notif_intentos), 10) || 0;\n  if (intentos >= MAX_INTENTOS) return false;\n  if (estado === 'PENDIENTE') return true;\n  if (estado === 'ENVIANDO') { const hasta = Date.parse(txt(f.notif_reserva_hasta).split('|')[0]);\n    return Number.isFinite(hasta) && hasta < ahora; }\n  return false;\n};\n\nconst ROL = { DOCENTE: 'Docente', ADMINISTRATIVO: 'Administrativo' };\nconst CATEGORIA = { EQUIPO: 'Equipos', MOBILIARIO: 'Mobiliario', ESPACIO: 'Condiciones del espacio' };\nconst RESULTADO = { BUENAS_CONDICIONES: 'En buenas condiciones', CON_NOVEDADES: 'Con novedades' };\n\nconst marco = (titulo, subtitulo, cuerpo) => '<!doctype html><html><body style=\"margin:0;padding:0;background:#f5f3ee;\">'\n  + '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f5f3ee;padding:24px 0;\"><tr><td align=\"center\">'\n  + '<table role=\"presentation\" width=\"640\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:640px;width:100%;background:#ffffff;border:1px solid #e3ded3;border-radius:8px;font-family:Arial,Helvetica,sans-serif;color:#1f2430;\">'\n  + '<tr><td style=\"background:#14264a;padding:20px 24px;border-radius:8px 8px 0 0;\">'\n  + '<div style=\"color:#d8b765;font-size:12px;letter-spacing:1px;text-transform:uppercase;\">Infraestructura · Corporación Universitaria Americana</div>'\n  + '<div style=\"color:#ffffff;font-size:20px;font-weight:bold;margin-top:6px;\">' + esc(titulo) + '</div>'\n  + '<div style=\"color:#c9d1e3;font-size:14px;margin-top:4px;\">' + esc(subtitulo) + '</div></td></tr>'\n  + '<tr><td style=\"padding:24px;\">' + cuerpo + '</td></tr>'\n  + '<tr><td style=\"padding:16px 24px;border-top:1px solid #e3ded3;color:#6b7080;font-size:12px;\">'\n  + 'Mensaje automático del sistema de entrega de espacios. La constancia oficial es el registro verificable en línea; este correo no la reemplaza.'\n  + '</td></tr></table></td></tr></table></body></html>';\n\nconst fichas = (pares) => '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"font-size:14px;margin-bottom:16px;\">'\n  + pares.filter(([, v]) => txt(v) !== '').map(([k, v]) => '<tr><td style=\"padding:4px 12px 4px 0;color:#6b7080;width:38%;vertical-align:top;\">' + esc(k)\n  + '</td><td style=\"padding:4px 0;vertical-align:top;\">' + v + '</td></tr>').join('') + '</table>';\n\nconst boton = (texto, url) => '<p style=\"margin:20px 0;\"><a href=\"' + esc(url) + '\" style=\"background:#14264a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-size:14px;display:inline-block;\">' + esc(texto) + '</a></p>';\n\nconst fotos = (ids) => txt(ids).split(',').filter(Boolean)\n  .map((f, i) => '<a href=\"https://drive.google.com/file/d/' + encodeURIComponent(f) + '/view\" style=\"color:#14264a;\">foto ' + (i + 1) + '</a>').join(' · ');\n\nconst tablaDetalle = (det) => {\n  const orden = [...det].sort((a, b) => txt(a.categoria).localeCompare(txt(b.categoria)) || txt(a.elemento_nombre).localeCompare(txt(b.elemento_nombre)));\n  return '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"font-size:13px;border-collapse:collapse;\">'\n    + '<tr style=\"background:#f5f3ee;\"><th align=\"left\" style=\"padding:6px;border-bottom:1px solid #e3ded3;\">Elemento</th><th align=\"left\" style=\"padding:6px;border-bottom:1px solid #e3ded3;\">Categoría</th>'\n    + '<th align=\"right\" style=\"padding:6px;border-bottom:1px solid #e3ded3;\">Esperada</th><th align=\"right\" style=\"padding:6px;border-bottom:1px solid #e3ded3;\">Recibida</th>'\n    + '<th align=\"left\" style=\"padding:6px;border-bottom:1px solid #e3ded3;\">Estado</th></tr>'\n    + orden.map((d) => { const nov = txt(d.estado).toUpperCase() === 'NOVEDAD';\n      return '<tr><td style=\"padding:6px;border-bottom:1px solid #eee;\">' + esc(d.elemento_nombre)\n        + (nov ? '<div style=\"color:#8a1c1c;font-size:12px;margin-top:2px;\">' + esc(d.observacion) + (txt(d.foto_ids) ? ' — ' + fotos(d.foto_ids) : '') + '</div>' : '')\n        + '</td><td style=\"padding:6px;border-bottom:1px solid #eee;\">' + esc(CATEGORIA[txt(d.categoria)] ?? d.categoria)\n        + '</td><td align=\"right\" style=\"padding:6px;border-bottom:1px solid #eee;\">' + esc(d.cantidad_esperada)\n        + '</td><td align=\"right\" style=\"padding:6px;border-bottom:1px solid #eee;\">' + esc(d.cantidad_recibida)\n        + '</td><td style=\"padding:6px;border-bottom:1px solid #eee;font-weight:bold;color:' + (nov ? '#8a1c1c' : '#1d6b3a') + ';\">' + (nov ? 'Novedad' : 'Conforme') + '</td></tr>'; }).join('')\n    + '</table>';\n};\n\n// Enlace de devolución: mecanismo pendiente de decisión (el token actual exige BETTER_AUTH_SECRET).\nconst enlaceDevolucion = (_asignacionId) => null;\n\nconst LIMITE_HTML = 95000; // Gmail recorta a partir de ~102 KB\nconst acotar = (html, respaldo) => (html.length > LIMITE_HTML ? respaldo : html);\n\nconst salida = [];\n\nfor (const r of recepcionesLista.filter(pendiente)) {\n  const consecutivo = txt(r.consecutivo);\n  const a = asignaciones[txt(r.asignacion_id)] ?? {};\n  const e = espacios[txt(a.espacio_id)] ?? {};\n  const det = detRec[consecutivo] ?? [];\n  const hayNovedad = det.some((d) => txt(d.estado).toUpperCase() === 'NOVEDAD');\n  const verificar = URL_APP + '/verificar/' + encodeURIComponent(consecutivo);\n  const base = [\n    ['Espacio', esc(e.nombre || a.espacio_id) + (txt(e.ubicacion) ? ' — ' + esc(e.ubicacion) : '')],\n    ['Evento', esc(a.evento)],\n    ['Franja', fecha(a.inicio) + ' → ' + fecha(a.fin)],\n    ['Recibe', esc(r.receptor_nombre) + ' &lt;' + esc(r.receptor_correo) + '&gt;'],\n    ['Rol', esc(ROL[txt(r.rol)] ?? r.rol)],\n    ['Dependencia', esc(r.dependencia)],\n    ['Cargo', esc(r.cargo)],\n    ['Asistentes', esc(r.asistentes)],\n    ['Sellada', fecha(r.sellada_en)],\n    ['Código de verificación', '<strong>' + esc(r.codigo_verificacion) + '</strong>'],\n  ];\n  const resumen = hayNovedad\n    ? '<p style=\"margin:0 0 16px;padding:10px 12px;background:#fbeaea;border-left:4px solid #8a1c1c;font-size:14px;\">Se registraron <strong>novedades</strong> en la recepción.</p>'\n    : '<p style=\"margin:0 0 16px;padding:10px 12px;background:#e9f4ed;border-left:4px solid #1d6b3a;font-size:14px;\">Todos los elementos se recibieron conformes.</p>';\n  const enlace = enlaceDevolucion(txt(r.asignacion_id));\n  const bloqueDevolucion = enlace\n    ? '<p style=\"font-size:14px;margin:16px 0 4px;\">Al terminar, declara la devolución del espacio:</p>' + boton('Declarar devolución', enlace)\n    : '<p style=\"font-size:14px;margin:16px 0 4px;\">Al terminar, declara la devolución desde el enlace de tu pantalla de confirmación.</p>';\n  const cuerpo = (conDevolucion) => resumen + fichas(base) + tablaDetalle(det) + boton('Verificar constancia', verificar) + (conDevolucion ? bloqueDevolucion : '');\n  const cuerpoCorto = (conDevolucion) => resumen + fichas(base) + '<p style=\"font-size:14px;\">El detalle completo está en la constancia en línea.</p>' + boton('Verificar constancia', verificar) + (conDevolucion ? bloqueDevolucion : '');\n  const titulo = 'Constancia de recepción ' + consecutivo;\n  const sub = (e.nombre || 'Espacio') + ' · ' + txt(a.evento);\n  const fijos = correosDe('recepcion', ...(hayNovedad ? ['novedad'] : [])).filter((c) => c !== txt(r.receptor_correo).toLowerCase());\n  salida.push({ json: {\n    tipo: 'recepcion', hoja: 'Recepciones', consecutivo, reservaMinutos: RESERVA_MIN, alertaPara,\n    receptor: { correo: txt(r.receptor_correo), nombre: txt(r.receptor_nombre),\n      asunto: '[check-auditorio] ' + titulo + (hayNovedad ? ' (con novedades)' : ''),\n      html: acotar(marco(titulo, sub, cuerpo(true)), marco(titulo, sub, cuerpoCorto(true))) },\n    fijos: { para: fijos, asunto: '[check-auditorio] ' + titulo + (hayNovedad ? ' — NOVEDAD' : ''),\n      html: acotar(marco(titulo, sub, cuerpo(false)), marco(titulo, sub, cuerpoCorto(false))) },\n  } });\n}\n\nfor (const d of filas('Leer Devoluciones').filter(pendiente)) {\n  const consecutivo = txt(d.consecutivo);\n  const r = recepciones[consecutivo] ?? {};\n  const a = asignaciones[txt(r.asignacion_id)] ?? {};\n  const e = espacios[txt(a.espacio_id)] ?? {};\n  const nombres = Object.fromEntries((detRec[consecutivo] ?? []).map((x) => [txt(x.elemento_id), txt(x.elemento_nombre)]));\n  const novedades = detDev[consecutivo] ?? [];\n  const conNovedad = txt(d.resultado).toUpperCase() === 'CON_NOVEDADES';\n  const verificar = URL_APP + '/verificar/' + encodeURIComponent(consecutivo);\n  const listaNov = novedades.length\n    ? '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"font-size:13px;border-collapse:collapse;\">'\n      + novedades.map((x) => '<tr><td style=\"padding:6px;border-bottom:1px solid #eee;\"><strong>' + esc(nombres[txt(x.elemento_id)] || x.elemento_id)\n        + '</strong><div style=\"color:#8a1c1c;font-size:12px;margin-top:2px;\">' + esc(x.observacion) + (txt(x.foto_ids) ? ' — ' + fotos(x.foto_ids) : '') + '</div></td></tr>').join('')\n      + '</table>' : '';\n  const cuerpo = (conNovedad\n      ? '<p style=\"margin:0 0 16px;padding:10px 12px;background:#fbeaea;border-left:4px solid #8a1c1c;font-size:14px;\">El espacio se devolvió <strong>con novedades</strong>.</p>'\n      : '<p style=\"margin:0 0 16px;padding:10px 12px;background:#e9f4ed;border-left:4px solid #1d6b3a;font-size:14px;\">El espacio se devolvió en buenas condiciones.</p>')\n    + fichas([\n      ['Constancia', esc(consecutivo)],\n      ['Espacio', esc(e.nombre || a.espacio_id)],\n      ['Evento', esc(a.evento)],\n      ['Franja', fecha(a.inicio) + ' → ' + fecha(a.fin)],\n      ['Declara', esc(r.receptor_nombre) + ' &lt;' + esc(r.receptor_correo) + '&gt;'],\n      ['Resultado', esc(RESULTADO[txt(d.resultado)] ?? d.resultado)],\n      ['Declarada', fecha(d.declarada_en)],\n    ])\n    + listaNov + boton('Ver constancia', verificar);\n  const titulo = 'Devolución declarada ' + consecutivo;\n  const sub = (e.nombre || 'Espacio') + ' · ' + txt(a.evento);\n  const html = acotar(marco(titulo, sub, cuerpo), marco(titulo, sub, fichas([['Constancia', esc(consecutivo)]]) + boton('Ver constancia', verificar)));\n  const fijos = correosDe('devolucion', ...(conNovedad ? ['novedad'] : [])).filter((c) => c !== txt(r.receptor_correo).toLowerCase());\n  salida.push({ json: {\n    tipo: 'devolucion', hoja: 'Devoluciones', consecutivo, reservaMinutos: RESERVA_MIN, alertaPara,\n    receptor: { correo: txt(r.receptor_correo), nombre: txt(r.receptor_nombre),\n      asunto: '[check-auditorio] ' + titulo + (conNovedad ? ' (con novedades)' : ''), html },\n    fijos: { para: fijos, asunto: '[check-auditorio] ' + titulo + (conNovedad ? ' — NOVEDAD' : ''), html },\n  } });\n}\n\nreturn salida;\n"
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000011",
+      "name": "Armar pendientes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000012",
+      "name": "Recorrer pendientes",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2240,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Recorrer pendientes').first().json.hoja }}"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "consecutivo",
+              "lookupValue": "={{ $('Recorrer pendientes').first().json.consecutivo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000013",
+      "name": "Releer fila",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2464,
+        480
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Relee la fila justo antes de reservar: otra ejecución pudo enviarla desde la lectura inicial.\nconst ctx = $('Recorrer pendientes').first().json;\nconst txt = (v) => String(v ?? '').trim();\nconst fila = $input.all().map((i) => i.json).find((f) => txt(f.consecutivo) === ctx.consecutivo);\nconst intentos = fila ? Number.parseInt(txt(fila.notif_intentos), 10) || 0 : 0;\nlet libre = false;\nif (fila && intentos < 3) {\n  const estado = txt(fila.notificacion).toUpperCase();\n  const hasta = Date.parse(txt(fila.notif_reserva_hasta).split('|')[0]);\n  libre = estado === 'PENDIENTE' || (estado === 'ENVIANDO' && Number.isFinite(hasta) && hasta < Date.now());\n}\nconst vence = new Date(Date.now() + ctx.reservaMinutos * 60000 - 5 * 3600000).toISOString().slice(0, 19) + '-05:00';\nreturn [{ json: { libre, intentos, reserva: vence + '|' + $execution.id } }];\n"
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000014",
+      "name": "Decidir reserva",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c4a0d1e2-0000-4000-8000-000000000015",
+              "leftValue": "={{ $json.libre }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000016",
+      "name": "¿Libre para reservar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Recorrer pendientes').first().json.hoja }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consecutivo": "={{ $('Recorrer pendientes').first().json.consecutivo }}",
+            "notificacion": "ENVIANDO",
+            "notif_reserva_hasta": "={{ $('Decidir reserva').first().json.reserva }}"
+          },
+          "matchingColumns": [
+            "consecutivo"
+          ],
+          "schema": [
+            {
+              "id": "consecutivo",
+              "displayName": "consecutivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notificacion",
+              "displayName": "notificacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notif_reserva_hasta",
+              "displayName": "notif_reserva_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000017",
+      "name": "Reservar (ENVIANDO)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3136,
+        576
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Recorrer pendientes').first().json.hoja }}"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "consecutivo",
+              "lookupValue": "={{ $('Recorrer pendientes').first().json.consecutivo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000018",
+      "name": "Confirmar reserva",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3360,
+        720
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sheets no tiene bloqueo: tras escribir la reserva se relee y solo envía quien quedó escrito.\nconst txt = (v) => String(v ?? '').trim();\nconst ctx = $('Recorrer pendientes').first().json;\nconst esperada = $('Decidir reserva').first().json.reserva;\nconst fila = $input.all().map((i) => i.json).find((f) => txt(f.consecutivo) === ctx.consecutivo);\nconst propia = !!fila && txt(fila.notificacion).toUpperCase() === 'ENVIANDO' && txt(fila.notif_reserva_hasta) === esperada;\nreturn [{ json: { propia } }];\n"
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000019",
+      "name": "¿Reserva propia?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3584,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c4a0d1e2-0000-4000-8000-000000000020",
+              "leftValue": "={{ $json.propia }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000021",
+      "name": "¿Es nuestra?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3808,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Recorrer pendientes').first().json.receptor.correo }}",
+        "subject": "={{ $('Recorrer pendientes').first().json.receptor.asunto }}",
+        "message": "={{ $('Recorrer pendientes').first().json.receptor.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000022",
+      "name": "Gmail · receptor",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4032,
+        816
+      ],
+      "webhookId": "0a7cd419-161d-4065-833d-5b32d62eeb83",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a1JCK7RIIoLGRDzV",
+          "name": "check-auditorio · Gmail (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c4a0d1e2-0000-4000-8000-000000000023",
+              "leftValue": "={{ $('Recorrer pendientes').first().json.fijos.para.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000024",
+      "name": "¿Hay destinatarios fijos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4256,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Recorrer pendientes').first().json.fijos.para.join(',') }}",
+        "subject": "={{ $('Recorrer pendientes').first().json.fijos.asunto }}",
+        "message": "={{ $('Recorrer pendientes').first().json.fijos.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000025",
+      "name": "Gmail · destinatarios fijos",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4480,
+        656
+      ],
+      "webhookId": "009d8d62-5134-4349-9421-fb604e8cfc02",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a1JCK7RIIoLGRDzV",
+          "name": "check-auditorio · Gmail (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Recorrer pendientes').first().json.hoja }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consecutivo": "={{ $('Recorrer pendientes').first().json.consecutivo }}",
+            "notificacion": "ENVIADO",
+            "notif_reserva_hasta": ""
+          },
+          "matchingColumns": [
+            "consecutivo"
+          ],
+          "schema": [
+            {
+              "id": "consecutivo",
+              "displayName": "consecutivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notificacion",
+              "displayName": "notificacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notif_reserva_hasta",
+              "displayName": "notif_reserva_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000026",
+      "name": "Marcar ENVIADO",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4704,
+        720
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Falló un envío de Gmail: +1 intento; al 3.º queda FALLIDO y se alerta a Infraestructura.\nconst ctx = $('Recorrer pendientes').first().json;\nconst txt = (v) => String(v ?? '').trim();\nconst esc = (v) => txt(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst intentos = $('Decidir reserva').first().json.intentos + 1;\nconst agotado = intentos >= 3;\nconst e = $input.first().json.error;\nconst mensaje = (typeof e === 'string' ? e : e?.message ?? JSON.stringify(e ?? 'error desconocido')).slice(0, 500);\nconst html = '<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1f2430;\">'\n  + '<p><strong>No se pudo enviar la notificación de ' + esc(ctx.tipo) + ' ' + esc(ctx.consecutivo) + '</strong> después de ' + intentos + ' intentos.</p>'\n  + '<p>Último error: <code>' + esc(mensaje) + '</code></p>'\n  + '<p>La constancia está guardada en el libro; solo falló el correo. La fila quedó en <strong>FALLIDO</strong>: para reintentar, cambia <code>notificacion</code> a PENDIENTE y <code>notif_intentos</code> a 0.</p></div>';\nreturn [{ json: {\n  notificacion: agotado ? 'FALLIDO' : 'PENDIENTE', notif_intentos: String(intentos), agotado, mensaje,\n  alertaPara: ctx.alertaPara.join(','), asunto: '[check-auditorio] Notificación FALLIDA ' + ctx.consecutivo, html,\n} }];\n"
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000027",
+      "name": "Registrar fallo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4704,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1-ws9w9UdgGzDmjdrd4s8OMjG5wo3y9ynUpYuDUh0Pu4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Recorrer pendientes').first().json.hoja }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consecutivo": "={{ $('Recorrer pendientes').first().json.consecutivo }}",
+            "notificacion": "={{ $json.notificacion }}",
+            "notif_intentos": "={{ $json.notif_intentos }}",
+            "notif_reserva_hasta": ""
+          },
+          "matchingColumns": [
+            "consecutivo"
+          ],
+          "schema": [
+            {
+              "id": "consecutivo",
+              "displayName": "consecutivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notificacion",
+              "displayName": "notificacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notif_intentos",
+              "displayName": "notif_intentos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notif_reserva_hasta",
+              "displayName": "notif_reserva_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000028",
+      "name": "Marcar fallo",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4928,
+        1040
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kbtl9jKqwo5cn9u5",
+          "name": "check-auditorio · Sheets (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c4a0d1e2-0000-4000-8000-000000000029",
+              "leftValue": "={{ $('Registrar fallo').first().json.agotado }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000030",
+      "name": "¿Agotó intentos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5376,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Registrar fallo').first().json.alertaPara }}",
+        "subject": "={{ $('Registrar fallo').first().json.asunto }}",
+        "message": "={{ $('Registrar fallo').first().json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000031",
+      "name": "Gmail · alerta de envío fallido",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        5600,
+        1296
+      ],
+      "webhookId": "5da7d672-e3a9-42e0-8f4d-1477fbd6f549",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a1JCK7RIIoLGRDzV",
+          "name": "check-auditorio · Gmail (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Falló la lectura o escritura del libro: nada se envió a medias; se alerta y la ejecución termina en error.\nconst txt = (v) => String(v ?? '').trim();\nconst esc = (v) => txt(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst e = $input.first()?.json?.error;\nconst mensaje = (typeof e === 'string' ? e : e?.message ?? JSON.stringify(e ?? 'error desconocido')).slice(0, 800);\n// Si el fallo ocurrió antes de armar el lote, se usan los fijos (mismos que en «Armar pendientes»).\nlet para = ['rbracho@americana.edu.co', 'andresbermudez@americana.edu.co', 'auxdiradministrativa@americana.edu.co'];\ntry { const p = $('Recorrer pendientes').first().json.alertaPara; if (Array.isArray(p) && p.length) para = p; } catch (_) {}\nlet consecutivo = '';\ntry { consecutivo = $('Recorrer pendientes').first().json.consecutivo; } catch (_) {}\nconst html = '<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1f2430;\">'\n  + '<p><strong>El flujo de notificaciones de check-auditorio falló</strong> en el nodo «' + esc($prevNode.name) + '»'\n  + (consecutivo ? ' mientras procesaba ' + esc(consecutivo) : '') + '.</p>'\n  + '<p>Error: <code>' + esc(mensaje) + '</code></p>'\n  + '<p>Las constancias no se ven afectadas. Las filas pendientes se reintentan en la siguiente pasada (cada 15 min); una reserva a medias vence sola.</p>'\n  + '<p>Ejecución n8n: ' + esc($execution.id) + '</p></div>';\nreturn [{ json: { para: para.join(','), asunto: '[check-auditorio] Fallo técnico en notificaciones', html, mensaje } }];\n"
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000032",
+      "name": "Armar alerta técnica",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5152,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.para }}",
+        "subject": "={{ $json.asunto }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000033",
+      "name": "Gmail · alerta técnica",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        5376,
+        0
+      ],
+      "webhookId": "e92a47b0-5bd7-44c5-ba3b-db9ce87077e4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a1JCK7RIIoLGRDzV",
+          "name": "check-auditorio · Gmail (auxdiradministrativa)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Fallo técnico en notificaciones: ' + $('Armar alerta técnica').first().json.mensaje }}"
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000034",
+      "name": "Detener con error",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        5600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "check-auditorio-notificar",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "c4a0d1e2-0000-4000-8000-000000000035",
+      "name": "Etapa 2 · entrada desde la app",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        320
+      ],
+      "webhookId": "0b7e5c3a-9d41-4f2e-8a6b-1c2d3e4f5a60",
+      "disabled": true,
+      "notes": "Etapa 2: la app dispara una pasada inmediata tras sellar. Requiere credencial Header Auth."
+    },
+    {
+      "parameters": {},
+      "id": "c4a0d1e2-0000-4000-8000-000000000036",
+      "name": "Etapa 2 · avisar a la app (ENVIADO)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4928,
+        848
+      ],
+      "disabled": true,
+      "notes": "Etapa 2: HTTP a la app para reflejar notificación ENVIADA (consecutivo, tipo)."
+    },
+    {
+      "parameters": {},
+      "id": "c4a0d1e2-0000-4000-8000-000000000037",
+      "name": "Etapa 2 · avisar a la app (fallo)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5152,
+        1152
+      ],
+      "disabled": true,
+      "notes": "Etapa 2: HTTP a la app para reflejar PENDIENTE/FALLIDO e intentos."
+    }
+  ],
+  "connections": {
+    "Cada 15 minutos": {
+      "main": [
+        [
+          {
+            "node": "Leer CFG_General",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer CFG_General": {
+      "main": [
+        [
+          {
+            "node": "Leer CFG_Destinatarios",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer CFG_Destinatarios": {
+      "main": [
+        [
+          {
+            "node": "Leer CAT_Espacios",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer CAT_Espacios": {
+      "main": [
+        [
+          {
+            "node": "Leer Asignaciones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Asignaciones": {
+      "main": [
+        [
+          {
+            "node": "Leer Recepciones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Recepciones": {
+      "main": [
+        [
+          {
+            "node": "Leer Recepcion_Detalle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Recepcion_Detalle": {
+      "main": [
+        [
+          {
+            "node": "Leer Devoluciones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Devoluciones": {
+      "main": [
+        [
+          {
+            "node": "Leer Devolucion_Detalle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Devolucion_Detalle": {
+      "main": [
+        [
+          {
+            "node": "Armar pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar pendientes": {
+      "main": [
+        [
+          {
+            "node": "Recorrer pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recorrer pendientes": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Releer fila",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Releer fila": {
+      "main": [
+        [
+          {
+            "node": "Decidir reserva",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decidir reserva": {
+      "main": [
+        [
+          {
+            "node": "¿Libre para reservar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Libre para reservar?": {
+      "main": [
+        [
+          {
+            "node": "Reservar (ENVIANDO)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recorrer pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar (ENVIANDO)": {
+      "main": [
+        [
+          {
+            "node": "Confirmar reserva",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar reserva": {
+      "main": [
+        [
+          {
+            "node": "¿Reserva propia?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Reserva propia?": {
+      "main": [
+        [
+          {
+            "node": "¿Es nuestra?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es nuestra?": {
+      "main": [
+        [
+          {
+            "node": "Gmail · receptor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recorrer pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail · receptor": {
+      "main": [
+        [
+          {
+            "node": "¿Hay destinatarios fijos?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar fallo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay destinatarios fijos?": {
+      "main": [
+        [
+          {
+            "node": "Gmail · destinatarios fijos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar ENVIADO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail · destinatarios fijos": {
+      "main": [
+        [
+          {
+            "node": "Marcar ENVIADO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar fallo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar ENVIADO": {
+      "main": [
+        [
+          {
+            "node": "Etapa 2 · avisar a la app (ENVIADO)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Etapa 2 · avisar a la app (ENVIADO)": {
+      "main": [
+        [
+          {
+            "node": "Recorrer pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar fallo": {
+      "main": [
+        [
+          {
+            "node": "Marcar fallo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar fallo": {
+      "main": [
+        [
+          {
+            "node": "Etapa 2 · avisar a la app (fallo)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Etapa 2 · avisar a la app (fallo)": {
+      "main": [
+        [
+          {
+            "node": "¿Agotó intentos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Etapa 2 · entrada desde la app": {
+      "main": [
+        [
+          {
+            "node": "Leer CFG_General",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Agotó intentos?": {
+      "main": [
+        [
+          {
+            "node": "Gmail · alerta de envío fallido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recorrer pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail · alerta de envío fallido": {
+      "main": [
+        [
+          {
+            "node": "Recorrer pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar alerta técnica": {
+      "main": [
+        [
+          {
+            "node": "Gmail · alerta técnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail · alerta técnica": {
+      "main": [
+        [
+          {
+            "node": "Detener con error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "saveManualExecutions": true,
+    "binaryMode": "separate"
+  }
+}

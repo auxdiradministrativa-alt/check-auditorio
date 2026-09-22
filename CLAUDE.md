@@ -34,7 +34,7 @@ Navegador ─► Vercel · Next.js 16 (UI + auth + validación + sello)
              n8n (servidor privado institucional) · correos HTML vía Gmail · recordatorios · alertas
 ```
 
-- **BD = Google Sheets** (lo opera Infraestructura sin TI). Nunca escribir la hoja desde Vercel ni desde n8n.
+- **BD = Google Sheets** (lo opera Infraestructura sin TI). Nunca escribir la hoja desde Vercel. **n8n sí (decisión de Leo, 2026-09-15):** lee el libro con nodos nativos y escribe solo `notificacion`/`notif_intentos`/`notif_reserva_hasta`, que no entran en el hash; no pasa por Apps Script (ver `docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md` §4.quater).
 - **Primero guardar, luego notificar.** El correo nunca es el registro.
 - n8n **no** está en la ruta crítica: si cae, la recepción ya existe y se reintenta (outbox).
 
