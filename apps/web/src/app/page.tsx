@@ -53,7 +53,7 @@ export default async function PaginaIngreso({ searchParams }: Props) {
             aria-hidden
             className="pointer-events-none absolute -top-24 -right-24 size-[20rem] rounded-full border border-gold-500/10"
           />
-          <Marca />
+          <Marca variante="completa" />
           <div className="relative flex max-w-lg flex-col gap-5">
             <p className="text-xs font-semibold tracking-[0.18em] text-gold-400 uppercase">
               Entrega temporal de espacios
