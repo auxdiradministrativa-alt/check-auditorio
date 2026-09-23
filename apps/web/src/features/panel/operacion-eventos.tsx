@@ -8,10 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardBody } from '@/components/ui/card'
 
 /*
- * Flujo por enlace (spec 2026-09-23): la acción principal es emitir un enlace personal. El
- * formulario del flujo anterior (`form-nueva-asignacion.tsx`) se conserva en el repo pero ya no se
- * monta: crear eventos directamente produciría filas nuevas que pasan por EN_VALIDACION, y la spec
- * fija que ninguna fila nueva entre en ese estado.
+ * Flujo por enlace (spec 2026-09-23): la acción principal es emitir un enlace personal. La web ya
+ * no crea eventos directamente: esas filas pasarían por EN_VALIDACION, y la spec fija que ninguna
+ * fila nueva entre en ese estado. Las filas históricas siguen su camino con el mismo panel.
  */
 const FormEmitirEnlace = dynamic(
   () => import('./form-emitir-enlace').then((m) => m.FormEmitirEnlace),
