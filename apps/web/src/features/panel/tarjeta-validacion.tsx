@@ -23,36 +23,39 @@ export function TarjetaValidacion({
   const router = useRouter()
   const [pendiente, iniciar] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [decision, setDecision] = useState<'CONFIRMAR' | 'RECHAZAR' | null>(null)
 
   const decidir = (decision: 'CONFIRMAR' | 'RECHAZAR') =>
     iniciar(async () => {
+      setDecision(decision)
+      setError(null)
       const r = await decidirValidacion(asignacionId, decision)
       if (!r.ok) setError(r.mensaje)
       router.refresh()
     })
 
   return (
-    <Card className="border-gold-500/50 ring-4 ring-gold-500/10">
+    <Card className="border-attention-accent/50 ring-4 ring-attention-accent/10">
       <CardHeader>
-        <p className="flex items-center gap-2 text-sm font-medium text-ink-600">
+        <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold-500 opacity-60 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-2 rounded-full bg-gold-500" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-attention-accent opacity-60 motion-reduce:animate-none" />
+            <span className="relative inline-flex size-2 rounded-full bg-attention-accent" />
           </span>
           Solicitud de recepción
         </p>
         <CardTitle as="h4">¿Es la persona que tienes en frente?</CardTitle>
       </CardHeader>
       <CardBody className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 rounded-xl border border-pearl-200 bg-white p-3">
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
           <Avatar nombre={solicitante.nombre} className="size-12 text-base" />
           <div className="min-w-0">
-            <p className="font-semibold break-words text-navy-900">{solicitante.nombre}</p>
-            <p className="text-sm break-all text-ink-600">{solicitante.correo}</p>
+            <p className="font-semibold break-words text-foreground">{solicitante.nombre}</p>
+            <p className="text-sm break-all text-muted-foreground">{solicitante.correo}</p>
           </div>
         </div>
         {error && (
-          <p role="alert" className="text-sm font-medium text-danger-700">
+          <p role="alert" className="text-sm font-medium text-destructive">
             {error}
           </p>
         )}
@@ -65,7 +68,7 @@ export function TarjetaValidacion({
           onClick={() => decidir('RECHAZAR')}
         >
           <X aria-hidden />
-          No es
+          {pendiente && decision === 'RECHAZAR' ? 'Rechazando…' : 'No es'}
         </Button>
         <Button
           variante="primario"
@@ -74,7 +77,7 @@ export function TarjetaValidacion({
           onClick={() => decidir('CONFIRMAR')}
         >
           <Check aria-hidden />
-          Sí, confirmar
+          {pendiente && decision === 'CONFIRMAR' ? 'Confirmando…' : 'Sí, confirmar'}
         </Button>
       </CardFooter>
     </Card>

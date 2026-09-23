@@ -8,5 +8,5 @@ export const qrSvg = (texto: string) =>
     type: 'svg',
     errorCorrectionLevel: 'M',
     margin: 1,
-    color: { dark: '#0b1f3a', light: '#ffffff' },
+    color: { dark: '#1a1f2e', light: '#ffffff' },
   })

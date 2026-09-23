@@ -1,11 +1,13 @@
 'use client'
 
 import { useMemo, useState, useTransition, type ReactNode } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Download } from 'lucide-react'
+import { Download, UserRoundCheck } from 'lucide-react'
 import { type Asignacion, type Espacio, type ElementoCatalogo } from '@check-auditorio/shared'
 
 import { Button } from '@/components/ui/button'
+import { formatearHoraExacta } from '@/lib/fechas'
 import { Card, CardHeader } from '@/components/ui/card'
 import { RefrescoAutomatico } from '@/components/refresco-automatico'
 import { OperacionEventos } from './operacion-eventos'
@@ -28,6 +30,7 @@ export function CentroGestion({
   eventoId,
   nuevo,
   detalle,
+  leidoEn,
 }: {
   asignaciones: Asignacion[]
   espacios: Espacio[]
@@ -35,6 +38,8 @@ export function CentroGestion({
   eventoId: string | undefined
   nuevo: boolean
   detalle: ReactNode
+  /** Momento en que el servidor leyó el registro; cambia con cada refresco. */
+  leidoEn: string
 }) {
   const router = useRouter()
   const [actualizando, actualizar] = useTransition()
@@ -84,6 +89,14 @@ export function CentroGestion({
     ].includes(a.estado),
   )
 
+  const porValidar = asignaciones.filter((a) => a.estado === 'EN_VALIDACION')
+  // Si el evento que espera ya está abierto, su tarjeta de validación basta.
+  const avisoValidacion = porValidar.some((a) => a.id === eventoId) ? [] : porValidar
+  const primeraPorValidar = avisoValidacion[0]
+  const activos =
+    Object.values(filtros).filter(Boolean).length + Number(soloAtencion) + Number(soloConstancias)
+  const resumen = `${activas.length} ${activas.length === 1 ? 'reserva activa' : 'reservas activas'} y ${historico.length} ${historico.length === 1 ? 'registro' : 'registros'} en el histórico coinciden.`
+
   function cambiarFiltro(cambiar: () => void) {
     cambiar()
     setPagina(1)
@@ -114,6 +127,40 @@ export function CentroGestion({
           }
         />
       )}
+      {/* Región viva montada siempre: anuncia la llegada de una solicitud sin mover el foco. */}
+      <div role="status" aria-atomic="true">
+        {primeraPorValidar && (
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-attention-accent/50 bg-attention-soft p-4 ring-4 ring-attention-accent/10 sm:px-6">
+            <p className="flex min-w-0 items-start gap-3 text-sm text-foreground">
+              <UserRoundCheck className="mt-0.5 size-5 shrink-0 text-attention" aria-hidden />
+              <span className="min-w-0 break-words">
+                {avisoValidacion.length === 1 ? (
+                  <>
+                    <strong className="font-semibold">
+                      {primeraPorValidar.receptor?.nombre ?? 'Una persona'}
+                    </strong>{' '}
+                    escaneó el QR de «{primeraPorValidar.evento}» y espera que confirmes su
+                    identidad.
+                  </>
+                ) : (
+                  <>
+                    <strong className="font-semibold">{avisoValidacion.length} personas</strong>{' '}
+                    esperan que confirmes su identidad.
+                  </>
+                )}
+              </span>
+            </p>
+            <Link
+              href={`/panel?evento=${primeraPorValidar.id}#operacion`}
+              prefetch={false}
+              className="inline-flex min-h-11 items-center rounded-lg bg-attention-accent px-4 text-sm font-semibold text-foreground transition-colors hover:bg-attention-accent/85 active:bg-attention-accent/75 sm:min-h-9"
+            >
+              {avisoValidacion.length === 1 ? 'Validar ahora' : 'Validar la primera'}
+            </Link>
+          </div>
+        )}
+      </div>
+
       <OperacionEventos
         espacios={espacios}
         elementos={elementos}
@@ -122,28 +169,37 @@ export function CentroGestion({
         detalle={detalle}
       />
 
-      <dl className="grid grid-cols-2 gap-4 rounded-card border border-pearl-200 bg-white p-4 sm:gap-6 sm:p-6 lg:grid-cols-4">
-        {[
-          ['Reservas activas', asignaciones.filter((a) => !CERRADAS.has(a.estado)).length],
-          ['Requieren atención', pendientes],
-          ['Constancias firmadas', asignaciones.filter((a) => a.consecutivo).length],
-          ['Eventos cerrados', asignaciones.filter((a) => CERRADAS.has(a.estado)).length],
-        ].map(([etiqueta, valor]) => (
-          <div key={etiqueta} className="flex min-w-0 flex-col gap-2">
-            <dt className="text-sm font-medium text-ink-600">{etiqueta}</dt>
-            <dd
-              className={`text-2xl font-semibold tabular ${etiqueta === 'Requieren atención' && pendientes ? 'text-danger-700' : 'text-navy-900'}`}
-            >
-              {valor}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 sm:p-6">
+        <dl className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          {[
+            ['Reservas activas', asignaciones.filter((a) => !CERRADAS.has(a.estado)).length],
+            ['Requieren atención', pendientes],
+            ['Constancias firmadas', asignaciones.filter((a) => a.consecutivo).length],
+            ['Eventos cerrados', asignaciones.filter((a) => CERRADAS.has(a.estado)).length],
+          ].map(([etiqueta, valor]) => (
+            <div key={etiqueta} className="flex min-w-0 flex-col gap-2">
+              <dt className="text-sm font-medium text-muted-foreground">{etiqueta}</dt>
+              <dd
+                className={`text-2xl font-semibold tabular ${etiqueta === 'Requieren atención' && pendientes ? 'text-destructive' : 'text-foreground'}`}
+              >
+                {valor}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="border-t border-border pt-3 text-xs text-muted-foreground tabular">
+          {actualizando
+            ? 'Actualizando…'
+            : `Actualizado a las ${formatearHoraExacta(leidoEn)}${seguimiento ? ' · se actualiza solo' : ''}`}
+        </p>
+      </div>
 
       <FiltrosRegistro
         filtros={filtros}
         espacios={espacios}
         actualizando={actualizando}
+        activos={activos}
+        resumen={resumen}
         onCambiar={(campo, valor) =>
           cambiarFiltro(() => setFiltros((previos) => ({ ...previos, [campo]: valor })))
         }
@@ -151,22 +207,22 @@ export function CentroGestion({
         onActualizar={() => actualizar(() => router.refresh())}
       />
 
-      <Card id="reservas" aria-labelledby="titulo-reservas" className="scroll-mt-6">
+      <Card id="reservas" aria-labelledby="titulo-reservas" className="scroll-mt-16">
         <CardHeader className="flex-row flex-wrap items-center justify-between gap-4">
           <div>
             <h2 id="titulo-reservas" className="text-section">
               Reservas y seguimiento
             </h2>
-            <p className="mt-1 text-sm text-ink-600">
+            <p className="mt-1 text-sm text-muted-foreground">
               Eventos programados y entregas abiertas, sin limitarse a la fecha de hoy.
             </p>
           </div>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={soloAtencion}
               onChange={(e) => cambiarFiltro(() => setSoloAtencion(e.target.checked))}
-              className="size-4 accent-navy-900"
+              className="size-4 accent-primary-strong"
             />
             Solo requieren atención
           </label>
@@ -180,13 +236,13 @@ export function CentroGestion({
         />
       </Card>
 
-      <Card id="historico" aria-labelledby="titulo-historico" className="scroll-mt-6">
+      <Card id="historico" aria-labelledby="titulo-historico" className="scroll-mt-16">
         <CardHeader className="flex-row flex-wrap items-center justify-between gap-4">
           <div>
             <h2 id="titulo-historico" className="text-section">
               Registro histórico y constancias
             </h2>
-            <p className="mt-1 text-sm text-ink-600">
+            <p className="mt-1 text-sm text-muted-foreground">
               Todas las reservas, incluidas devoluciones, anulaciones y eventos expirados.
             </p>
           </div>
@@ -200,10 +256,10 @@ export function CentroGestion({
             Exportar CSV
           </Button>
         </CardHeader>
-        <label className="mx-4 my-4 flex items-center gap-2 text-sm sm:mx-6">
+        <label className="mx-4 my-2 flex min-h-11 items-center gap-2 text-sm sm:mx-6">
           <input
             type="checkbox"
-            className="size-4 accent-navy-900"
+            className="size-4 accent-primary-strong"
             checked={soloConstancias}
             onChange={(e) => cambiarFiltro(() => setSoloConstancias(e.target.checked))}
           />

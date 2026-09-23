@@ -30,6 +30,7 @@ async function Gestion({ searchParams }: { searchParams: Consulta }) {
       elementos={catalogo.elementos}
       eventoId={eventoId}
       nuevo={consulta.nuevo === '1'}
+      leidoEn={new Date().toISOString()}
       detalle={
         seleccionada ? (
           <Suspense
@@ -62,9 +63,9 @@ export default function Panel({ searchParams }: { searchParams: Consulta }) {
       />
       <Suspense
         fallback={
-          <div role="status" className="rounded-2xl border border-pearl-200 bg-white p-6">
-            <h2 className="text-card">Preparando el centro de gestión</h2>
-            <p className="mt-1 mb-4 text-sm text-ink-600">
+          <div role="status" className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="text-card-title">Preparando el centro de gestión</h2>
+            <p className="mt-1 mb-4 text-sm text-muted-foreground">
               Consultando reservas y espacios disponibles…
             </p>
             <SkeletonFilas />

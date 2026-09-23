@@ -30,17 +30,17 @@ export default function ErrorDeAplicacion({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="bg-navy-900">
+      <header className="border-b border-sidebar-border bg-sidebar">
         <div className="mx-auto flex h-16 max-w-2xl items-center px-4 sm:px-6">
           <Marca />
         </div>
-        <div aria-hidden className="h-0.5 bg-linear-to-r from-gold-600 via-gold-400 to-gold-600" />
+        <div aria-hidden className="h-0.5 bg-primary" />
       </header>
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <div className="flex flex-col items-center gap-4 py-16 text-center">
-          <ServerCrash className="size-10 text-gold-600" aria-hidden />
+          <ServerCrash className="size-10 text-attention-accent" aria-hidden />
           <h1 className="text-page sm:text-page-lg">No pudimos cargar esta página</h1>
-          <p className="max-w-md text-ink-600">
+          <p className="max-w-md text-muted-foreground">
             El registro no respondió a tiempo. Vuelve a intentarlo en unos segundos. Si estabas
             firmando una constancia, no la envíes de nuevo sin confirmar con Infraestructura si
             quedó registrada.
@@ -55,13 +55,13 @@ export default function ErrorDeAplicacion({
             </ButtonLink>
           </div>
           {error.digest && (
-            <p className="text-xs text-ink-500">
+            <p className="text-xs text-muted-foreground">
               Código para soporte: <span className="tabular">{error.digest}</span>
             </p>
           )}
         </div>
       </main>
-      <footer className="border-t border-pearl-200 py-6 text-center text-xs text-ink-600">
+      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         Corporación Universitaria Americana · Infraestructura
       </footer>
     </div>

@@ -126,12 +126,12 @@ export function FormNuevaAsignacion({
       </div>
 
       {errores.servidor && (
-        <p role="alert" className="text-sm font-medium text-danger-700">
+        <p role="alert" className="text-sm font-medium text-destructive">
           {errores.servidor}
         </p>
       )}
 
-      <details className="rounded-xl border border-pearl-200 p-4">
+      <details className="rounded-xl border border-border p-4">
         <summary className="cursor-pointer text-sm font-semibold">
           Ver elementos del espacio seleccionado
         </summary>
@@ -139,7 +139,7 @@ export function FormNuevaAsignacion({
           <ResumenCatalogo catalogo={elementos.filter((e) => e.espacioId === espacioId)} />
         </div>
       </details>
-      <div className="flex justify-end border-t border-pearl-200 pt-5">
+      <div className="flex justify-end border-t border-border pt-5">
         <Button
           type="submit"
           variante="primario"

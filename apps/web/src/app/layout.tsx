@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import { Antic, JetBrains_Mono } from 'next/font/google'
 import type { ReactNode } from 'react'
 
 import './globals.css'
+
+// Familias del tema Sage Garden, autoalojadas por next/font. Antic solo existe en peso 400.
+const antic = Antic({ weight: '400', subsets: ['latin'], variable: '--font-antic' })
+const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono' })
 
 export const metadata: Metadata = {
   title: {
@@ -14,14 +19,20 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0b1f3a',
+  // Mismo tono que la barra superior (token sidebar).
+  themeColor: '#fafaf8',
   width: 'device-width',
   initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es-CO">
+    // Next desactiva el desplazamiento suave durante la navegación entre rutas.
+    <html
+      lang="es-CO"
+      data-scroll-behavior="smooth"
+      className={`${antic.variable} ${mono.variable}`}
+    >
       <body>{children}</body>
     </html>
   )

@@ -110,7 +110,7 @@ export function FormDevolucion({
       </Card>
 
       {resultado === 'CON_NOVEDADES' && (
-        <Card className="border-danger-700/25">
+        <Card className="border-destructive/25">
           <CardHeader>
             <CardTitle>¿Qué presenta novedad?</CardTitle>
             <CardDescription>
@@ -124,8 +124,8 @@ export function FormDevolucion({
                 <div
                   key={el.id}
                   className={cn(
-                    'rounded-xl border bg-white',
-                    n ? 'border-danger-700/30' : 'border-pearl-200',
+                    'rounded-xl border bg-card',
+                    n ? 'border-destructive/30' : 'border-border',
                   )}
                 >
                   <label className="flex cursor-pointer items-center gap-3 p-3.5">
@@ -133,12 +133,12 @@ export function FormDevolucion({
                       type="checkbox"
                       checked={!!n}
                       onChange={() => alternar(el.id)}
-                      className="size-5 accent-navy-800"
+                      className="size-5 accent-primary-strong"
                     />
                     <span className="font-medium">{el.nombre}</span>
                   </label>
                   {n && (
-                    <div className="flex flex-col gap-3 border-t border-pearl-200 p-3.5">
+                    <div className="flex flex-col gap-3 border-t border-border p-3.5">
                       <Textarea
                         aria-label={`Novedad de ${el.nombre}`}
                         rows={2}
@@ -185,7 +185,7 @@ export function FormDevolucion({
       </Checkbox>
 
       {errores.length > 0 && (
-        <ul role="alert" className="flex flex-col gap-1 text-sm font-medium text-danger-700">
+        <ul role="alert" className="flex flex-col gap-1 text-sm font-medium text-destructive">
           {errores.map((e) => (
             <li key={e}>• {e}</li>
           ))}

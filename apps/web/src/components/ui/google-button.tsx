@@ -20,7 +20,7 @@ export function GoogleButton({ className, children, ...props }: ComponentProps<'
       disabled={pending}
       aria-busy={pending}
       className={cn(
-        'inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-pearl-300 bg-white px-5 text-base font-semibold text-navy-900 shadow-sm transition-[background-color,border-color,transform] duration-200 hover:border-navy-500/40 hover:bg-navy-50 active:translate-y-px disabled:cursor-progress disabled:opacity-80',
+        'inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border-strong bg-card px-5 text-base font-semibold text-foreground shadow-sm transition-[background-color,border-color,transform] duration-200 hover:border-primary/40 hover:bg-primary-soft active:translate-y-px disabled:cursor-progress disabled:opacity-80',
         className,
       )}
       {...props}
@@ -45,7 +45,7 @@ export function GoogleButton({ className, children, ...props }: ComponentProps<'
       </svg>
       {pending ? (
         <>
-          <Loader2 className="size-4 animate-spin text-ink-500" aria-hidden />
+          <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />
           Conectando…
         </>
       ) : (

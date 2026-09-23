@@ -11,10 +11,7 @@ export function Skeleton({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       aria-hidden
-      className={cn(
-        'animate-pulse rounded-lg bg-pearl-200/80 motion-reduce:animate-none',
-        className,
-      )}
+      className={cn('animate-pulse rounded-lg bg-border/80 motion-reduce:animate-none', className)}
       {...props}
     />
   )
@@ -49,7 +46,7 @@ export function SkeletonPageHeader({ conAccion = false }: { conAccion?: boolean 
 /** Filas de una lista o tabla en carga. */
 export function SkeletonFilas({ filas = 4 }: { filas?: number }) {
   return (
-    <ul className="divide-y divide-pearl-200">
+    <ul className="divide-y divide-border">
       {Array.from({ length: filas }, (_, i) => (
         <li key={i} className="flex items-center gap-4 px-5 py-4 sm:px-6">
           <div className="flex flex-1 flex-col gap-2">

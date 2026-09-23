@@ -207,7 +207,7 @@ export function FlujoRecepcion({
         <>
           <div className="flex flex-col gap-2">
             <h1 className="text-page sm:text-page-lg">Recepción del espacio</h1>
-            <p className="text-ink-600">
+            <p className="text-muted-foreground">
               Vas a dejar constancia de que recibes el espacio y sus elementos. Tu cuenta
               institucional funciona como firma.
             </p>
@@ -217,9 +217,9 @@ export function FlujoRecepcion({
               <Avatar nombre={sesion.nombre} className="size-12 text-base" />
               <div className="min-w-0 flex-1 basis-40">
                 <p className="truncate font-semibold">{sesion.nombre}</p>
-                <p className="truncate text-sm text-ink-600">{sesion.correo}</p>
+                <p className="truncate text-sm text-muted-foreground">{sesion.correo}</p>
               </div>
-              <span className="flex items-center gap-1.5 rounded-full bg-ok-50 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-ok-700">
+              <span className="flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-success">
                 <BadgeCheck className="size-4" aria-hidden />
                 Identidad validada
               </span>
@@ -227,14 +227,14 @@ export function FlujoRecepcion({
           </Card>
           <Card>
             <CardHeader>
-              <p className="text-sm font-medium text-ink-600">Entrega</p>
+              <p className="text-sm font-medium text-muted-foreground">Entrega</p>
               <CardTitle>{asignacion.evento}</CardTitle>
             </CardHeader>
             <CardBody>
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div className="flex items-center gap-2">
                   <dt>
-                    <MapPin className="size-4 text-navy-500" aria-label="Espacio" />
+                    <MapPin className="size-4 text-primary" aria-label="Espacio" />
                   </dt>
                   <dd>
                     {espacio.nombre} · {espacio.ubicacion}
@@ -242,7 +242,7 @@ export function FlujoRecepcion({
                 </div>
                 <div className="flex items-center gap-2">
                   <dt>
-                    <CalendarDays className="size-4 text-navy-500" aria-label="Fecha" />
+                    <CalendarDays className="size-4 text-primary" aria-label="Fecha" />
                   </dt>
                   <dd className="first-letter:uppercase">
                     {formatearFechaLarga(asignacion.inicio)}
@@ -250,13 +250,13 @@ export function FlujoRecepcion({
                 </div>
                 <div className="flex items-center gap-2">
                   <dt>
-                    <Clock className="size-4 text-navy-500" aria-label="Horario" />
+                    <Clock className="size-4 text-primary" aria-label="Horario" />
                   </dt>
                   <dd className="tabular">{formatearFranja(asignacion.inicio, asignacion.fin)}</dd>
                 </div>
                 <div className="flex items-center gap-2">
                   <dt>
-                    <BadgeCheck className="size-4 text-navy-500" aria-label="Entrega" />
+                    <BadgeCheck className="size-4 text-primary" aria-label="Entrega" />
                   </dt>
                   <dd>Entrega {asignacion.entregadoPor.nombre}</dd>
                 </div>
@@ -287,7 +287,7 @@ export function FlujoRecepcion({
                 onCambio={(rol) => setDatos({ ...datos, rol })}
               />
               {erroresDatos.rol && (
-                <p role="alert" className="text-sm font-medium text-danger-700">
+                <p role="alert" className="text-sm font-medium text-destructive">
                   {erroresDatos.rol}
                 </p>
               )}
@@ -362,7 +362,7 @@ export function FlujoRecepcion({
               <h2 className="text-section">
                 {paso === 2 ? 'Elementos que recibes' : 'Condiciones del espacio'}
               </h2>
-              <p className="text-sm text-ink-600">
+              <p className="text-sm text-muted-foreground">
                 {paso === 2
                   ? 'Cuenta y revisa cada elemento. Si algo falta o falla, marca Novedad y toma una foto.'
                   : 'Revisa cómo está el espacio al recibirlo.'}
@@ -373,7 +373,7 @@ export function FlujoRecepcion({
               Marcar pendientes conformes
             </Button>
           </div>
-          <p className="text-sm font-medium text-navy-700 tabular" aria-live="polite">
+          <p className="text-sm font-medium text-primary-strong tabular" aria-live="polite">
             {revisados} de {grupoActual.length} revisados
           </p>
           <ul className="flex flex-col gap-3">
@@ -407,10 +407,10 @@ export function FlujoRecepcion({
             <ol
               tabIndex={0}
               aria-label="Cláusulas"
-              className="flex max-h-80 list-decimal flex-col gap-3 overflow-y-auto rounded-xl border border-pearl-200 bg-white py-4 pr-4 pl-9 text-sm leading-relaxed text-navy-900"
+              className="flex max-h-80 list-decimal flex-col gap-3 overflow-y-auto rounded-xl border border-border bg-card py-4 pr-4 pl-9 text-sm leading-relaxed text-foreground"
             >
               {terminos.clausulas.map((c) => (
-                <li key={c} className="pl-1 marker:font-semibold marker:text-gold-700">
+                <li key={c} className="pl-1 marker:font-semibold marker:text-attention">
                   {c}
                 </li>
               ))}
@@ -430,7 +430,7 @@ export function FlujoRecepcion({
               {terminos.tratamientoDatos}
             </Checkbox>
             {errorTerminos && (
-              <p role="alert" className="text-sm font-medium text-danger-700">
+              <p role="alert" className="text-sm font-medium text-destructive">
                 {errorTerminos}
               </p>
             )}
@@ -442,7 +442,7 @@ export function FlujoRecepcion({
         <>
           <div className="flex flex-col gap-2">
             <h2 className="text-section">Revisa y envía</h2>
-            <p className="text-sm text-ink-600">
+            <p className="text-sm text-muted-foreground">
               Al enviar, la constancia queda sellada y no se puede modificar.
             </p>
           </div>
@@ -450,48 +450,50 @@ export function FlujoRecepcion({
             <CardBody>
               <dl className="grid gap-4 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-ink-600">Recibe</dt>
+                  <dt className="text-muted-foreground">Recibe</dt>
                   <dd className="font-semibold">{sesion.nombre}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-600">Rol y dependencia</dt>
+                  <dt className="text-muted-foreground">Rol y dependencia</dt>
                   <dd className="font-semibold">
                     {datos.rol && ETIQUETAS_ROL[datos.rol]} · {datos.dependencia}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-ink-600">Evento</dt>
+                  <dt className="text-muted-foreground">Evento</dt>
                   <dd className="font-semibold">{asignacion.evento}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-600">Asistentes estimados</dt>
+                  <dt className="text-muted-foreground">Asistentes estimados</dt>
                   <dd className="font-semibold tabular">{datos.asistentesEstimados}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-600">Elementos verificados</dt>
+                  <dt className="text-muted-foreground">Elementos verificados</dt>
                   <dd className="font-semibold tabular">
                     {catalogo.length - novedades.length} conformes · {novedades.length} con novedad
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-ink-600">Términos</dt>
+                  <dt className="text-muted-foreground">Términos</dt>
                   <dd className="font-semibold">Aceptados · {terminos.version}</dd>
                 </div>
               </dl>
             </CardBody>
           </Card>
           {novedades.length > 0 && (
-            <Card className="border-danger-700/25">
+            <Card className="border-destructive/25">
               <CardHeader>
                 <CardTitle>Novedades reportadas</CardTitle>
               </CardHeader>
               <CardBody>
-                <ul className="flex flex-col divide-y divide-pearl-200">
+                <ul className="flex flex-col divide-y divide-border">
                   {novedades.map((el) => (
                     <li key={el.id} className="flex flex-col gap-0.5 py-3 first:pt-0 last:pb-0">
                       <span className="font-semibold">{el.nombre}</span>
-                      <span className="text-sm text-ink-600">{items[el.id]?.observacion}</span>
-                      <span className="text-xs text-ink-500">
+                      <span className="text-sm text-muted-foreground">
+                        {items[el.id]?.observacion}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
                         {items[el.id]?.fotos.length} foto(s)
                       </span>
                     </li>
@@ -511,7 +513,7 @@ export function FlujoRecepcion({
             </Alert>
           )}
           {errorTerminos && (
-            <p role="alert" className="text-sm font-medium text-danger-700">
+            <p role="alert" className="text-sm font-medium text-destructive">
               {errorTerminos}
             </p>
           )}
@@ -525,7 +527,7 @@ export function FlujoRecepcion({
         </>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-pearl-200 bg-pearl-50/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto flex max-w-2xl gap-3 px-4 py-3 sm:px-6">
           {paso > 0 && (
             <Button

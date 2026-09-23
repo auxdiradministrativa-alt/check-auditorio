@@ -5,13 +5,13 @@ import { cn } from '@/lib/cn'
 type Opcion<T extends string> = {
   valor: T
   etiqueta: string
-  tono?: 'navy' | 'ok' | 'peligro'
+  tono?: 'primario' | 'ok' | 'peligro'
 }
 
 const activo = {
-  navy: 'border-navy-800 bg-navy-900 text-pearl-50',
-  ok: 'border-ok-700 bg-ok-50 text-ok-700',
-  peligro: 'border-danger-700 bg-danger-50 text-danger-700',
+  primario: 'border-primary-strong bg-primary-strong text-primary-strong-foreground',
+  ok: 'border-success bg-success-soft text-success',
+  peligro: 'border-destructive bg-destructive-soft text-destructive-strong',
 } as const
 
 /** Grupo de opciones excluyentes con semántica de radio. */
@@ -38,10 +38,10 @@ export function Segmented<T extends string>({
           <label
             key={op.valor}
             className={cn(
-              'flex min-h-11 flex-[1_1_8rem] cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold-500',
+              'flex min-h-11 flex-[1_1_8rem] cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
               seleccionado
-                ? activo[op.tono ?? 'navy']
-                : 'border-pearl-300 bg-white text-navy-800 hover:border-navy-500/40',
+                ? activo[op.tono ?? 'primario']
+                : 'border-border-strong bg-card text-primary-strong hover:border-primary/40',
             )}
           >
             <input

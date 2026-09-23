@@ -4,12 +4,14 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
 
 const variantes = {
-  primario: 'bg-navy-900 text-pearl-50 hover:bg-navy-800 active:bg-navy-950',
-  oro: 'bg-gold-500 text-navy-950 hover:bg-gold-400 active:bg-gold-600',
+  primario:
+    'bg-primary-strong text-primary-strong-foreground hover:bg-primary-strong-hover active:bg-primary-strong-hover',
+  oro: 'bg-attention-accent text-foreground hover:bg-attention-accent/85 active:bg-attention-accent/75',
   secundario:
-    'border border-pearl-300 bg-pearl-50 text-navy-900 hover:border-navy-500/40 hover:bg-white',
-  fantasma: 'text-navy-800 hover:bg-navy-50',
-  peligro: 'border border-danger-700/25 bg-danger-50 text-danger-700 hover:bg-danger-700/10',
+    'border border-border-strong/60 bg-card text-foreground hover:border-primary hover:bg-primary-soft',
+  fantasma: 'text-primary-strong hover:bg-primary-soft',
+  peligro:
+    'border border-destructive/25 bg-destructive-soft text-destructive-strong hover:bg-destructive/15',
 } as const
 
 const tamanos = {

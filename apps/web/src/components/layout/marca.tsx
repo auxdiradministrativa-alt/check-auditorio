@@ -27,12 +27,10 @@ const LOGOS = {
 
 export function Marca({
   href = '/',
-  claro = true,
   variante = 'compacta',
   className,
 }: {
   href?: string
-  claro?: boolean
   variante?: keyof typeof LOGOS
   className?: string
 }) {
@@ -64,7 +62,7 @@ export function Marca({
           variante === 'completa'
             ? 'h-0.5 w-16 sm:my-1 sm:h-auto sm:w-0.5 sm:self-stretch'
             : 'my-1.5 w-0.5 self-stretch',
-          claro ? 'bg-gold-500' : 'bg-gold-600',
+          'bg-primary',
         )}
       />
       <span
@@ -72,7 +70,7 @@ export function Marca({
         className={cn(
           'font-semibold',
           variante === 'completa' ? 'text-base sm:text-xl' : 'text-xs sm:text-sm',
-          claro ? 'text-gold-400' : 'text-gold-700',
+          'text-primary-strong',
         )}
       >
         Infraestructura

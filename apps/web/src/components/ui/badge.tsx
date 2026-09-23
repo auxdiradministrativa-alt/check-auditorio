@@ -6,11 +6,11 @@ import { ETIQUETAS_ESTADO_ASIGNACION } from '@check-auditorio/shared'
 import { cn } from '@/lib/cn'
 
 const tonos = {
-  neutro: 'bg-pearl-200 text-ink-600',
-  navy: 'bg-navy-100 text-navy-800',
-  oro: 'bg-gold-50 text-gold-800 ring-1 ring-gold-500/30',
-  ok: 'bg-ok-50 text-ok-700',
-  peligro: 'bg-danger-50 text-danger-700',
+  neutro: 'bg-muted text-foreground',
+  primario: 'bg-primary-soft text-primary-strong',
+  oro: 'bg-attention-soft text-attention ring-1 ring-attention-accent/40',
+  ok: 'bg-success-soft text-success',
+  peligro: 'bg-destructive-soft text-destructive-strong',
 } as const
 
 export type TonoBadge = keyof typeof tonos
@@ -38,7 +38,7 @@ export function Badge({
 }
 
 const TONO_POR_ESTADO: Record<EstadoAsignacion, TonoBadge> = {
-  PROGRAMADA: 'navy',
+  PROGRAMADA: 'primario',
   EN_VALIDACION: 'oro',
   EN_DILIGENCIAMIENTO: 'oro',
   RECIBIDA: 'ok',

@@ -8,7 +8,7 @@ export default function CargandoDevolucion() {
       <Skeleton className="h-4 w-full max-w-md" />
       <Skeleton className="mt-2 h-32 w-full rounded-card" />
       <Skeleton className="h-12 w-full rounded-xl" />
-      <p className="text-center text-sm text-ink-600">Abriendo la devolución…</p>
+      <p className="text-center text-sm text-muted-foreground">Abriendo la devolución…</p>
     </div>
   )
 }

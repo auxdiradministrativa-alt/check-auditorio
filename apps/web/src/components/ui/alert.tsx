@@ -3,10 +3,10 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
 const tonos = {
-  info: 'border-navy-100 bg-navy-50 text-navy-800',
-  oro: 'border-gold-500/30 bg-gold-50 text-gold-800',
-  ok: 'border-ok-700/20 bg-ok-50 text-ok-700',
-  peligro: 'border-danger-700/20 bg-danger-50 text-danger-700',
+  info: 'border-accent bg-primary-soft text-primary-strong',
+  oro: 'border-attention-accent/40 bg-attention-soft text-attention',
+  ok: 'border-success/20 bg-success-soft text-success',
+  peligro: 'border-destructive/20 bg-destructive-soft text-destructive-strong',
 } as const
 
 export function Alert({

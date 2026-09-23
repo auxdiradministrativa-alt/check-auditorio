@@ -12,7 +12,7 @@ export default function CargandoConfirmacion() {
       <Skeleton className="h-8 w-72 max-w-full" />
       <Skeleton className="h-4 w-48" />
       <Skeleton className="mt-4 h-40 w-full rounded-card" />
-      <p className="text-sm text-ink-600">Cargando tu constancia…</p>
+      <p className="text-sm text-muted-foreground">Cargando tu constancia…</p>
     </div>
   )
 }

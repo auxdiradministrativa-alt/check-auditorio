@@ -45,7 +45,7 @@ export function UtilidadesQr({
           Descargar QR
         </Button>
       </div>
-      <p role="status" className="text-sm text-ink-600">
+      <p role="status" className="text-sm text-muted-foreground">
         {mensaje}
       </p>
     </div>

@@ -28,9 +28,9 @@ export default function ErrorDePanel({
   return (
     <Card>
       <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-        <ServerCrash className="size-9 text-gold-600" aria-hidden />
-        <h1 className="text-page text-navy-900 sm:text-page-lg">El registro no respondió</h1>
-        <p className="max-w-md text-sm text-ink-600">
+        <ServerCrash className="size-9 text-attention-accent" aria-hidden />
+        <h1 className="text-page text-foreground sm:text-page-lg">El registro no respondió</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
           La hoja de cálculo tarda unos segundos en responder y esta vez agotó el tiempo de espera.
           Vuelve a intentarlo; si acabas de confirmar algo, recarga y revisa el estado antes de
           repetirlo.
@@ -40,7 +40,7 @@ export default function ErrorDePanel({
           Reintentar
         </Button>
         {error.digest && (
-          <p className="text-xs text-ink-500">
+          <p className="text-xs text-muted-foreground">
             Código para soporte: <span className="tabular">{error.digest}</span>
           </p>
         )}

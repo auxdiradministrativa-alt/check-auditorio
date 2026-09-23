@@ -83,7 +83,7 @@ export function SelectorFotos({
             key={foto.id}
             className={cn(
               'relative size-20 overflow-hidden rounded-lg border',
-              foto.estado === 'error' ? 'border-danger-700' : 'border-pearl-300',
+              foto.estado === 'error' ? 'border-destructive' : 'border-border-strong',
             )}
           >
             <Image
@@ -94,9 +94,9 @@ export function SelectorFotos({
               className="object-cover"
             />
             {foto.estado === 'subiendo' && (
-              <span className="absolute inset-0 grid place-items-center bg-navy-950/45">
+              <span className="absolute inset-0 grid place-items-center bg-foreground/45">
                 <LoaderCircle
-                  className="size-6 animate-spin text-pearl-50"
+                  className="size-6 animate-spin text-card-title"
                   aria-label="Subiendo foto"
                 />
               </span>
@@ -105,7 +105,7 @@ export function SelectorFotos({
               <button
                 type="button"
                 onClick={() => reintentar(foto)}
-                className="absolute inset-0 grid place-items-center bg-danger-700/60 text-pearl-50"
+                className="absolute inset-0 grid place-items-center bg-destructive/75 text-card-title"
                 aria-label={`Reintentar subir ${foto.nombre}`}
               >
                 <RotateCw className="size-6" aria-hidden />
@@ -114,7 +114,7 @@ export function SelectorFotos({
             <button
               type="button"
               onClick={() => quitar(foto)}
-              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-navy-950/80 text-pearl-50"
+              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-foreground/80 text-card-title"
               aria-label={`Quitar ${foto.nombre}`}
             >
               <X className="size-3.5" aria-hidden />
@@ -125,10 +125,10 @@ export function SelectorFotos({
           <label
             htmlFor={id}
             className={cn(
-              'flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-xs font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-gold-500',
+              'flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-xs font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-ring',
               error
-                ? 'border-danger-700/50 bg-danger-50 text-danger-700'
-                : 'border-pearl-300 bg-white text-navy-700 hover:border-navy-500/50',
+                ? 'border-destructive/50 bg-destructive-soft text-destructive-strong'
+                : 'border-border-strong bg-card text-primary-strong hover:border-primary/50',
             )}
           >
             <Camera className="size-5" aria-hidden />
@@ -149,7 +149,7 @@ export function SelectorFotos({
         )}
       </div>
       <p
-        className={cn('text-xs', error ? 'font-medium text-danger-700' : 'text-ink-600')}
+        className={cn('text-xs', error ? 'font-medium text-destructive' : 'text-muted-foreground')}
         role={error ? 'alert' : undefined}
       >
         {error ??

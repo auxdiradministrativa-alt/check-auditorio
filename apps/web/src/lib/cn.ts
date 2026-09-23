@@ -5,7 +5,8 @@ import { extendTailwindMerge } from 'tailwind-merge'
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      'font-size': [{ text: ['page', 'page-lg', 'section', 'card'] }],
+      // `card-title` y no `card`: text-card sería el color de la superficie (token card).
+      'font-size': [{ text: ['page', 'page-lg', 'section', 'card-title'] }],
     },
   },
 })

@@ -27,39 +27,41 @@ export default async function Confirmada({ params }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-6 py-6 text-center">
-      <span className="grid size-20 place-items-center rounded-full bg-ok-50 ring-1 ring-ok-700/20">
-        <CircleCheckBig className="size-10 text-ok-700" aria-hidden />
+      <span className="grid size-20 place-items-center rounded-full bg-success-soft ring-1 ring-success/20">
+        <CircleCheckBig className="size-10 text-success" aria-hidden />
       </span>
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-ink-600">Constancia sellada</p>
+        <p className="text-sm font-medium text-muted-foreground">Constancia sellada</p>
         <h1 className="text-page sm:text-page-lg">Recepción confirmada</h1>
-        <p className="text-ink-600 tabular">{formatearFechaHora(sello.selladaEn)}</p>
+        <p className="text-muted-foreground tabular">{formatearFechaHora(sello.selladaEn)}</p>
       </div>
 
       <Card className="w-full overflow-hidden text-left">
-        <div className="flex flex-col gap-4 bg-navy-900 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 bg-primary-strong px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-navy-100">Consecutivo</p>
-            <p className="text-page text-pearl-50 tabular sm:text-page-lg">{sello.consecutivo}</p>
+            <p className="text-sm font-medium text-primary-soft">Consecutivo</p>
+            <p className="text-page text-primary-strong-foreground tabular sm:text-page-lg">
+              {sello.consecutivo}
+            </p>
           </div>
           <div className="sm:text-right">
-            <p className="text-sm font-medium text-navy-100">Código de verificación</p>
-            <p className="font-mono text-card tracking-wider text-pearl-50 tabular">
+            <p className="text-sm font-medium text-primary-soft">Código de verificación</p>
+            <p className="font-mono text-card-title tracking-wider text-primary-strong-foreground tabular">
               {sello.codigoVerificacion}
             </p>
           </div>
         </div>
         <CardBody className="flex flex-col gap-3 text-sm">
-          <p className="flex items-start gap-2 text-ink-600">
-            <Undo2 className="mt-0.5 size-4 shrink-0 text-navy-500" aria-hidden />
+          <p className="flex items-start gap-2 text-muted-foreground">
+            <Undo2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
             <span>
               {devolucion
                 ? `Devolución declarada el ${formatearFechaHora(devolucion.declaradaEn)}.`
                 : 'Al terminar el evento vuelve a esta página (escaneando el mismo QR) para declarar la devolución.'}
             </span>
           </p>
-          <p className="flex items-start gap-2 text-ink-600">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-navy-500" aria-hidden />
+          <p className="flex items-start gap-2 text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
             <span>Guarda el código: con él se verifica que la constancia no fue alterada.</span>
           </p>
         </CardBody>

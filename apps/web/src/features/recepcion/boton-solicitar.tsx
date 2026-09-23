@@ -27,7 +27,7 @@ export function BotonSolicitar({ token }: { token: string }) {
         <ArrowRight aria-hidden />
       </Button>
       {error && (
-        <p role="alert" className="text-sm font-medium text-danger-700">
+        <p role="alert" className="text-sm font-medium text-destructive">
           {error}
         </p>
       )}

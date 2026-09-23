@@ -11,7 +11,7 @@ export function AvisoDemo() {
     auth === 'local' ? 'cuentas simuladas' : 'ingreso con Google',
   ]
   return (
-    <div className="bg-gold-500 px-4 py-1.5 text-center text-xs font-semibold text-navy-950 print:hidden">
+    <div className="border-b border-attention-accent/40 bg-attention-soft px-4 py-1.5 text-center text-xs font-semibold text-attention print:hidden">
       Modo local · {partes.join(' · ')}
     </div>
   )

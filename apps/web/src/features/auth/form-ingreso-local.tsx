@@ -29,7 +29,7 @@ export function FormIngresoLocal({ destino }: { destino: string }) {
         />
       </Field>
       {estado && !estado.ok && (
-        <p role="alert" className="text-sm font-medium text-danger-700">
+        <p role="alert" className="text-sm font-medium text-destructive">
           {estado.mensaje}
         </p>
       )}

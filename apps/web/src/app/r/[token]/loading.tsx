@@ -13,7 +13,7 @@ export default function CargandoRecepcion() {
       <Skeleton className="h-4 w-2/3 max-w-xs" />
       <Skeleton className="mt-4 h-28 w-full rounded-card" />
       <Skeleton className="h-20 w-full rounded-card" />
-      <p className="text-sm text-ink-600">Abriendo la entrega…</p>
+      <p className="text-sm text-muted-foreground">Abriendo la entrega…</p>
     </div>
   )
 }

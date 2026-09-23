@@ -33,9 +33,9 @@ function TarjetaEvento({ asignacion }: { asignacion: Asignacion }) {
   return (
     <Card className="w-full max-w-sm text-left">
       <CardBody className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-ink-600">Entrega</p>
-        <p className="text-card">{asignacion.evento}</p>
-        <p className="text-sm text-ink-600 first-letter:uppercase">
+        <p className="text-sm font-medium text-muted-foreground">Entrega</p>
+        <p className="text-card-title">{asignacion.evento}</p>
+        <p className="text-sm text-muted-foreground first-letter:uppercase">
           {formatearFechaLarga(asignacion.inicio)} ·{' '}
           <span className="tabular">{formatearFranja(asignacion.inicio, asignacion.fin)}</span>
         </p>
@@ -51,7 +51,7 @@ function TarjetaPersona({ persona }: { persona: Persona }) {
         <Avatar nombre={persona.nombre} />
         <div className="min-w-0">
           <p className="truncate font-semibold">{persona.nombre}</p>
-          <p className="truncate text-sm text-ink-600">{persona.correo}</p>
+          <p className="truncate text-sm text-muted-foreground">{persona.correo}</p>
         </div>
       </CardBody>
     </Card>
@@ -65,10 +65,10 @@ const icono = (children: ReactNode, clase: string) => (
 export function PantallaIngresar({ asignacion, token }: { asignacion: Asignacion; token: string }) {
   return (
     <Pantalla
-      icono={icono(<LogIn className="size-9 text-navy-800" aria-hidden />, 'bg-navy-50')}
+      icono={icono(<LogIn className="size-9 text-primary-strong" aria-hidden />, 'bg-primary-soft')}
       titulo="Identifícate para recibir"
     >
-      <p className="max-w-sm text-ink-600">
+      <p className="max-w-sm text-muted-foreground">
         Inicia sesión con tu cuenta institucional. Esa cuenta queda como firma de la constancia.
       </p>
       <TarjetaEvento asignacion={asignacion} />
@@ -90,10 +90,10 @@ export function PantallaSolicitar({
 }) {
   return (
     <Pantalla
-      icono={icono(<LogIn className="size-9 text-navy-800" aria-hidden />, 'bg-navy-50')}
+      icono={icono(<LogIn className="size-9 text-primary-strong" aria-hidden />, 'bg-primary-soft')}
       titulo="Confirma quién recibe"
     >
-      <p className="max-w-sm text-ink-600">
+      <p className="max-w-sm text-muted-foreground">
         Vas a solicitar la recepción del espacio con esta cuenta. Infraestructura confirmará que
         eres tú.
       </p>
@@ -108,20 +108,20 @@ export function PantallaEspera({ sesion }: { sesion: Persona }) {
   return (
     <Pantalla
       icono={
-        <span className="relative grid size-20 place-items-center rounded-full bg-gold-50 ring-1 ring-gold-500/40">
-          <span className="absolute inset-0 animate-ping rounded-full bg-gold-500/15 motion-reduce:animate-none" />
-          <Hourglass className="size-9 text-gold-700" aria-hidden />
+        <span className="relative grid size-20 place-items-center rounded-full bg-attention-soft ring-1 ring-attention-accent/40">
+          <span className="absolute inset-0 animate-ping rounded-full bg-attention-accent/15 motion-reduce:animate-none" />
+          <Hourglass className="size-9 text-attention" aria-hidden />
         </span>
       }
       titulo="Esperando validación"
     >
       <RefrescoAutomatico />
-      <p className="max-w-sm text-ink-600">
+      <p className="max-w-sm text-muted-foreground">
         Muéstrale esta pantalla a la persona de Infraestructura. Cuando confirme tu identidad,
         podrás diligenciar la constancia.
       </p>
       <TarjetaPersona persona={sesion} />
-      <p className="text-xs text-ink-500" aria-live="polite">
+      <p className="text-xs text-muted-foreground" aria-live="polite">
         Esta pantalla se actualiza sola.
       </p>
     </Pantalla>
@@ -131,10 +131,13 @@ export function PantallaEspera({ sesion }: { sesion: Persona }) {
 export function PantallaAunNoVigente({ asignacion }: { asignacion: Asignacion }) {
   return (
     <Pantalla
-      icono={icono(<CalendarClock className="size-9 text-ink-600" aria-hidden />, 'bg-pearl-200')}
+      icono={icono(
+        <CalendarClock className="size-9 text-muted-foreground" aria-hidden />,
+        'bg-border',
+      )}
       titulo="Aún no puedes recibir"
     >
-      <p className="max-w-sm text-ink-600">
+      <p className="max-w-sm text-muted-foreground">
         Este QR se habilita 30 minutos antes del inicio ({formatearHora(asignacion.inicio)}).
       </p>
       <TarjetaEvento asignacion={asignacion} />
@@ -145,10 +148,10 @@ export function PantallaAunNoVigente({ asignacion }: { asignacion: Asignacion })
 export function PantallaExpirada() {
   return (
     <Pantalla
-      icono={icono(<TimerOff className="size-9 text-ink-600" aria-hidden />, 'bg-pearl-200')}
+      icono={icono(<TimerOff className="size-9 text-muted-foreground" aria-hidden />, 'bg-border')}
       titulo="Este QR ya no está vigente"
     >
-      <p className="max-w-sm text-ink-600">
+      <p className="max-w-sm text-muted-foreground">
         Venció, fue anulado o ya se usó para otra recepción. Pide a Infraestructura que genere uno
         nuevo.
       </p>

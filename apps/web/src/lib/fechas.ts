@@ -34,6 +34,15 @@ const fmtFechaHora = new Intl.DateTimeFormat(LOCALE, {
   hour12: true,
 })
 
+const fmtHoraExacta = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: ZONA_HORARIA,
+  hour: 'numeric',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: true,
+})
+
+export const formatearHoraExacta = (iso: string | Date) => fmtHoraExacta.format(new Date(iso))
 export const formatearFechaLarga = (iso: string | Date) => fmtFechaLarga.format(new Date(iso))
 export const formatearFechaCorta = (iso: string | Date) => fmtFechaCorta.format(new Date(iso))
 export const formatearHora = (iso: string | Date) => fmtHora.format(new Date(iso))

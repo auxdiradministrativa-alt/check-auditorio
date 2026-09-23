@@ -9,16 +9,18 @@ export function ResumenCatalogo({ catalogo }: { catalogo: ElementoCatalogo[] }) 
         if (!items.length) return null
         return (
           <div key={categoria} className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-ink-600">{ETIQUETAS_CATEGORIA[categoria]}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              {ETIQUETAS_CATEGORIA[categoria]}
+            </p>
             <ul className="flex flex-wrap gap-2">
               {items.map((e) => (
                 <li
                   key={e.id}
-                  className="flex items-center gap-2 rounded-lg border border-pearl-200 bg-white px-2.5 py-1 text-sm text-navy-900"
+                  className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1 text-sm text-foreground"
                 >
                   {e.nombre}
                   {categoria !== 'ESPACIO' && (
-                    <span className="rounded bg-navy-50 px-1.5 text-xs font-semibold text-navy-700 tabular">
+                    <span className="rounded bg-primary-soft px-1.5 text-xs font-semibold text-primary-strong tabular">
                       ×{e.cantidadEsperada}
                     </span>
                   )}

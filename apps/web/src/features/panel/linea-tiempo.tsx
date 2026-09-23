@@ -42,7 +42,7 @@ export function LineaTiempo({ estado }: { estado: EstadoAsignacion }) {
                 aria-hidden
                 className={cn(
                   'absolute top-6 left-[0.6875rem] h-[calc(100%-1.25rem)] w-px',
-                  hecho ? 'bg-navy-800' : 'bg-pearl-300',
+                  hecho ? 'bg-primary-strong' : 'bg-border',
                 )}
               />
             )}
@@ -50,18 +50,18 @@ export function LineaTiempo({ estado }: { estado: EstadoAsignacion }) {
               aria-hidden
               className={cn(
                 'relative mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2',
-                hecho && 'border-navy-800 bg-navy-800',
-                enCurso && 'border-gold-500 bg-gold-50',
-                !hecho && !enCurso && 'border-pearl-300 bg-pearl-50',
+                hecho && 'border-primary-strong bg-primary-strong',
+                enCurso && 'border-attention-accent bg-attention-soft',
+                !hecho && !enCurso && 'border-border-strong bg-card',
               )}
             >
-              {hecho && <span className="size-2 rounded-full bg-gold-400" />}
+              {hecho && <span className="size-2 rounded-full bg-primary-strong-foreground" />}
             </span>
             <div className="flex flex-col">
               <span
                 className={cn(
                   'text-sm font-semibold',
-                  hecho || enCurso ? 'text-navy-900' : 'text-ink-500',
+                  hecho || enCurso ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
                 {etapa.titulo}
@@ -69,7 +69,7 @@ export function LineaTiempo({ estado }: { estado: EstadoAsignacion }) {
                   {hecho ? ' (completado)' : enCurso ? ' (en curso)' : ' (pendiente)'}
                 </span>
               </span>
-              <span className="text-sm text-ink-600">{etapa.detalle}</span>
+              <span className="text-sm text-muted-foreground">{etapa.detalle}</span>
             </div>
           </li>
         )

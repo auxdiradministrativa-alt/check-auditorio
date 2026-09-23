@@ -29,7 +29,7 @@ export function BotonAnular({ asignacionId }: { asignacionId: string }) {
         {pendiente ? 'Anulando…' : 'Anular asignación'}
       </Button>
       {error && (
-        <p role="alert" className="text-sm font-medium text-danger-700">
+        <p role="alert" className="text-sm font-medium text-destructive">
           {error}
         </p>
       )}

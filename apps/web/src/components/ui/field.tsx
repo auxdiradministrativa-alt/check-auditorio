@@ -21,18 +21,18 @@ export function Field({
 }) {
   return (
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>
-      <label htmlFor={id} className="text-sm font-medium text-navy-900">
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
-        {opcional && <span className="ml-1.5 font-normal text-ink-500">(opcional)</span>}
+        {opcional && <span className="ml-1.5 font-normal text-muted-foreground">(opcional)</span>}
       </label>
       {children}
       {error ? (
-        <p id={`${id}-error`} role="alert" className="text-sm font-medium text-danger-700">
+        <p id={`${id}-error`} role="alert" className="text-sm font-medium text-destructive">
           {error}
         </p>
       ) : (
         hint && (
-          <p id={`${id}-hint`} className="text-sm text-ink-600">
+          <p id={`${id}-hint`} className="text-sm text-muted-foreground">
             {hint}
           </p>
         )
@@ -42,7 +42,7 @@ export function Field({
 }
 
 const control =
-  'min-w-0 w-full rounded-xl border border-pearl-300 bg-white px-3.5 text-base text-navy-900 placeholder:text-ink-500 transition-colors hover:border-navy-500/40 focus:border-navy-600 focus:ring-3 focus:ring-navy-600/15 focus:outline-none disabled:bg-pearl-100 disabled:text-ink-600 aria-invalid:border-danger-700 aria-invalid:ring-danger-700/15'
+  'min-w-0 w-full rounded-xl border border-border-strong bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground transition-colors hover:border-primary/40 focus:border-primary focus:ring-3 focus:ring-primary/15 focus:outline-none disabled:bg-background disabled:text-muted-foreground aria-invalid:border-destructive aria-invalid:ring-destructive/15'
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(control, 'h-11', className)} {...props} />

@@ -37,11 +37,11 @@ export async function DetalleEvento({
         <div className="flex flex-wrap items-center gap-3">
           <EstadoBadge estado={estado} />
           {consecutivo && (
-            <span className="text-sm font-semibold text-navy-700 tabular">{consecutivo}</span>
+            <span className="text-sm font-semibold text-primary-strong tabular">{consecutivo}</span>
           )}
         </div>
         <h3 className="text-section">{evento}</h3>
-        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-600">
+        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <dt>
               <MapPin className="size-4" aria-label="Espacio" />
@@ -101,11 +101,11 @@ export async function DetalleEvento({
                 <div
                   role="img"
                   aria-label={`Código QR para recibir ${evento}`}
-                  className="aspect-square w-full max-w-60 shrink-0 rounded-2xl border border-pearl-200 bg-white p-3 [&_svg]:size-full"
+                  className="aspect-square w-full max-w-60 shrink-0 rounded-2xl border border-border bg-card p-3 [&_svg]:size-full"
                   // SVG generado en servidor a partir de una URL propia.
                   dangerouslySetInnerHTML={{ __html: svg }}
                 />
-                <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-3 text-sm text-ink-600">
+                <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-3 text-sm text-muted-foreground">
                   <ul className="flex flex-col gap-2">
                     <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
                     <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
@@ -116,7 +116,7 @@ export async function DetalleEvento({
                     href={enlace}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 font-semibold break-all text-navy-700 hover:text-navy-900"
+                    className="inline-flex items-center gap-1.5 font-semibold break-all text-primary-strong hover:text-foreground"
                   >
                     <ExternalLink className="size-4 shrink-0" aria-hidden />
                     Abrir enlace de recepción

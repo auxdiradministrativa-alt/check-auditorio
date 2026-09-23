@@ -2,6 +2,7 @@
 
 import { RefreshCw, Search } from 'lucide-react'
 import { ETIQUETAS_ESTADO_ASIGNACION, type Espacio } from '@check-auditorio/shared'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/field'
 
@@ -24,6 +25,8 @@ export function FiltrosRegistro({
   filtros,
   espacios,
   actualizando,
+  activos,
+  resumen,
   onCambiar,
   onLimpiar,
   onActualizar,
@@ -31,6 +34,10 @@ export function FiltrosRegistro({
   filtros: FiltrosGestion
   espacios: Espacio[]
   actualizando: boolean
+  /** Filtros aplicados, incluidas las casillas de cada tabla. */
+  activos: number
+  /** Resultado con contexto, anunciado una sola vez por cambio. */
+  resumen: string
   onCambiar: (campo: keyof FiltrosGestion, valor: string) => void
   onLimpiar: () => void
   onActualizar: () => void
@@ -40,14 +47,21 @@ export function FiltrosRegistro({
   return (
     <section
       aria-labelledby="titulo-filtros"
-      className="flex flex-col gap-4 rounded-card border border-pearl-200 bg-white p-4 sm:p-6"
+      className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 sm:p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="titulo-filtros" className="text-section">
-          Buscar en la gestión
-        </h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 id="titulo-filtros" className="text-section">
+            Buscar en la gestión
+          </h2>
+          {activos > 0 && (
+            <Badge tono="primario">
+              {activos} {activos === 1 ? 'filtro activo' : 'filtros activos'}
+            </Badge>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
-          <Button variante="fantasma" tamano="sm" onClick={onLimpiar}>
+          <Button variante="fantasma" tamano="sm" disabled={!activos} onClick={onLimpiar}>
             Limpiar filtros
           </Button>
           <Button variante="secundario" tamano="sm" disabled={actualizando} onClick={onActualizar}>
@@ -114,12 +128,12 @@ export function FiltrosRegistro({
             ))}
           </Select>
         </label>
-        <p className="text-xs text-ink-600">
-          Los filtros se aplican a las reservas y al registro histórico.
+        <p role="status" aria-atomic="true" className="text-xs text-muted-foreground">
+          {activos ? resumen : 'Los filtros se aplican a las reservas y al registro histórico.'}
         </p>
       </div>
       {fechasInvalidas && (
-        <p role="alert" className="text-sm text-danger-700">
+        <p role="alert" className="text-sm text-destructive">
           La fecha final debe ser igual o posterior a la inicial.
         </p>
       )}

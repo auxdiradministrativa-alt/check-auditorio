@@ -39,34 +39,34 @@ export function ItemChecklist({
     <li
       id={`item-${elemento.id}`}
       className={cn(
-        'flex scroll-mt-24 flex-col gap-3 rounded-xl border bg-white p-4 transition-colors',
-        valor.estado === 'NOVEDAD' ? 'border-danger-700/30' : 'border-pearl-200',
-        errores?.estado && 'border-danger-700/50',
+        'flex scroll-mt-24 flex-col gap-3 rounded-xl border bg-card p-4 transition-colors',
+        valor.estado === 'NOVEDAD' ? 'border-destructive/30' : 'border-border',
+        errores?.estado && 'border-destructive/50',
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col">
-          <span className="font-semibold text-navy-900">{elemento.nombre}</span>
+          <span className="font-semibold text-foreground">{elemento.nombre}</span>
           {cuantificable && (
-            <span className="text-sm text-ink-600">
+            <span className="text-sm text-muted-foreground">
               Se entregan{' '}
-              <strong className="text-navy-900 tabular">{elemento.cantidadEsperada}</strong>
+              <strong className="text-foreground tabular">{elemento.cantidadEsperada}</strong>
             </span>
           )}
         </div>
         {cuantificable && (
           <div className="flex flex-col items-end gap-1">
-            <span className="text-xs font-medium text-ink-600" id={`cant-${elemento.id}`}>
+            <span className="text-xs font-medium text-muted-foreground" id={`cant-${elemento.id}`}>
               Recibes
             </span>
             <div
-              className="flex items-center rounded-lg border border-pearl-300"
+              className="flex items-center rounded-lg border border-border-strong"
               role="group"
               aria-labelledby={`cant-${elemento.id}`}
             >
               <button
                 type="button"
-                className="grid size-9 place-items-center text-navy-800 disabled:text-pearl-300"
+                className="grid size-9 place-items-center text-primary-strong disabled:text-border-strong"
                 onClick={() => set({ cantidadRecibida: Math.max(0, valor.cantidadRecibida - 1) })}
                 disabled={valor.cantidadRecibida <= 0}
                 aria-label="Restar uno"
@@ -76,7 +76,7 @@ export function ItemChecklist({
               <input
                 inputMode="numeric"
                 aria-label={`Cantidad recibida de ${elemento.nombre}`}
-                className="h-9 w-12 border-x border-pearl-300 text-center text-sm font-semibold text-navy-900 tabular focus:outline-none"
+                className="h-9 w-12 border-x border-border-strong text-center text-sm font-semibold text-foreground tabular focus:outline-none"
                 value={valor.cantidadRecibida}
                 onChange={(e) => {
                   const n = Number.parseInt(e.target.value.replace(/\D/g, '') || '0', 10)
@@ -85,7 +85,7 @@ export function ItemChecklist({
               />
               <button
                 type="button"
-                className="grid size-9 place-items-center text-navy-800"
+                className="grid size-9 place-items-center text-primary-strong"
                 onClick={() => set({ cantidadRecibida: valor.cantidadRecibida + 1 })}
                 aria-label="Sumar uno"
               >
@@ -104,15 +104,15 @@ export function ItemChecklist({
         onCambio={(estado) => set({ estado })}
       />
       {(errores?.estado || errores?.cantidadRecibida) && (
-        <p role="alert" className="text-sm font-medium text-danger-700">
+        <p role="alert" className="text-sm font-medium text-destructive">
           {errores.estado ?? errores.cantidadRecibida}
         </p>
       )}
 
       {valor.estado === 'NOVEDAD' && (
-        <div className="flex flex-col gap-3 border-t border-pearl-200 pt-3">
+        <div className="flex flex-col gap-3 border-t border-border pt-3">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={idObs} className="text-sm font-semibold text-navy-900">
+            <label htmlFor={idObs} className="text-sm font-semibold text-foreground">
               ¿Qué novedad encontraste?
             </label>
             <Textarea
@@ -125,7 +125,7 @@ export function ItemChecklist({
               aria-invalid={!!errores?.observacion}
             />
             {errores?.observacion && (
-              <p role="alert" className="text-sm font-medium text-danger-700">
+              <p role="alert" className="text-sm font-medium text-destructive">
                 {errores.observacion}
               </p>
             )}

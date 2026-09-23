@@ -16,14 +16,14 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
     <Suspense
       fallback={
         <div className="min-h-dvh">
-          <header className="border-b-2 border-gold-500 bg-navy-900">
+          <header className="border-b-2 border-primary bg-sidebar">
             <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
               <Marca href="/panel" />
             </div>
           </header>
           <main className="mx-auto max-w-6xl space-y-5 px-4 py-8 sm:px-6">
             <h1 className="text-page sm:text-page-lg">Gestión de espacios</h1>
-            <p role="status" className="text-sm text-ink-600">
+            <p role="status" className="text-sm text-muted-foreground">
               Verificando acceso al centro de gestión…
             </p>
             <Skeleton className="h-32 w-full" />

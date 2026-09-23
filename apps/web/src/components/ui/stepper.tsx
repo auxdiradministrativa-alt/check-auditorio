@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn'
 export function Stepper({ pasos, actual }: { pasos: readonly string[]; actual: number }) {
   return (
     <nav aria-label="Progreso">
-      <p className="mb-2 text-sm font-medium text-ink-600">
+      <p className="mb-2 text-sm font-medium text-muted-foreground">
         Paso {actual + 1} de {pasos.length} · {pasos[actual]}
       </p>
       <ol className="flex gap-1.5">
@@ -13,9 +13,9 @@ export function Stepper({ pasos, actual }: { pasos: readonly string[]; actual: n
             aria-current={i === actual ? 'step' : undefined}
             className={cn(
               'h-1.5 flex-1 rounded-full transition-colors',
-              i < actual && 'bg-navy-800',
-              i === actual && 'bg-gold-500',
-              i > actual && 'bg-pearl-300',
+              i < actual && 'bg-primary-strong',
+              i === actual && 'bg-primary',
+              i > actual && 'bg-border-strong',
             )}
           >
             <span className="sr-only">
