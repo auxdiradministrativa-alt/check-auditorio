@@ -25,6 +25,9 @@ export function reclamarQr(
   return ctx.srv.conBloqueo(() => {
     const a =
       ctx.asignaciones.porToken(tokenSha256) ?? fallar('QR_NO_VIGENTE', 'El código no existe.')
+    // Puerta del flujo anterior: jamás sobre un enlace personal, aunque se llame directo.
+    if (a.invitadoCorreo)
+      fallar('NO_AUTORIZADO', 'Este enlace es personal: ábrelo con la cuenta a la que fue enviado.')
     if (a.receptor?.sub === receptor.sub) return vista(ctx, a)
     const cfg = ctx.catalogo.config()
     if (estadoEfectivo(a, ctx.srv.ahora(), cfg) !== 'PROGRAMADA')
@@ -47,7 +50,7 @@ export function decidirValidacion(
 ): Salida<'validacion.decidir'> {
   return ctx.srv.conBloqueo(() => {
     const a = exigirAsignacion(ctx, id)
-    if (a.estado !== 'EN_VALIDACION')
+    if (a.invitadoCorreo || a.estado !== 'EN_VALIDACION')
       fallar('ESTADO_INVALIDO', 'La asignación ya no está esperando validación.')
     ctx.asignaciones.actualizar(
       id,

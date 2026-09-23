@@ -3,6 +3,7 @@ import type { ElementoCatalogo, Espacio, Terminos } from '@check-auditorio/share
 import type {
   Config,
   Entregador,
+  Notificacion,
   NovedadDevolucion,
   RegistroAsignacion,
   RegistroDetalle,
@@ -17,9 +18,12 @@ export interface RepoAsignaciones {
   porId(id: string): RegistroAsignacion | null
   porToken(tokenSha256: string): RegistroAsignacion | null
   agregar(a: RegistroAsignacion): void
+  /** Todo menos la identidad de la fila y lo que se fija al crearla. */
   actualizar(
     id: string,
-    cambios: Partial<Pick<RegistroAsignacion, 'estado' | 'receptor' | 'consecutivo'>>,
+    cambios: Partial<
+      Omit<RegistroAsignacion, 'id' | 'espacioId' | 'entregadoPorCorreo' | 'creadaEn' | 'tokenSha256'>
+    >,
   ): void
 }
 
@@ -30,6 +34,26 @@ export interface RepoRecepciones {
   detalle(consecutivo: string): RegistroDetalle[]
   /** Encabezado y detalle en una sola operación, dentro del bloqueo. */
   agregar(r: RegistroRecepcion, detalle: RegistroDetalle[]): void
+  /**
+   * La bandeja del correo de constancia vive fuera de `RegistroRecepcion` a propósito: ese
+   * registro entra entero al sello, y el estado de un correo no debe alterar la constancia.
+   */
+  notificaciones(): { consecutivo: string; notif: Notificacion }[]
+  marcarNotificacion(consecutivo: string, notif: Notificacion): void
+}
+
+/** Correo saliente. Apps Script lo implementa con MailApp; las pruebas, con una lista. */
+export interface Mensaje {
+  para: string[]
+  asunto: string
+  html: string
+  texto: string
+}
+
+export interface Correo {
+  enviar(m: Mensaje): void
+  /** Destinatarios que aún se pueden enviar hoy. */
+  cuotaRestante(): number
 }
 
 export interface RepoDevoluciones {
@@ -43,6 +67,8 @@ export interface RepoCatalogo {
   elementos(espacioId: string): ElementoCatalogo[]
   terminosVigentes(): Terminos | null
   entregadores(): Entregador[]
+  /** Correos activos de `CFG_Destinatarios` para un evento de notificación. */
+  destinatarios(evento: 'recepcion' | 'devolucion' | 'novedad' | 'vencida'): string[]
   config(): Config
 }
 

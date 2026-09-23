@@ -1,15 +1,21 @@
 /**
  * Ciclo de vida de una asignación temporal del espacio.
  *
- * PROGRAMADA          → creada por Infraestructura; el QR está disponible.
- * EN_VALIDACION       → una cuenta del dominio escaneó el QR; espera confirmación de quien entrega.
- * EN_DILIGENCIAMIENTO → identidad confirmada; el receptor está llenando la constancia.
+ * INVITADA            → Infraestructura emitió el enlace para una cuenta; falta diligenciar.
+ * SOLICITADA          → quien solicita propuso evento y franja; espera aprobación.
+ * RECHAZADA           → Infraestructura la devolvió con un motivo; quien solicita la corrige.
+ * PROGRAMADA          → aprobada (o creada por Infraestructura en el flujo anterior).
+ * EN_VALIDACION       → solo flujo anterior: una cuenta escaneó el QR y espera confirmación.
+ * EN_DILIGENCIAMIENTO → quien recibe está llenando la constancia.
  * RECIBIDA            → constancia enviada y sellada.
  * DEVUELTA            → el receptor declaró la devolución.
  * DEVOLUCION_VENCIDA  → pasó el plazo sin declarar la devolución.
  * ANULADA / EXPIRADA  → estados terminales sin recepción.
  */
 export const ESTADOS_ASIGNACION = [
+  'INVITADA',
+  'SOLICITADA',
+  'RECHAZADA',
   'PROGRAMADA',
   'EN_VALIDACION',
   'EN_DILIGENCIAMIENTO',
@@ -34,6 +40,9 @@ export const RESULTADOS_DEVOLUCION = ['BUENAS_CONDICIONES', 'CON_NOVEDADES'] as 
 export type ResultadoDevolucion = (typeof RESULTADOS_DEVOLUCION)[number]
 
 export const ETIQUETAS_ESTADO_ASIGNACION: Record<EstadoAsignacion, string> = {
+  INVITADA: 'Por diligenciar',
+  SOLICITADA: 'Por aprobar',
+  RECHAZADA: 'Por corregir',
   PROGRAMADA: 'Programada',
   EN_VALIDACION: 'Por validar',
   EN_DILIGENCIAMIENTO: 'En diligenciamiento',

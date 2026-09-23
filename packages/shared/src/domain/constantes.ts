@@ -14,4 +14,6 @@ export const LIMITES = {
   dependenciaMax: 120,
   cargoMax: 120,
   eventoMax: 160,
+  motivoMin: 5,
+  motivoMax: 300,
 } as const

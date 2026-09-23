@@ -6,9 +6,13 @@ import { fallar } from './errores'
 const HORA_MS = 3_600_000
 const ms = (iso: string) => new Date(iso).getTime()
 
+/** Estados del flujo por enlace que aún no ocupan la franja: vencen con `token_vence`. */
+const PREVIOS_A_APROBAR: EstadoAsignacion[] = ['INVITADA', 'SOLICITADA', 'RECHAZADA']
+
 /** Los vencimientos no se escriben: se derivan del reloj al leer. */
 export function estadoEfectivo(a: RegistroAsignacion, ahora: Date, cfg: Config): EstadoAsignacion {
   const t = ahora.getTime()
+  if (PREVIOS_A_APROBAR.includes(a.estado) && t > ms(a.tokenVence)) return 'EXPIRADA'
   if (a.estado === 'PROGRAMADA' && t > ms(a.fin)) return 'EXPIRADA'
   if (a.estado === 'RECIBIDA' && t > ms(a.fin) + cfg.horasDevolucion * HORA_MS)
     return 'DEVOLUCION_VENCIDA'
@@ -23,6 +27,14 @@ export function vigenciaQr(a: RegistroAsignacion, ahora: Date, cfg: Config): Vig
   return 'VIGENTE'
 }
 
+/** «14:00» de un ISO con desfase de Bogotá, sin depender de la zona del servidor. */
+const horaCorta = (iso: string) => iso.slice(11, 16)
+
+/**
+ * Solo ocupa la franja lo aprobado o en curso: dos solicitudes pendientes pueden proponer la
+ * misma hora, y gana la primera que Infraestructura apruebe (se vuelve a evaluar al aprobar).
+ * El mensaje no nombra el otro evento: quien solicita no debe ver reservas ajenas.
+ */
 export function exigirSinCruce(
   existentes: RegistroAsignacion[],
   nueva: { espacioId: string; inicio: string; fin: string },
@@ -34,13 +46,25 @@ export function exigirSinCruce(
   const cruce = existentes.find((a) => {
     if (a.espacioId !== nueva.espacioId) return false
     const estado = estadoEfectivo(a, ahora, cfg)
-    if (estado === 'ANULADA' || estado === 'EXPIRADA') return false
+    if (estado === 'ANULADA' || estado === 'EXPIRADA' || PREVIOS_A_APROBAR.includes(estado))
+      return false
     return ms(a.inicio) < ms(nueva.fin) && ms(nueva.inicio) < ms(a.fin)
   })
-  if (cruce) fallar('DATOS_INVALIDOS', `Se cruza con «${cruce.evento}» en el mismo espacio.`)
+  if (cruce)
+    fallar(
+      'DATOS_INVALIDOS',
+      `El espacio ya está reservado de ${horaCorta(cruce.inicio)} a ${horaCorta(cruce.fin)} ese día.`,
+    )
 }
 
-const ANULABLES: EstadoAsignacion[] = ['PROGRAMADA', 'EN_VALIDACION', 'EN_DILIGENCIAMIENTO']
+const ANULABLES: EstadoAsignacion[] = [
+  'INVITADA',
+  'SOLICITADA',
+  'RECHAZADA',
+  'PROGRAMADA',
+  'EN_VALIDACION',
+  'EN_DILIGENCIAMIENTO',
+]
 
 export function exigirAnulable(a: RegistroAsignacion) {
   if (!ANULABLES.includes(a.estado))
@@ -50,6 +74,14 @@ export function exigirAnulable(a: RegistroAsignacion) {
 export function exigirReceptor(a: RegistroAsignacion, sub: string) {
   if (!a.receptor || a.receptor.sub !== sub)
     fallar('NO_AUTORIZADO', 'Esta asignación está a nombre de otra cuenta.')
+}
+
+/** El enlace personal solo lo usa la cuenta a la que se emitió. */
+export function exigirInvitado(a: RegistroAsignacion, correo: string) {
+  if (!a.invitadoCorreo)
+    fallar('ESTADO_INVALIDO', 'Esta asignación no se gestiona con enlace personal.')
+  if (a.invitadoCorreo !== correo.trim().toLowerCase())
+    fallar('NO_AUTORIZADO', 'Este enlace es personal: ábrelo con la cuenta a la que fue enviado.')
 }
 
 export function aVista(
@@ -74,5 +106,17 @@ export function aVista(
     receptor: a.receptor ? { correo: a.receptor.correo, nombre: a.receptor.nombre } : null,
     consecutivo: a.consecutivo,
     creadaEn: a.creadaEn,
+    invitadoCorreo: a.invitadoCorreo,
+    solicitadaEn: a.solicitadaEn,
+    motivoRechazo: a.motivoRechazo,
+    solicitud: a.solicitud
+      ? {
+          rol: a.solicitud.rol,
+          dependencia: a.solicitud.dependencia,
+          cargo: a.solicitud.cargo,
+          celular: a.solicitud.celular,
+          asistentesEstimados: a.solicitud.asistentes,
+        }
+      : null,
   }
 }
