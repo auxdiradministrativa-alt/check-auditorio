@@ -11,6 +11,8 @@ const PUERTO = 3100
 const URL_BASE = `http://localhost:${PUERTO}`
 
 export function configurar({ contraGas }: { contraGas: boolean }) {
+  // Lo leen las pruebas (`e2e/apoyo.ts`): contra el Sheet real los correos salen de verdad.
+  if (contraGas) process.env.CHECK_E2E_GAS = '1'
   return defineConfig({
     testDir: './e2e',
     fullyParallel: false,

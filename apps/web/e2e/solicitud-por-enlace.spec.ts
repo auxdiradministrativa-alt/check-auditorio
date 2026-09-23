@@ -144,7 +144,8 @@ test('solicitud por enlace: devolver, corregir, aprobar, confirmar, sellar y dev
     await revisarVista('solicitud-corregir')
 
     // Empieza en ~10 min: la recepción ya queda habilitada (desde 30 min antes) al aprobar.
-    await diligenciar(recibe, franjaDeHoy(10))
+    // 30 min de franja: contra el Sheet real, la constancia de prueba ocupa el auditorio lo mínimo.
+    await diligenciar(recibe, franjaDeHoy(10, 30))
     await recibe.locator('#autorizaDatos').check()
     await recibe.getByRole('button', { name: 'Enviar corrección' }).click()
     await expect(recibe.getByRole('heading', { name: 'Solicitud en revisión' })).toBeVisible()

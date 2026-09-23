@@ -17,7 +17,25 @@ const TIEMPO_MAXIMO_MS = 30_000
 const LECTURAS_DEL_ECO = 4
 const ESPERA_ENTRE_LECTURAS_MS = 700
 
+const INTENTOS_DE_CONEXION = 3
+
 const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms))
+
+/** Fallos de undici ANTES de enviar un byte: la petición no llegó a Apps Script. */
+const SIN_CONEXION = new Set([
+  'UND_ERR_CONNECT_TIMEOUT',
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'EHOSTUNREACH',
+])
+const noConecto = (error: unknown) => {
+  const causa = error instanceof Error ? error.cause : undefined
+  return typeof causa === 'object' && causa !== null && 'code' in causa
+    ? SIN_CONEXION.has(String(causa.code))
+    : false
+}
 
 /** Una respuesta de doPost, y no otra cosa (p. ej. la de doGet, que también trae `ok: true`). */
 function esRespuesta(valor: unknown): valor is Respuesta<unknown> {
@@ -30,8 +48,12 @@ function esRespuesta(valor: unknown): valor is Respuesta<unknown> {
  *
  * Apps Script ejecuta doPost y responde 302 hacia un «eco» en googleusercontent que guarda el
  * resultado. Medido con este despliegue: a veces ese eco da 404 o redirige a /exec (se leería la
- * salida de doGet). Por eso la redirección se sigue a mano y **solo se reintenta la lectura del
- * eco**: repetir el POST ejecutaría la acción dos veces.
+ * salida de doGet). Por eso la redirección se sigue a mano y **se reintenta la lectura del eco,
+ * no el POST**: repetirlo ejecutaría la acción dos veces.
+ *
+ * Única excepción: si la conexión ni se abrió (medido 2026-09-23: la red de la sede corta ~1 de
+ * cada 6 conexiones a Google), el POST no salió y se reenvía **el mismo sobre**. Aunque hubiera
+ * llegado, Apps Script rechaza el nonce repetido: la acción nunca corre dos veces.
  */
 export async function enviarAGas<A extends NombreAccion>(
   accion: A,
@@ -49,19 +71,29 @@ export async function enviarAGas<A extends NombreAccion>(
   const sobre: Sobre = { accion, datos, ts, nonce, firma }
   const limite = AbortSignal.timeout(TIEMPO_MAXIMO_MS)
 
-  let res: Response
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(sobre),
-      redirect: 'manual',
-      cache: 'no-store',
-      signal: limite,
-    })
-  } catch (error) {
-    console.error(`[gas] ${accion} sin respuesta del POST:`, error)
-    return { ok: false, codigo: 'INTERNO', mensaje: 'El registro no respondió. Intenta de nuevo.' }
+  let res: Response | undefined
+  for (let intento = 1; !res; intento++) {
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(sobre),
+        redirect: 'manual',
+        cache: 'no-store',
+        signal: limite,
+      })
+    } catch (error) {
+      if (intento < INTENTOS_DE_CONEXION && noConecto(error) && !limite.aborted) {
+        console.warn(`[gas] ${accion} no conectó (intento ${intento}); se reenvía el mismo sobre`)
+        continue
+      }
+      console.error(`[gas] ${accion} sin respuesta del POST:`, error)
+      return {
+        ok: false,
+        codigo: 'INTERNO',
+        mensaje: 'El registro no respondió. Intenta de nuevo.',
+      }
+    }
   }
 
   const eco = res.headers.get('location')

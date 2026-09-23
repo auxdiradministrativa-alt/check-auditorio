@@ -8,7 +8,20 @@ export const ENTREGADOR = {
   nombre: 'Infraestructura',
   correo: 'auxdiradministrativa@americana.edu.co',
 }
-export const SOLICITANTE = { nombre: 'Laura Pérez Gómez', correo: 'laura.perez@americana.edu.co' }
+/**
+ * Quien solicita recibe los correos reales cuando la prueba corre contra el Sheet (`e2e:gas`):
+ * ahí es obligatorio nombrar un buzón propio, para no escribirle a una cuenta ajena del dominio.
+ */
+function solicitante(): Cuenta {
+  const correo = process.env.E2E_CORREO_SOLICITANTE?.trim()
+  if (correo) return { nombre: process.env.E2E_NOMBRE_SOLICITANTE?.trim() || correo, correo }
+  if (process.env.CHECK_E2E_GAS)
+    throw new Error(
+      'e2e:gas envía correos reales a quien solicita: define E2E_CORREO_SOLICITANTE con tu correo @americana.edu.co.',
+    )
+  return { nombre: 'Laura Pérez Gómez', correo: 'laura.perez@americana.edu.co' }
+}
+export const SOLICITANTE = solicitante()
 export const INTRUSO = { nombre: 'Carlos Ruiz Díaz', correo: 'carlos.ruiz@americana.edu.co' }
 
 /** Un navegador con cookies propias, como un celular distinto. */
