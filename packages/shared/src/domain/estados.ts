@@ -1,16 +1,7 @@
 /**
- * Ciclo de vida de una asignación temporal del espacio.
- *
- * INVITADA            → Infraestructura emitió el enlace para una cuenta; falta diligenciar.
- * SOLICITADA          → quien solicita propuso evento y franja; espera aprobación.
- * RECHAZADA           → Infraestructura la devolvió con un motivo; quien solicita la corrige.
- * PROGRAMADA          → aprobada (o creada por Infraestructura en el flujo anterior).
- * EN_VALIDACION       → solo flujo anterior: una cuenta escaneó el QR y espera confirmación.
- * EN_DILIGENCIAMIENTO → quien recibe está llenando la constancia.
- * RECIBIDA            → constancia enviada y sellada.
- * DEVUELTA            → el receptor declaró la devolución.
- * DEVOLUCION_VENCIDA  → pasó el plazo sin declarar la devolución.
- * ANULADA / EXPIRADA  → estados terminales sin recepción.
+ * Entrega: PROGRAMADA → EN_DILIGENCIAMIENTO → RECIBIDA → DEVUELTA.
+ * INVITADA/SOLICITADA/RECHAZADA/EN_VALIDACION se leen solo para compatibilidad histórica.
+ * ANULADA/EXPIRADA son terminales sin acta; DEVOLUCION_VENCIDA se deriva del reloj.
  */
 export const ESTADOS_ASIGNACION = [
   'INVITADA',
@@ -40,11 +31,11 @@ export const RESULTADOS_DEVOLUCION = ['BUENAS_CONDICIONES', 'CON_NOVEDADES'] as 
 export type ResultadoDevolucion = (typeof RESULTADOS_DEVOLUCION)[number]
 
 export const ETIQUETAS_ESTADO_ASIGNACION: Record<EstadoAsignacion, string> = {
-  INVITADA: 'Por diligenciar',
-  SOLICITADA: 'Por aprobar',
-  RECHAZADA: 'Por corregir',
-  PROGRAMADA: 'Programada',
-  EN_VALIDACION: 'Por validar',
+  INVITADA: 'Registro anterior sin entrega',
+  SOLICITADA: 'Registro anterior pendiente',
+  RECHAZADA: 'Registro anterior devuelto',
+  PROGRAMADA: 'Entrega programada',
+  EN_VALIDACION: 'Recepción pendiente',
   EN_DILIGENCIAMIENTO: 'En diligenciamiento',
   RECIBIDA: 'Recibida',
   DEVUELTA: 'Devuelta',

@@ -35,13 +35,6 @@ function preparar() {
   }
   const recibir = (asignacionId: string, tokenSha256: string, clave = randomUUID()) => {
     ok(nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: laura }))
-    ok(
-      nucleo.ejecutar('validacion.decidir', {
-        id: asignacionId,
-        decision: 'CONFIRMAR',
-        actor: infra,
-      }),
-    )
     const catalogo = ok(nucleo.ejecutar('catalogo.listar', {}))
     const datos: Entrada<'recepcion.registrar'>['datos'] = {
       claveIdempotencia: clave,
@@ -163,7 +156,7 @@ test('CONFORME con cantidad distinta y novedad sin foto se rechazan', () => {
   assert.equal(r2.ok || r2.codigo, 'DATOS_INVALIDOS')
 })
 
-test('QR: otra cuenta no puede reclamarlo; rechazar lo libera; fuera de vigencia no se reclama', () => {
+test('QR: otra cuenta no puede reclamarlo; la recepción es directa; fuera de vigencia no se reclama', () => {
   const { nucleo, programar } = preparar()
   const { a, tokenSha256 } = programar(
     'Foro',
@@ -173,10 +166,13 @@ test('QR: otra cuenta no puede reclamarlo; rechazar lo libera; fuera de vigencia
   const otro = { ...laura, sub: 'sub-otro', correo: 'otro@americana.edu.co' }
   ok(nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: laura }))
   assert.equal(nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: otro }).ok, false)
-  ok(nucleo.ejecutar('validacion.decidir', { id: a.id, decision: 'RECHAZAR', actor: infra }))
   assert.equal(
-    ok(nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: otro })).estado,
-    'EN_VALIDACION',
+    nucleo.ejecutar('validacion.decidir', { id: a.id, decision: 'RECHAZAR', actor: infra }).ok,
+    false,
+  )
+  assert.equal(
+    ok(nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: laura })).estado,
+    'EN_DILIGENCIAMIENTO',
   )
 
   const futuro = programar('Tarde', '2026-09-15T18:00:00-05:00', '2026-09-15T20:00:00-05:00')
@@ -186,11 +182,11 @@ test('QR: otra cuenta no puede reclamarlo; rechazar lo libera; fuera de vigencia
 
 test('cruce de horario en el mismo espacio se rechaza', () => {
   const { nucleo, programar } = preparar()
-  programar('A', '2026-09-15T10:00:00-05:00', '2026-09-15T12:00:00-05:00')
+  programar('Evento A', '2026-09-15T10:00:00-05:00', '2026-09-15T12:00:00-05:00')
   const r = nucleo.ejecutar('asignacion.crear', {
     id: randomUUID(),
     espacioId: 'esp-auditorio',
-    evento: 'B',
+    evento: 'Evento B',
     inicio: '2026-09-15T11:00:00-05:00',
     fin: '2026-09-15T13:00:00-05:00',
     entregadoPor: infra,

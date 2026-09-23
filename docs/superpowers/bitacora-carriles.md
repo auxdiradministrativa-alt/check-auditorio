@@ -30,3 +30,11 @@ Solo se añaden entradas al final.
   `primary-soft`, `success*`, `attention*`, `destructive*`). El tamaño `text-card` pasa a
   `text-card-title`; `Badge`/`Segmented` tono `navy` → `primario`; `Marca` pierde `claro`.
   Tabla de equivalencias enviada a check-auditorio-35 por mensaje.
+
+## 2026-09-23 · Codex · entrega directa (sesión actual)
+
+- Leo solicita retirar reservas y abrir la recepción desde enlace/QR; autoriza agentes en paralelo.
+- Principal: contratos compartidos, creación, panel, rutas, correos, adaptadores de fotos, pruebas E2E y documentación.
+- Agente integridad: casos de recepción/devolución/inicio/QR, dominios recepción/devolución y pruebas entrega/núcleo.
+- Agente ux_acta: flujo-recepcion.tsx, foco, errores y protección de salida accidental.
+- Se conserva la paleta Sage Garden. Sin publicación, push ni modificación de datos remotos.

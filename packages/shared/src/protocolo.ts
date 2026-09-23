@@ -1,14 +1,11 @@
 import type {
   Asignacion,
-  DecisionSolicitudInput,
   DevolucionInput,
   ElementoCatalogo,
   Espacio,
-  InvitacionInput,
   NuevaAsignacionInput,
   Persona,
   RecepcionInput,
-  SolicitudInput,
 } from './domain/esquemas'
 import type {
   CategoriaElemento,
@@ -82,7 +79,12 @@ export interface Acciones {
   'terminos.vigentes': { entrada: Record<string, never>; salida: Terminos }
   'asignacion.crear': {
     /** `id` lo genera la web: el token del QR se deriva de él y así puede volver a mostrarse. */
-    entrada: NuevaAsignacionInput & { id: string; entregadoPor: Persona; tokenSha256: string }
+    entrada: NuevaAsignacionInput & {
+      id: string
+      entregadoPor: Persona
+      tokenSha256: string
+      correoReceptor?: string
+    }
     salida: Asignacion
   }
   'asignacion.listar': { entrada: Record<string, never>; salida: Asignacion[] }
@@ -94,20 +96,7 @@ export interface Acciones {
   }
   /** Solo flujo anterior: rechaza las asignaciones emitidas con enlace personal. */
   'qr.reclamar': { entrada: { tokenSha256: string; receptor: Identidad }; salida: Asignacion }
-  /** Flujo por enlace. `id` lo genera la web, como en `asignacion.crear`. */
-  'invitacion.crear': {
-    entrada: InvitacionInput & { id: string; entregadoPor: Persona; tokenSha256: string }
-    salida: Asignacion
-  }
-  'solicitud.diligenciar': {
-    entrada: { id: string; receptor: Identidad; datos: SolicitudInput }
-    salida: Asignacion
-  }
-  'solicitud.decidir': {
-    entrada: DecisionSolicitudInput & { id: string; actor: Persona }
-    salida: Asignacion
-  }
-  /** Quien solicitó abre el checklist dentro de la vigencia (desde `inicio − N min` hasta `fin`). */
+  /** Inicia el acta de una entrega dentro de su vigencia. */
   'recepcion.iniciar': { entrada: { id: string; receptor: Identidad }; salida: Asignacion }
   'validacion.decidir': {
     entrada: { id: string; decision: 'CONFIRMAR' | 'RECHAZAR'; actor: Persona }

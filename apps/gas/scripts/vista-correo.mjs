@@ -18,7 +18,7 @@ mkdirSync(tmp)
 const entrada = `
 import {
   correoConfirmacion, correoConstanciaDestinatarios, correoConstanciaReceptor,
-  correoDecision, correoVencida,
+  correoEntrega, correoVencida,
 } from './src/aplicacion/correo/plantillas'
 
 const e = {
@@ -43,9 +43,7 @@ const c = {
 const fijos = ['infraestructura@americana.edu.co']
 
 export const correos = [
-  ['decision-aprobada', 'Decisión · aprobada', correoDecision({ ...e, ...persona, aprobada: true, motivo: null }, 30)],
-  ['decision-devuelta', 'Decisión · devuelta', correoDecision({ ...e, ...persona, aprobada: false,
-    motivo: 'Indica el número de asistentes y el tipo de montaje que necesitas.' }, 30)],
+  ['entrega-programada', 'Entrega programada', correoEntrega({ ...e, ...persona }, 30)],
   ['confirmacion', 'Confirmación de recepción', correoConfirmacion({ ...e, ...persona })],
   ['constancia-receptor', 'Constancia · receptor', correoConstanciaReceptor(c)],
   ['constancia-destinatarios', 'Constancia · destinatarios fijos', correoConstanciaDestinatarios(fijos, c)],

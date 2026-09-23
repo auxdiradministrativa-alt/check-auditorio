@@ -1,5 +1,6 @@
 import {
   PREFIJO_CONSECUTIVO,
+  LIMITES,
   type ChecklistItemInput,
   type ElementoCatalogo,
 } from '@check-auditorio/shared/sin-zod'
@@ -15,6 +16,12 @@ export function construirDetalle(
   elementos: ElementoCatalogo[],
   checklist: ChecklistItemInput[],
 ): RegistroDetalle[] {
+  if (
+    !Array.isArray(checklist) ||
+    !checklist.length ||
+    checklist.some((i) => !i || typeof i !== 'object')
+  )
+    fallar('DATOS_INVALIDOS', 'Revisa los elementos del espacio.')
   const items = new Map(checklist.map((i) => [i.elementoId, i]))
   if (items.size !== checklist.length || items.size !== elementos.length)
     fallar('DATOS_INVALIDOS', 'El checklist no corresponde al catálogo vigente del espacio.')
@@ -25,8 +32,21 @@ export function construirDetalle(
     const esEspacio = el.categoria === 'ESPACIO'
     const esperada = esEspacio ? 1 : el.cantidadEsperada
     const recibida = esEspacio ? 1 : it.cantidadRecibida
+    if (it.observacion != null && typeof it.observacion !== 'string')
+      fallar('DATOS_INVALIDOS', 'La observación debe ser texto.')
     const observacion = (it.observacion ?? '').trim()
     const fotoIds = it.fotoIds ?? []
+    if (
+      !['CONFORME', 'NOVEDAD'].includes(it.estado) ||
+      !Number.isInteger(it.cantidadRecibida) ||
+      it.cantidadRecibida < 0 ||
+      observacion.length > LIMITES.observacionMax ||
+      !Array.isArray(fotoIds) ||
+      fotoIds.length > LIMITES.fotosPorNovedadMax ||
+      fotoIds.some((id) => typeof id !== 'string' || !id.trim()) ||
+      new Set(fotoIds).size !== fotoIds.length
+    )
+      fallar('DATOS_INVALIDOS', `Revisa el estado y cantidad de «${el.nombre}».`)
     if (it.estado === 'CONFORME' && recibida !== esperada)
       fallar('DATOS_INVALIDOS', `«${el.nombre}»: la cantidad no coincide; márcalo como novedad.`)
     if (it.estado === 'NOVEDAD' && (!observacion || fotoIds.length === 0))

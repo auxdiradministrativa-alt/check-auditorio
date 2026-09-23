@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn'
 
 const SECCIONES = [
   { id: 'operacion', etiqueta: 'Operación' },
-  { id: 'reservas', etiqueta: 'Reservas' },
+  { id: 'entregas', etiqueta: 'Entregas' },
   { id: 'historico', etiqueta: 'Histórico' },
 ] as const
 

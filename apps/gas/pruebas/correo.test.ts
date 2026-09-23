@@ -8,7 +8,7 @@ import {
   correoConfirmacion,
   correoConstanciaDestinatarios,
   correoConstanciaReceptor,
-  correoDecision,
+  correoEntrega,
   correoVencida,
   escapar,
   fechaLarga,
@@ -49,16 +49,10 @@ const constancia = (sobre: Partial<DatosConstancia> = {}): DatosConstancia => ({
 })
 
 /** Los seis correos con los mismos datos, para barrer propiedades comunes. */
-function todos(e: DatosEvento, c: DatosConstancia, motivo: string, nombre: string) {
+function todos(e: DatosEvento, c: DatosConstancia, _motivo: string, nombre: string) {
   return {
-    aprobada: correoDecision(
-      { ...e, para: 'laura.perez@americana.edu.co', nombre, aprobada: true, motivo: null },
-      30,
-    ),
-    devuelta: correoDecision(
-      { ...e, para: 'laura.perez@americana.edu.co', nombre, aprobada: false, motivo },
-      30,
-    ),
+    aprobada: correoEntrega({ ...e, para: 'laura.perez@americana.edu.co', nombre }, 30),
+    devuelta: correoEntrega({ ...e, para: 'laura.perez@americana.edu.co', nombre }, 30),
     confirmacion: correoConfirmacion({ ...e, para: 'laura.perez@americana.edu.co', nombre }),
     receptor: correoConstanciaReceptor(c),
     destinatarios: correoConstanciaDestinatarios(['infraestructura@americana.edu.co'], c),
@@ -103,8 +97,6 @@ test('a) ningún texto del usuario llega crudo al HTML de ningún correo', () =>
     assert.ok(m.html.includes(escapar(XSS)), `${nombre}: el evento no aparece escapado`)
     assert.ok(m.html.includes('O&#39;Brien') && m.html.includes('Ciencia &amp; Arte'), nombre)
   }
-  // El motivo solo va en la devuelta: se comprueba que está, escapado.
-  assert.ok(correos.devuelta.html.includes(`Motivo: ${escapar(peligroso)}`))
 })
 
 /* ─── b) Tamaño ─── */
@@ -138,13 +130,11 @@ test('b) cada correo pesa menos que el límite de Gmail, con datos realistas y a
     }
 
   // Control negativo: la medida de verdad detecta un correo que se pasa del límite.
-  const inflado = correoDecision(
+  const inflado = correoEntrega(
     {
       ...evento(),
       para: 'x@americana.edu.co',
-      nombre: 'X',
-      aprobada: false,
-      motivo: largo(LIMITE_BYTES, 'ñ'),
+      nombre: largo(LIMITE_BYTES, 'ñ'),
     },
     30,
   )
@@ -155,23 +145,23 @@ test('b) cada correo pesa menos que el límite de Gmail, con datos realistas y a
 
 /* ─── c) Botón y enlace de respaldo ─── */
 
-test('c) los correos al solicitante llevan /mi-solicitud/<id> en botón y en texto', () => {
+test('c) los correos al solicitante llevan /mi-entrega/<id> en botón y en texto', () => {
   const e = evento()
-  const url = `${URL_APP}/mi-solicitud/${e.id}`
+  const url = `${URL_APP}/mi-entrega/${e.id}`
   const c = todos(e, constancia(), 'Motivo', 'Laura Pérez')
 
   // Botón (href del <a> del botón) + respaldo (href y texto visible del enlace de copia).
   assert.ok(ocurrencias(c.confirmacion.html, url) >= 2, 'confirmación sin botón + respaldo')
   assert.ok(c.confirmacion.html.includes(`>${url}</a>`), 'confirmación sin la URL visible en texto')
   for (const nombre of ['aprobada', 'devuelta', 'receptor'] as const)
-    assert.ok(ocurrencias(c[nombre].html, url) >= 2, `${nombre} sin /mi-solicitud/`)
+    assert.ok(ocurrencias(c[nombre].html, url) >= 2, `${nombre} sin /mi-entrega/`)
   // El texto plano también la lleva (clientes sin HTML).
   assert.ok(c.confirmacion.texto.includes(url))
 
   // Control negativo: el id se codifica; un id con «/» no puede abrir otra ruta.
   const raro = todos(evento({ id: 'a/b?c' }), constancia(), 'M', 'L')
-  assert.ok(raro.confirmacion.html.includes('/mi-solicitud/a%2Fb%3Fc'))
-  assert.ok(!raro.confirmacion.html.includes('/mi-solicitud/a/b'))
+  assert.ok(raro.confirmacion.html.includes('/mi-entrega/a%2Fb%3Fc'))
+  assert.ok(!raro.confirmacion.html.includes('/mi-entrega/a/b'))
 })
 
 /* ─── d) Privacidad ─── */
@@ -186,8 +176,8 @@ test('d) los correos a destinatarios fijos no llevan enlaces personales, celular
 
   for (const nombre of ['destinatarios', 'vencida'] as const) {
     const m = c[nombre]
-    assert.ok(!m.html.includes('/mi-solicitud/'), `${nombre}: enlace personal`)
-    assert.ok(!m.texto.includes('/mi-solicitud/'), `${nombre}: enlace personal en texto`)
+    assert.ok(!m.html.includes('/mi-entrega/'), `${nombre}: enlace personal`)
+    assert.ok(!m.texto.includes('/mi-entrega/'), `${nombre}: enlace personal en texto`)
     assert.ok(!celular.test(m.html) && !celular.test(m.texto), `${nombre}: celular`)
   }
   // Destinatarios: ni el correo del receptor (decisión de la plantilla: nombre y dependencia).
@@ -199,7 +189,7 @@ test('d) los correos a destinatarios fijos no llevan enlaces personales, celular
 
   // Control negativo: el correo del propio receptor sí lleva su enlace, y el patrón de celular
   // detecta un celular cuando está.
-  assert.ok(c.receptor.html.includes('/mi-solicitud/'))
+  assert.ok(c.receptor.html.includes('/mi-entrega/'))
   assert.ok(celular.test(`Celular: ${CELULAR}`))
 })
 

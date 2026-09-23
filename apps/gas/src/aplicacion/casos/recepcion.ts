@@ -1,6 +1,12 @@
-import type { Entrada, Salida, Sello } from '@check-auditorio/shared/sin-zod'
+import {
+  ROLES_RECEPTOR,
+  LIMITES,
+  type Entrada,
+  type Salida,
+  type Sello,
+} from '@check-auditorio/shared/sin-zod'
 
-import { exigirReceptor } from '../../dominio/asignacion'
+import { exigirReceptor, vigenciaQr } from '../../dominio/asignacion'
 import type { RegistroRecepcion } from '../../dominio/entidades'
 import { fallar } from '../../dominio/errores'
 import { codigoVerificacion, construirDetalle, siguienteConsecutivo } from '../../dominio/recepcion'
@@ -43,17 +49,47 @@ export function registrarRecepcion(
   { asignacionId, receptor, datos, userAgent }: Entrada<'recepcion.registrar'>,
 ): Salida<'recepcion.registrar'> {
   return ctx.srv.conBloqueo(() => {
-    const previa = ctx.recepciones.porClave(datos.claveIdempotencia)
-    if (previa) return selloDe(previa)
-
     const a = exigirAsignacion(ctx, asignacionId)
     exigirReceptor(a, receptor.sub)
+    const previa = ctx.recepciones.porClave(datos.claveIdempotencia)
+    if (previa) {
+      if (previa.asignacionId !== asignacionId || previa.receptor.sub !== receptor.sub)
+        fallar('NO_AUTORIZADO', 'La clave de envío pertenece a otra recepción.')
+      return selloDe(previa)
+    }
+    if (datos.aceptaTerminos !== true || datos.autorizaDatos !== true)
+      fallar('DATOS_INVALIDOS', 'Acepta los términos y autoriza el tratamiento de datos.')
+    if (
+      !ROLES_RECEPTOR.includes(datos.rol) ||
+      typeof datos.dependencia !== 'string' ||
+      datos.dependencia.trim().length < 2 ||
+      datos.dependencia.length > LIMITES.dependenciaMax ||
+      typeof datos.celular !== 'string' ||
+      !/^3\d{9}$/.test(datos.celular) ||
+      !Number.isInteger(datos.asistentesEstimados) ||
+      datos.asistentesEstimados <= 0 ||
+      typeof datos.cargo !== 'string' ||
+      datos.cargo.length > LIMITES.cargoMax ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        datos.claveIdempotencia,
+      )
+    )
+      fallar('DATOS_INVALIDOS', 'Revisa los datos de quien recibe.')
     if (a.estado !== 'EN_DILIGENCIAMIENTO')
       fallar('ESTADO_INVALIDO', 'La asignación no está lista para diligenciar.')
+
+    if (vigenciaQr(a, ctx.srv.ahora(), ctx.catalogo.config()) !== 'VIGENTE')
+      fallar('QR_NO_VIGENTE', 'El plazo para recibir este espacio ha finalizado.')
 
     const terminos =
       ctx.catalogo.terminosVigentes() ?? fallar('INTERNO', 'No hay términos vigentes.')
     const detalle = construirDetalle(ctx.catalogo.elementos(a.espacioId), datos.checklist)
+    for (const item of detalle) {
+      for (const fotoId of item.fotoIds) {
+        if (!ctx.srv.fotoPertenece(fotoId, asignacionId))
+          fallar('DATOS_INVALIDOS', 'Una foto no pertenece a esta entrega. Vuelve a adjuntarla.')
+      }
+    }
     const consecutivo = siguienteConsecutivo(ctx.recepciones.consecutivos())
 
     const registro: RegistroRecepcion = {

@@ -29,11 +29,11 @@ const FLUJO: EstadoAsignacion[] = [
 ]
 
 const ACCION_POR_ESTADO: Partial<Record<EstadoAsignacion, string>> = {
-  INVITADA: 'Compartir enlace',
-  SOLICITADA: 'Revisar solicitud',
+  INVITADA: 'Ver registro',
+  SOLICITADA: 'Ver registro',
   RECHAZADA: 'Ver motivo',
   PROGRAMADA: 'Abrir QR',
-  EN_VALIDACION: 'Validar identidad',
+  EN_VALIDACION: 'Ver entrega',
 }
 
 const comparar: Record<Campo, (a: Asignacion, b: Asignacion) => number> = {
@@ -193,7 +193,7 @@ export function TablaEventos({
       <div className="overflow-x-auto">
         <table className="block w-full text-left text-sm md:table md:min-w-[640px] md:table-fixed">
           <caption className="sr-only">
-            {historial ? 'Registro histórico de eventos y recepciones' : 'Reservas activas'}
+            {historial ? 'Registro histórico de eventos y recepciones' : 'Entregas activas'}
           </caption>
           <thead className="sr-only border-y border-border bg-background/60 text-xs text-muted-foreground focus-within:not-sr-only md:not-sr-only">
             <tr>

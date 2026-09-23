@@ -42,6 +42,21 @@ export const serviciosGas: Servicios = {
     return DriveApp.getFolderById(carpetaId).createFile(blob).getId()
   },
 
+  fotoPertenece: (id, asignacionId) => {
+    try {
+      const archivo = DriveApp.getFileById(id)
+      const carpetaId = tablaGas
+        .leer('CFG_General')
+        .find((f) => f.clave === 'carpeta_fotos_id')?.valor
+      if (archivo.isTrashed() || !archivo.getName().startsWith(`${asignacionId}_`)) return false
+      const padres = archivo.getParents()
+      while (padres.hasNext()) if (padres.next().getId() === carpetaId) return true
+      return false
+    } catch {
+      return false
+    }
+  },
+
   secretoHmac: () => leerPropiedad('GAS_HMAC_SECRET'),
   ahora: () => new Date(),
   uuid: () => Utilities.getUuid(),

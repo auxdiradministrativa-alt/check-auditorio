@@ -23,12 +23,17 @@ async function asignacionDelToken(token: string) {
   return estado.asignacion
 }
 
-/** Quien escaneó se identifica: la asignación pasa a EN_VALIDACION con su cuenta. */
-export async function solicitarRecepcion(token: string): Promise<Resultado> {
+/** Abre el acta únicamente cuando la persona pulsa Comenzar. */
+export async function comenzarRecepcion(token: string): Promise<Resultado> {
   return ejecutarAccion(async () => {
     const sesion = await requerirSesion()
-    await registro('qr.reclamar', { tokenSha256: huella(token), receptor: identidad(sesion) })
-    revalidatePath(`/r/${token}`)
+    const asignacion = await asignacionDelToken(token)
+    if (asignacion.invitadoCorreo) {
+      await registro('recepcion.iniciar', { id: asignacion.id, receptor: identidad(sesion) })
+    } else {
+      await registro('qr.reclamar', { tokenSha256: huella(token), receptor: identidad(sesion) })
+    }
+    revalidatePath('/panel', 'layout')
   })
 }
 

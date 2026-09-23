@@ -37,6 +37,7 @@ export function crearTablaMemoria(): Tabla & {
 export function crearServiciosMemoria(
   opciones: { ahora?: () => Date; secreto?: string } = {},
 ): Servicios {
+  const fotos = new Map<string, string>()
   const nonces = new Map<string, number>()
   return {
     conBloqueo: (fn) => fn(),
@@ -49,7 +50,12 @@ export function crearServiciosMemoria(
     sha256Hex,
     hmacSha256Hex: (secreto, texto) =>
       createHmac('sha256', secreto).update(texto, 'utf8').digest('hex'),
-    guardarFoto: () => `local-${randomUUID()}`,
+    guardarFoto: (nombre) => {
+      const id = `local-${randomUUID()}`
+      fotos.set(id, nombre)
+      return id
+    },
+    fotoPertenece: (id, asignacionId) => fotos.get(id)?.startsWith(`${asignacionId}_`) ?? false,
     secretoHmac: () => opciones.secreto ?? 'secreto-local',
     ahora: opciones.ahora ?? (() => new Date()),
     uuid: () => randomUUID(),

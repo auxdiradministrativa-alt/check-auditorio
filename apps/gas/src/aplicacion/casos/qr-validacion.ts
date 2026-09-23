@@ -28,14 +28,24 @@ export function reclamarQr(
     // Puerta del flujo anterior: jamás sobre un enlace personal, aunque se llame directo.
     if (a.invitadoCorreo)
       fallar('NO_AUTORIZADO', 'Este enlace es personal: ábrelo con la cuenta a la que fue enviado.')
-    if (a.receptor?.sub === receptor.sub) return vista(ctx, a)
+    if (
+      a.receptor?.sub === receptor.sub &&
+      (a.estado === 'EN_DILIGENCIAMIENTO' || a.estado === 'EN_VALIDACION') &&
+      vigenciaQr(a, ctx.srv.ahora(), ctx.catalogo.config()) !== 'VIGENTE'
+    )
+      fallar('QR_NO_VIGENTE', 'El plazo para recibir este espacio ha finalizado.')
+    if (a.receptor?.sub === receptor.sub && a.estado === 'EN_DILIGENCIAMIENTO') return vista(ctx, a)
+    if (a.receptor?.sub === receptor.sub && a.estado === 'EN_VALIDACION') {
+      ctx.asignaciones.actualizar(a.id, { estado: 'EN_DILIGENCIAMIENTO' })
+      return releer(ctx, a.id)
+    }
     const cfg = ctx.catalogo.config()
     if (estadoEfectivo(a, ctx.srv.ahora(), cfg) !== 'PROGRAMADA')
       fallar('QR_NO_VIGENTE', 'Este código ya fue usado.')
     if (vigenciaQr(a, ctx.srv.ahora(), cfg) !== 'VIGENTE')
       fallar('QR_NO_VIGENTE', 'El código no está vigente en este momento.')
     ctx.asignaciones.actualizar(a.id, {
-      estado: 'EN_VALIDACION',
+      estado: 'EN_DILIGENCIAMIENTO',
       receptor: { nombre: receptor.nombre, correo: receptor.correo, sub: receptor.sub },
     })
     ctx.bitacora.registrar('qr.reclamar', a.id, receptor.correo)

@@ -62,7 +62,7 @@ export function exigirSinCruce(
   if (cruce)
     fallar(
       'DATOS_INVALIDOS',
-      `El espacio ya está reservado de ${horaCorta(cruce.inicio)} a ${horaCorta(cruce.fin)} ese día.`,
+      `Ya existe una entrega del espacio de ${horaCorta(cruce.inicio)} a ${horaCorta(cruce.fin)} ese día.`,
     )
 }
 

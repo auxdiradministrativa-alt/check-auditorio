@@ -37,15 +37,19 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Field, Input } from '@/components/ui/field'
 import { Segmented } from '@/components/ui/segmented'
 import { Stepper } from '@/components/ui/stepper'
-import { formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
 import { uuid } from '@/lib/uuid'
 
 import { cerrarSesion } from '@/features/auth/acciones'
 
-import { firmarRecepcion } from './acciones'
+import { comenzarRecepcion, firmarRecepcion } from './acciones'
 import { ItemChecklist } from './item-checklist'
 import type { DatosReceptor, ErroresItem, ItemEstado } from './tipos'
 import { aItemInput, validarDatos, validarItems, type ErroresDatos } from './validacion'
+
+function comportamientoScroll(): ScrollBehavior {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
+}
 
 const PASOS = ['Identidad', 'Tus datos', 'Elementos', 'Condiciones', 'Términos', 'Revisar'] as const
 
@@ -56,18 +60,20 @@ export function FlujoRecepcion({
   catalogo,
   sesion,
   terminos,
+  disponible = true,
 }: {
   token: string
   asignacion: Asignacion
   espacio: Espacio
   catalogo: ElementoCatalogo[]
   sesion: Persona
+  disponible?: boolean
   terminos: Terminos
 }) {
   const router = useRouter()
   const [paso, setPaso] = useState(0)
   const [claveIdempotencia] = useState(uuid)
-  // Flujo por enlace: lo diligenciado en la solicitud se precarga y la persona solo lo revisa.
+  // Los datos disponibles se precargan para que la persona solo revise y complete.
   const [datos, setDatos] = useState<DatosReceptor>(() => {
     const s = asignacion.solicitud
     return {
@@ -94,6 +100,37 @@ export function FlujoRecepcion({
   const [enviando, setEnviando] = useState(false)
   const [reautenticar, setReautenticar] = useState(false)
   const [avisoTodoConforme, setAvisoTodoConforme] = useState<string | null>(null)
+  const contenedorRef = useRef<HTMLDivElement>(null)
+  const firmadoRef = useRef(false)
+  const quitarProteccionRef = useRef<(() => void) | null>(null)
+  const pasoAnteriorRef = useRef(paso)
+  const [estadoInicial] = useState(() => JSON.stringify({ datos, items }))
+  const hayCambios =
+    aceptaTerminos || autorizaDatos || JSON.stringify({ datos, items }) !== estadoInicial
+
+  useEffect(() => {
+    if (!hayCambios) return
+    function protegerSalida(event: BeforeUnloadEvent) {
+      if (firmadoRef.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', protegerSalida)
+    const quitarProteccion = () => window.removeEventListener('beforeunload', protegerSalida)
+    quitarProteccionRef.current = quitarProteccion
+    return quitarProteccion
+  }, [hayCambios])
+
+  useEffect(() => {
+    if (pasoAnteriorRef.current === paso) return
+    pasoAnteriorRef.current = paso
+    const titulo = contenedorRef.current?.querySelector<HTMLElement>('h1, h2')
+    if (titulo) {
+      titulo.tabIndex = -1
+      titulo.focus({ preventScroll: true })
+    }
+    window.scrollTo({ top: 0, behavior: comportamientoScroll() })
+  }, [paso])
 
   const elementos = catalogo.filter((e) => e.categoria !== 'ESPACIO')
   const condiciones = catalogo.filter((e) => e.categoria === 'ESPACIO')
@@ -115,7 +152,14 @@ export function FlujoRecepcion({
 
   function irA(n: number) {
     setPaso(n)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function enfocar(selector: string) {
+    requestAnimationFrame(() => {
+      const control = contenedorRef.current?.querySelector<HTMLElement>(selector)
+      control?.focus({ preventScroll: true })
+      control?.scrollIntoView({ behavior: comportamientoScroll(), block: 'center' })
+    })
   }
 
   function actualizarItem(id: string, cambio: (previo: ItemEstado) => ItemEstado) {
@@ -167,25 +211,57 @@ export function FlujoRecepcion({
     )
   }
 
-  function continuar() {
+  async function continuar() {
+    if (enviando) return
+    if (paso === 0) {
+      setEnviando(true)
+      setErrorTerminos(null)
+      try {
+        const r = await comenzarRecepcion(token)
+        if (!r.ok) {
+          setErrorTerminos(r.mensaje)
+          return
+        }
+      } catch {
+        setErrorTerminos('No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.')
+        return
+      } finally {
+        setEnviando(false)
+      }
+    }
     if (paso === 1) {
       const e = validarDatos(datos)
       setErroresDatos(e)
-      if (Object.keys(e).length) return
+      if (Object.keys(e).length) {
+        enfocar(e.rol ? '[name="rol"]' : '[aria-invalid="true"]')
+        return
+      }
     }
     if (paso === 2 || paso === 3) {
       const e = validarItems(grupoActual, items)
       setErroresItems(e)
       const primero = Object.keys(e)[0]
       if (primero) {
-        document
-          .getElementById(`item-${primero}`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        const error = e[primero]
+        const selector = error?.estado
+          ? 'input[type="radio"]'
+          : error?.cantidadRecibida
+            ? 'input[inputmode="numeric"]'
+            : error?.observacion
+              ? 'textarea'
+              : 'input[type="file"], button'
+        enfocar(
+          selector
+            .split(', ')
+            .map((control) => `#item-${CSS.escape(primero)} ${control}`)
+            .join(', '),
+        )
         return
       }
     }
     if (paso === 4) {
       if (!aceptaTerminos || !autorizaDatos) {
+        enfocar(!aceptaTerminos ? '#acepta' : '#datos')
         setErrorTerminos(
           'Debes aceptar los términos y autorizar el tratamiento de datos para continuar.',
         )
@@ -197,6 +273,7 @@ export function FlujoRecepcion({
   }
 
   async function enviar() {
+    if (enviando || firmadoRef.current) return
     const payload = {
       claveIdempotencia,
       rol: datos.rol,
@@ -215,22 +292,40 @@ export function FlujoRecepcion({
     }
     setEnviando(true)
     setErrorTerminos(null)
-    const resultado = await firmarRecepcion(token, r.data)
-    if (resultado.ok) {
-      router.push(`/r/${token}/confirmada`)
-      return
+    try {
+      const resultado = await firmarRecepcion(token, r.data)
+      if (resultado.ok) {
+        firmadoRef.current = true
+        quitarProteccionRef.current?.()
+        router.push(`/r/${token}/confirmada`)
+        return
+      }
+      setReautenticar(resultado.codigo === 'REAUTENTICAR' || resultado.codigo === 'SESION')
+      setErrorTerminos(resultado.mensaje)
+    } catch {
+      setErrorTerminos('No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.')
+    } finally {
+      if (!firmadoRef.current) setEnviando(false)
     }
-    setEnviando(false)
-    setReautenticar(resultado.codigo === 'REAUTENTICAR' || resultado.codigo === 'SESION')
-    setErrorTerminos(resultado.mensaje)
   }
 
   const novedades = catalogo.filter((el) => items[el.id]?.estado === 'NOVEDAD')
   const revisados = grupoActual.filter((el) => items[el.id]?.estado !== null).length
 
   return (
-    <div className="flex flex-col gap-6 pb-28">
+    <div ref={contenedorRef} className="flex flex-col gap-6 pb-28">
       <Stepper pasos={PASOS} actual={paso} />
+      {paso === 0 && !disponible && (
+        <Alert tono="info" icono={<Clock aria-hidden />} titulo="Entrega programada">
+          Podrás comenzar la recepción el {formatearFechaHora(asignacion.recepcionDesde)}. Vuelve a
+          abrir este enlace cuando recibas el espacio.
+        </Alert>
+      )}
+      {paso === 0 && errorTerminos && (
+        <p role="alert" className="text-sm text-destructive">
+          {errorTerminos}
+        </p>
+      )}
 
       {paso === 0 && (
         <>
@@ -238,7 +333,7 @@ export function FlujoRecepcion({
             <h1 className="text-page sm:text-page-lg">Recepción del espacio</h1>
             <p className="text-muted-foreground">
               Vas a dejar constancia de que recibes el espacio y sus elementos. Tu cuenta
-              institucional funciona como firma.
+              institucional funciona como firma del acta de conformidad.
             </p>
           </div>
           <Card>
@@ -304,7 +399,12 @@ export function FlujoRecepcion({
             </CardDescription>
           </CardHeader>
           <CardBody className="flex flex-col gap-5">
-            <div className="flex flex-col gap-1.5">
+            <div
+              className="flex flex-col gap-1.5"
+              role="group"
+              aria-labelledby="rol-label"
+              aria-describedby={erroresDatos.rol ? 'rol-error' : undefined}
+            >
               <span className="text-sm font-semibold" id="rol-label">
                 Rol
               </span>
@@ -316,7 +416,7 @@ export function FlujoRecepcion({
                 onCambio={(rol) => setDatos({ ...datos, rol })}
               />
               {erroresDatos.rol && (
-                <p role="alert" className="text-sm font-medium text-destructive">
+                <p id="rol-error" role="alert" className="text-sm font-medium text-destructive">
                   {erroresDatos.rol}
                 </p>
               )}
@@ -329,11 +429,15 @@ export function FlujoRecepcion({
                 value={datos.dependencia}
                 onChange={(e) => setDatos({ ...datos, dependencia: e.target.value })}
                 aria-invalid={!!erroresDatos.dependencia}
+                aria-describedby={erroresDatos.dependencia ? 'dependencia-error' : undefined}
               />
             </Field>
             <Field id="cargo" label="Cargo" opcional error={erroresDatos.cargo}>
               <Input
                 id="cargo"
+                autoComplete="organization-title"
+                aria-invalid={!!erroresDatos.cargo}
+                aria-describedby={erroresDatos.cargo ? 'cargo-error' : undefined}
                 maxLength={LIMITES.cargoMax}
                 placeholder="Ej. Coordinadora académica"
                 value={datos.cargo}
@@ -354,6 +458,7 @@ export function FlujoRecepcion({
                     setDatos({ ...datos, celular: e.target.value.replace(/\D/g, '') })
                   }
                   aria-invalid={!!erroresDatos.celular}
+                  aria-describedby={erroresDatos.celular ? 'celular-error' : undefined}
                 />
               </Field>
               <Field
@@ -371,6 +476,9 @@ export function FlujoRecepcion({
                     setDatos({ ...datos, asistentesEstimados: e.target.value.replace(/\D/g, '') })
                   }
                   aria-invalid={!!erroresDatos.asistentesEstimados}
+                  aria-describedby={
+                    erroresDatos.asistentesEstimados ? 'asistentes-error' : 'asistentes-hint'
+                  }
                 />
               </Field>
             </div>
@@ -466,6 +574,8 @@ export function FlujoRecepcion({
             </ol>
             <Checkbox
               id="acepta"
+              aria-invalid={!!errorTerminos && !aceptaTerminos}
+              aria-describedby={errorTerminos ? 'terminos-error' : undefined}
               checked={aceptaTerminos}
               onChange={(e) => setAceptaTerminos(e.target.checked)}
             >
@@ -473,13 +583,15 @@ export function FlujoRecepcion({
             </Checkbox>
             <Checkbox
               id="datos"
+              aria-invalid={!!errorTerminos && !autorizaDatos}
+              aria-describedby={errorTerminos ? 'terminos-error' : undefined}
               checked={autorizaDatos}
               onChange={(e) => setAutorizaDatos(e.target.checked)}
             >
               {terminos.tratamientoDatos}
             </Checkbox>
             {errorTerminos && (
-              <p role="alert" className="text-sm font-medium text-destructive">
+              <p id="terminos-error" role="alert" className="text-sm font-medium text-destructive">
                 {errorTerminos}
               </p>
             )}
@@ -491,8 +603,9 @@ export function FlujoRecepcion({
         <>
           <div className="flex flex-col gap-2">
             <h2 className="text-section">Revisa y envía</h2>
-            <p className="text-sm text-muted-foreground">
-              Al enviar, la constancia queda sellada y no se puede modificar.
+            <p id="firma-descripcion" className="text-sm text-muted-foreground">
+              Al firmar con tu identidad institucional, confirmas la recepción del espacio y las
+              novedades registradas. El acta queda sellada y no se puede modificar.
             </p>
           </div>
           <Card>
@@ -591,14 +704,27 @@ export function FlujoRecepcion({
             </Button>
           )}
           {paso < PASOS.length - 1 ? (
-            <Button variante="primario" tamano="lg" bloque onClick={continuar}>
-              {paso === 0 ? 'Comenzar' : 'Continuar'}
+            <Button
+              variante="primario"
+              tamano="lg"
+              bloque
+              onClick={continuar}
+              disabled={enviando || (paso === 0 && !disponible)}
+            >
+              {enviando ? 'Abriendo acta…' : paso === 0 ? 'Comenzar recepción' : 'Continuar'}
               <ArrowRight aria-hidden />
             </Button>
           ) : (
-            <Button variante="oro" tamano="lg" bloque onClick={enviar} disabled={enviando}>
+            <Button
+              variante="oro"
+              tamano="lg"
+              bloque
+              onClick={enviar}
+              disabled={enviando}
+              aria-describedby="firma-descripcion"
+            >
               <Send aria-hidden />
-              {enviando ? 'Enviando…' : 'Confirmar recepción'}
+              {enviando ? 'Enviando…' : 'Firmar acta de recepción'}
             </Button>
           )}
         </div>
