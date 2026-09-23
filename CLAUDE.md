@@ -10,15 +10,18 @@ Idioma de UI, dominio y commits: **español**. Zona horaria: `America/Bogota`.
 
 ## 1. Flujo de negocio (fuente de verdad)
 
-1. **Infraestructura programa** una asignación (espacio, evento, inicio, fin) → se genera un **QR de un solo uso**.
-2. **Quien recibe** (docente o administrativo, solo cuentas `@americana.edu.co`) escanea → inicia sesión con Google → la asignación pasa a `EN_VALIDACION`.
-3. **Infraestructura confirma o rechaza** en su panel que esa cuenta es la persona presente. Rechazar libera el QR.
-4. Quien recibe diligencia: rol, dependencia, cargo (opc.), celular, asistentes → **checklist** por elemento (`CONFORME`/`NOVEDAD`; cantidad recibida en equipos/mobiliario; **foto obligatoria solo si hay novedad**) → condiciones del espacio → **términos + autorización de datos** (Ley 1581, casillas separadas, sin marcar por defecto) → envía.
-5. El servidor **sella**: consecutivo `REC-000123`, hora del servidor, SHA-256 del registro canónico, código de verificación. Queda `RECIBIDA`.
-6. Se notifica por correo (receptor + destinatarios fijos). **No hay acta Doc/PDF**: constancia = fila en Sheets + correo HTML + página `/verificar/[consecutivo]` (recalcula hash; PDF solo con imprimir).
-7. **Devolución**: la declara **solo quien recibió**, desde enlace personal del correo (buenas condiciones / con novedades + foto). Infraestructura **no participa**. Si vence el plazo → `DEVOLUCION_VENCIDA` + alerta a Infraestructura. Control cruzado: diferencias halladas en la siguiente entrega se asocian al turno anterior.
+**Flujo por solicitud con enlace personal (decisión de Leo, 2026-09-23)** — spec completa en
+[`docs/superpowers/specs/2026-09-23-flujo-solicitud-por-enlace.md`](docs/superpowers/specs/2026-09-23-flujo-solicitud-por-enlace.md).
 
-Estados: `PROGRAMADA → EN_VALIDACION → EN_DILIGENCIAMIENTO → RECIBIDA → DEVUELTA | DEVOLUCION_VENCIDA`; terminales `ANULADA`, `EXPIRADA`.
+1. La solicitud llega por **cualquier canal**. **Infraestructura emite un enlace/QR amarrado al correo `@americana.edu.co` de quien solicita** (`INVITADA`): solo esa cuenta de Google lo abre; otra cuenta ve «Este enlace es personal» sin ningún dato del evento. Caduca a las `horas_vigencia_invitacion` (72) si no se diligencia.
+2. **Quien solicita** abre el enlace, inicia sesión con **esa** cuenta y diligencia evento, fecha, franja y sus datos (rol, dependencia, cargo opc., celular, asistentes) + **autorización de datos** (Ley 1581, sin marcar por defecto) → `SOLICITADA`. Un solo espacio (el auditorio): no lo elige.
+3. **Infraestructura aprueba** (`PROGRAMADA`, revalida el cruce de franja y aprueba solo la versión que vio) **o devuelve con motivo** (`RECHAZADA`); quien solicita corrige con sus datos precargados y vuelve a `SOLICITADA`. Sin aprobar, la solicitud vence en el `inicio` propuesto.
+4. **No hay validación de presencia por el gestor.** Desde `inicio − minutos_vigencia_qr_antes` (30) hasta `fin`, el mismo enlace muestra «Confirmar recepción» (y a la hora de inicio llega un correo que lo recuerda). **Riesgo aceptado:** la constancia prueba la cuenta que confirmó, no la presencia física.
+5. **Checklist** por elemento (`CONFORME`/`NOVEDAD`; cantidad en equipos/mobiliario; **foto obligatoria solo si hay novedad**; atajo «Todo en buen estado» que no pisa una novedad ya descrita) → condiciones del espacio → **términos + autorización** (casillas separadas, sin marcar) → envía.
+6. El servidor **sella**: consecutivo `REC-000123`, hora del servidor, SHA-256 del registro canónico, código de verificación. Queda `RECIBIDA`. **No hay acta Doc/PDF**: constancia = fila en Sheets + correo HTML + `/verificar/[consecutivo]` (recalcula hash; PDF solo con imprimir).
+7. **Devolución**: la declara **solo quien recibió**, desde su enlace personal (buenas condiciones / con novedades + foto). Infraestructura **no participa**. Si vence el plazo → `DEVOLUCION_VENCIDA` + alerta. Control cruzado: diferencias en la siguiente entrega se asocian al turno anterior.
+
+Estados: `INVITADA → SOLICITADA ⇄ RECHAZADA → PROGRAMADA → EN_DILIGENCIAMIENTO → RECIBIDA → DEVUELTA | DEVOLUCION_VENCIDA`; terminales `ANULADA`, `EXPIRADA`. **Flujo anterior** (`PROGRAMADA → EN_VALIDACION` por QR de un solo uso y validación del gestor): su código se conserva solo para filas históricas; la web ya no crea filas nuevas por ahí y `qr.reclamar` rechaza toda fila con enlace personal.
 Fuera de alcance v1: **externos** (sin cuenta del dominio), integración con SIGAF.
 
 ## 2. Arquitectura (decidida, no reabrir)
@@ -29,14 +32,12 @@ Navegador ─► Vercel · Next.js 16 (UI + auth + validación + sello)
                  ▼
              Apps Script independiente (cuenta institucional de Infraestructura)
                · ÚNICO escritor del Google Sheet (LockService) · CacheService · Drive (fotos)
-                 │  webhook no bloqueante {evento, id} + barrido periódico
-                 ▼
-             n8n (servidor privado institucional) · correos HTML vía Gmail · recordatorios · alertas
+               · activador de tiempo cada 10 min → procesarOutbox → MailApp (correos HTML)
 ```
 
-- **BD = Google Sheets** (lo opera Infraestructura sin TI). Nunca escribir la hoja desde Vercel. **n8n sí (decisión de Leo, 2026-09-15):** lee el libro con nodos nativos y escribe solo `notificacion`/`notif_intentos`/`notif_reserva_hasta`, que no entran en el hash; no pasa por Apps Script (ver `docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md` §4.quater).
-- **Primero guardar, luego notificar.** El correo nunca es el registro.
-- n8n **no** está en la ruta crítica: si cae, la recepción ya existe y se reintenta (outbox).
+- **BD = Google Sheets** (lo opera Infraestructura sin TI). Nunca escribir la hoja desde Vercel.
+- **Sin n8n en notificaciones (decisión de Leo, 2026-09-23).** Los correos los envía el propio Apps Script desde la cuenta dueña: bandeja de salida por correo en las columnas `notif_*`, reservada con el mismo `LockService`, **enviada fuera del bloqueo**, 3 intentos y respeto de la cuota diaria. El flujo de n8n (commit `d0e0275`, `docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md`) queda **archivado, sin borrar**, hasta probar el activador en la cuenta real.
+- **Primero guardar, luego notificar.** El correo nunca es el registro: todo lo que avisa ya se ve en la web, y los correos enlazan a `/mi-solicitud/[id]` (el token del QR lo deriva la web; Apps Script no lo conoce).
 
 ## 3. Estado actual del repo (Bloque 1 terminado: mecanismo completo sin credenciales)
 
@@ -44,10 +45,11 @@ La Fase 2 está **escrita y probada en modo local**: el flujo entero corre contr
 irá a Apps Script, sobre un libro en memoria. **Google conectado y producción desplegada el
 2026-09-15** en `https://check-auditorio-web.vercel.app`: prueba de uso completa en producción con
 la sesión real (REC-000001). Guía y estado de Google en
-[`docs/google-workspace.md`](docs/google-workspace.md). **Siguiente capítulo: n8n** — punto de
-partida y decisiones a preguntar en
-[`docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md`](docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md).
-Latencia medida de Apps Script: páginas 2–4 s, escrituras 13–20 s.
+[`docs/google-workspace.md`](docs/google-workspace.md). **Flujo por enlace (2026-09-23): construido
+y probado en la rama `flujo-solicitud`, pendiente de desplegar** — el orden exacto (`push` →
+`instalar()` con la cuenta dueña → nueva versión → `probar-gas` → merge) está en la spec §10.bis;
+saltárselo tumba los `doPost` o las escrituras. Latencia medida de Apps Script: páginas 2–4 s,
+escrituras 13–20 s.
 
 ```
 packages/shared/          contrato, sin build (se consume como TS fuente)
@@ -57,10 +59,13 @@ packages/shared/          contrato, sin build (se consume como TS fuente)
 apps/gas/                 núcleo del registro — Clean Architecture, esbuild → dist/codigo.js
   src/dominio/            reglas puras: asignación, recepción, devolución, sello, errores
   src/aplicacion/         puertos · enrutador (acción → caso) · sobre (HMAC, ventana, nonce)
-                          casos/ un módulo por caso de uso
+                          casos/ un módulo por caso de uso (solicitud.ts: invitar, diligenciar, decidir, iniciar;
+                          notificaciones.ts: la bandeja de correo)
+                          correo/ plantillas HTML puras + colores.ts (Sage Garden en hex)
   src/infraestructura/
     hojas/                esquema (columnas §5), semilla, repositorios sobre la interfaz Tabla
-    gas/                  tabla-gas, servicios-gas (Lock, Cache, Digest, Drive), instalar, main (doGet/doPost)
+    gas/                  tabla-gas, servicios-gas (Lock, Cache, Digest, Drive), correo-gas (MailApp),
+                          instalar, main (doGet/doPost/procesarOutbox)
     memoria/              Tabla y servicios en memoria (pruebas y desarrollo local)
   src/nucleo.ts           raíz de composición: crearNucleo(tabla, servicios)
   pruebas/                node:test contra el núcleo en memoria
@@ -69,15 +74,17 @@ apps/web/                 Next.js 16.3.5 · React 19.3 · Tailwind 4.3 · lucide
                           /panel?evento=<id>#operacion · /panel?nuevo=1#operacion
                           /panel/asignaciones(/nueva|/[id]) y /panel/recepciones redirigen al centro
                           /r/[token](/confirmada) · /devolucion/[id]?t= · /verificar/[consecutivo]
-  src/features/<f>/       UI del caso + acciones.ts (Server Actions) en auth · panel · fotos · recepcion · devolucion; verificacion solo UI
+                          /mi-solicitud/[id] (enlace estable de los correos: sesión → paso que toca)
+  src/features/<f>/       UI del caso + acciones.ts (Server Actions) en auth · panel · fotos · recepcion · solicitud · devolucion; verificacion solo UI
   src/servidor/           solo servidor (`server-only`)
     entorno.ts            variables validadas; modos gas|memoria y google|local
     registro/             ÚNICO puerto de datos: index → cliente-gas (POST firmado) | cliente-memoria
                           lecturas: catálogo con revalidación a 60 s en GAS; estados sin caché persistente
     auth/                 better-auth (Google, sin BD) · sesion-local · sesion · permisos (guardas)
     tokens.ts · qr.ts · accion.ts (ejecutarAccion → Resultado)
-  e2e/                    Playwright: entrega/recepción y gestión unificada (QR, filtros, CSV, móvil)
-n8n/workflows/            vacío (después del MVP)
+  e2e/                    Playwright: solicitud por enlace de punta a punta, gestión (enlace, filtros, CSV,
+                          móvil) e ingreso; apoyo.ts con cuentas y franjas compartidas
+n8n/workflows/            vacío (notificaciones sin n8n desde 2026-09-23)
 ```
 
 Centro de gestión: `features/panel/centro-gestion.tsx` compone operación, filtros y tablas paginadas.
@@ -99,6 +106,12 @@ Costuras que no se ven leyendo un solo fichero:
 - **El POST a Apps Script no se reintenta; la lectura de su respuesta sí** (`registro/cliente-gas.ts`): doPost ejecuta y responde 302 a un eco en googleusercontent que a veces da 404 o redirige a `/exec` (se leería doGet). Se sigue la redirección a mano, se relee el eco hasta 4 veces y se valida la forma. Repetir el POST duplicaría la acción.
 - **`RefrescoAutomatico` espera a que termine el refresco anterior**: con GAS un refresco dura segundos; un `setInterval` de 4 s cancelaba cada uno y el panel no se enteraba de la solicitud del receptor. En memoria no se ve.
 - **Escritura no transaccional**: si Apps Script falla a mitad de `recepcion.registrar`, pueden quedar filas parciales. La clave de idempotencia permite reintentar; no hay rollback.
+- **El enlace personal tiene dos puertas y las dos cuentan**: la web (`app/r/[token]/page.tsx`, `features/solicitud/acciones.ts`, `/mi-solicitud`) compara el correo de la sesión con `invitadoCorreo` antes de pintar nada, y el núcleo lo exige otra vez (`exigirInvitado` + `exigirReceptor` por `sub`). La web decide qué se ve; el núcleo, qué se escribe.
+- **La vista `Asignacion` trae los plazos calculados** (`tokenVence`, `recepcionDesde`): la web nunca escribe 72 h ni 30 min. Si Infraestructura cambia `CFG_General`, el panel y el solicitante lo muestran solos.
+- **`solicitadaEn` es la versión de la solicitud**: `solicitud.decidir` exige la que el gestor vio. Si quien solicita corrigió entre medias, la aprobación falla y hay que volver a revisar.
+- **`tabla-gas` es estricto con las columnas**: si falta una, falla con «Faltan columnas… Ejecuta instalar()». Tras un cambio de esquema, toda escritura falla hasta ejecutar `instalar()` en el libro real — a propósito, para no escribir filas a medias.
+- **La bandeja de correo reserva con bloqueo y envía sin él**: las firmas de los usuarios esperan el bloqueo 20 s y `MailApp` tarda segundos. Hueco aceptado: si Apps Script muere entre enviar y marcar, ese correo sale dos veces.
+- **Si `pnpm e2e` llena el log de `unhandledRejection: JSON.parse` sin stack**, es `.next-e2e/dev/cache/next-devtools-config.json` escrito a medias (bytes nulos) por una corrida interrumpida: se borra y Next lo regenera. No es código nuestro (medido el 2026-09-23).
 
 ## 4. Reglas del código
 
@@ -115,28 +128,29 @@ Costuras que no se ven leyendo un solo fichero:
 
 Pestañas **editables por Infraestructura**:
 
-| Hoja                | Columnas                                                                                        |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `CAT_Espacios`      | id, nombre, ubicacion, capacidad, activo                                                        |
-| `CAT_Elementos`     | id, espacio_id, nombre, categoria (EQUIPO/MOBILIARIO/ESPACIO), cantidad_esperada, orden, activo |
-| `CFG_Entregadores`  | correo, nombre, activo (quién puede usar `/panel`)                                              |
-| `CFG_Destinatarios` | correo, nombre, evento (recepcion/devolucion/novedad/vencida), activo                           |
-| `CFG_Terminos`      | version, texto_clausulas (JSON), texto_datos, sha256, vigente                                   |
-| `CFG_General`       | clave, valor (horas_plazo_devolucion, minutos_vigencia_qr_antes, url_app…)                      |
+| Hoja                | Columnas                                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `CAT_Espacios`      | id, nombre, ubicacion, capacidad, activo                                                                                    |
+| `CAT_Elementos`     | id, espacio_id, nombre, categoria (EQUIPO/MOBILIARIO/ESPACIO), cantidad_esperada, orden, activo                             |
+| `CFG_Entregadores`  | correo, nombre, activo (quién puede usar `/panel`)                                                                          |
+| `CFG_Destinatarios` | correo, nombre, evento (recepcion/devolucion/novedad/vencida), activo                                                       |
+| `CFG_Terminos`      | version, texto_clausulas (JSON), texto_datos, sha256, vigente                                                               |
+| `CFG_General`       | clave, valor (horas_plazo_devolucion, minutos_vigencia_qr_antes, horas_vigencia_invitacion, url_app, notificaciones_desde…) |
 
 Pestañas **protegidas (solo el script)** — nunca se editan ni borran; anular = evento en bitácora:
 
-| Hoja                 | Columnas clave                                                                                                                                                                                                                                                                                                               |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Asignaciones`       | id (uuid), espacio_id, evento, inicio, fin, estado, entregado_por, creada_en, token_sha256, token_vence, receptor_correo, receptor_nombre, receptor_sub, consecutivo                                                                                                                                                         |
-| `Recepciones`        | consecutivo, asignacion_id, receptor_nombre, receptor_correo, receptor_sub, rol, dependencia, cargo, celular, asistentes, terminos_version, terminos_sha256, sellada_en, sha256, codigo_verificacion, clave_idempotencia, user_agent, notificacion (PENDIENTE/ENVIANDO/ENVIADO/FALLIDO), notif_intentos, notif_reserva_hasta |
-| `Recepcion_Detalle`  | consecutivo, elemento_id, elemento_nombre, categoria, cantidad_esperada, cantidad_recibida, estado, observacion, foto_ids                                                                                                                                                                                                    |
-| `Devoluciones`       | consecutivo, resultado, declarada_en, sha256, clave_idempotencia, notificacion…                                                                                                                                                                                                                                              |
-| `Devolucion_Detalle` | consecutivo, elemento_id, observacion, foto_ids                                                                                                                                                                                                                                                                              |
-| `Bitacora`           | ts, evento, entidad_id, actor_correo, datos_json                                                                                                                                                                                                                                                                             |
+| Hoja                 | Columnas clave                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Asignaciones`       | id (uuid), espacio_id, evento, inicio, fin, estado, entregado_por, creada_en, token_sha256, token_vence, receptor_correo, receptor_nombre, receptor_sub, consecutivo; **flujo por enlace:** invitado_correo, solicitada_en, motivo_rechazo, solicitud_{rol,dependencia,cargo,celular,asistentes}, autoriza_datos_{en,version,sha256}, notif_{decision,confirmacion,vencida} con sus `_intentos` y `_reserva` |
+| `Recepciones`        | consecutivo, asignacion_id, receptor_nombre, receptor_correo, receptor_sub, rol, dependencia, cargo, celular, asistentes, terminos_version, terminos_sha256, sellada_en, sha256, codigo_verificacion, clave_idempotencia, user_agent, notificacion (PENDIENTE/ENVIANDO/ENVIADO/FALLIDO), notif_intentos, notif_reserva_hasta                                                                                 |
+| `Recepcion_Detalle`  | consecutivo, elemento_id, elemento_nombre, categoria, cantidad_esperada, cantidad_recibida, estado, observacion, foto_ids                                                                                                                                                                                                                                                                                    |
+| `Devoluciones`       | consecutivo, resultado, declarada_en, sha256, clave_idempotencia, notificacion…                                                                                                                                                                                                                                                                                                                              |
+| `Devolucion_Detalle` | consecutivo, elemento_id, observacion, foto_ids                                                                                                                                                                                                                                                                                                                                                              |
+| `Bitacora`           | ts, evento, entidad_id, actor_correo, datos_json                                                                                                                                                                                                                                                                                                                                                             |
 
 Siempre IDs estables (uuid/consecutivo), **nunca número de fila**. Límite: 20 M celdas por libro.
 La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esquema.ts` (la escribe `instalar()`); esta tabla la resume.
+Las columnas del flujo por enlace (2026-09-23) van **al final** y `instalar()` las añade a un libro existente sin tocar filas; ninguna entra en el sello (`contenidoRecepcion`), así que las constancias anteriores siguen «Íntegra». `token_vence` cambia de sentido con el estado (invitación: +72 h; solicitada: el `inicio` propuesto; aprobada: el `fin`).
 `receptor_nombre` (Asignaciones) y `categoria` (Recepcion_Detalle) se añadieron en el Bloque 1: la tarjeta de validación y la constancia los necesitan sin cruzar hojas. Todas las celdas de las pestañas protegidas son texto plano. `DEVOLUCION_VENCIDA` no se escribe: se deriva al leer (`dominio/asignacion.ts`).
 
 ## 6. Fase 2 — Mecanismo (orden sugerido, criterios de aceptación)
@@ -171,12 +185,11 @@ La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esque
 
 - ✅ Editar a mano una celda de `Recepcion_Detalle` → `/verificar` muestra "Alterada".
 
-**2.6 n8n** (`n8n/workflows/*.json`, sin credenciales) — WF-01 notificar recepción (webhook + barrido → `outbox.reclamar` → datos → Code arma HTML → Gmail → `outbox.confirmar`), WF-02 recordatorio devolución, WF-03 devolución declarada/vencida, WF-00 errores.
+**2.6 Notificaciones — ~~n8n~~ sustituido por Apps Script (2026-09-23)**, spec del flujo por enlace §6 y §7. Un activador de tiempo (`procesarOutbox`, cada 10 min, lo crea `instalar()`) envía con `MailApp` desde la cuenta dueña: decisión (aprobada/devuelta), «Confirma la recepción» al llegar el inicio, constancia (solicitante + destinatarios fijos) y devolución vencida. El diseño con n8n (WF-00…03) queda archivado en el commit `d0e0275`.
 
-- Solo **credencial Gmail** (OAuth de la cuenta de Infraestructura; cliente Interno o publicado: en "Testing" el token vence a los 7 días). Header Auth en webhooks.
-- n8n 2.x: Code node aislado y **sin `$env`**; configuración llega desde Apps Script. Guardar ≠ Publicar.
-- Correo: escapar todo texto del usuario, estilos en línea, **< 102 KB** (Gmail recorta), sin imágenes embebidas; enlace de devolución **solo** en el correo del receptor; sin documento/celular en el de destinatarios fijos.
-- ✅ Webhook y barrido simultáneos → un solo correo. 3 fallos → `FALLIDO` + alerta.
+- Correo: escapar todo texto del usuario, estilos en línea, **< 102 KB** (Gmail recorta), texto plano en el mismo envío; enlace de devolución **solo** en el correo de quien recibió; sin celular ni enlaces personales en el de destinatarios fijos. Vista previa: `pnpm --filter @check-auditorio/gas vista-correo`.
+- Requiere el permiso `script.send_mail`: lo autoriza la cuenta dueña al ejecutar `instalar()`, nunca el agente.
+- ✅ (núcleo) Dos barridos seguidos → un solo envío; 3 fallos → `FALLIDO` + bitácora; sin cuota → espera sin gastar intento; no envía la confirmación antes de `inicio`. **Pendiente con Google real:** cuotas de `MailApp` y del activador en la cuenta `auxdiradministrativa@`.
 
 ## 7. Fase 3 — Deploy
 
@@ -188,8 +201,8 @@ La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esque
   - Si en producción `/api/auth/*` da 404, la app cree estar en modo local: falta una variable de Google o `BETTER_AUTH_SECRET` (el 500 de las páginas nombra cuáles en el log).
 - Vercel: Root Directory `apps/web`, pnpm detectado por lockfile, Node 24. Variables: `NEXT_PUBLIC_APP_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET`, `GAS_WEBAPP_URL`, `GAS_HMAC_SECRET` (ver `apps/web/.env.example`).
 - Google Cloud: cliente OAuth con redirect `https://<dominio>/api/auth/callback/google` y el de localhost.
-- Vercel Hobby = solo uso personal no comercial; confirmar plan/cuenta institucional antes de producción. Cron de Hobby: 1 vez/día → los recordatorios los hace n8n.
-- Dueña de todo (Sheet, script, Drive, Gmail n8n, Vercel): **cuenta institucional de Infraestructura**, no personal.
+- Vercel Hobby = solo uso personal no comercial; confirmar plan/cuenta institucional antes de producción. Cron de Hobby: 1 vez/día → los recordatorios los hace el activador de Apps Script.
+- Dueña de todo (Sheet, script, Drive, correo, Vercel): **cuenta institucional de Infraestructura**, no personal.
 
 ## 8. Decisiones abiertas (preguntar a Leonardo antes de implementar)
 
@@ -199,7 +212,7 @@ La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esque
 4. ~~Correo/cuenta de Infraestructura dueña del sistema.~~ **Cerrada (2026-09-15):** `auxdiradministrativa@americana.edu.co` es dueña de Sheet, script, Drive, Gmail, OAuth y repo; a esa persona se le entrega el proyecto. Las keys/credenciales de Google Workspace las configura Leonardo: avisarle al llegar a ese punto, no crearlas.
    **MVP 2026-09-15 (confirmado por Leonardo):** sale **sin correo** (n8n después; la constancia vive en la hoja + `/verificar` y el enlace de devolución se muestra en la pantalla de confirmación). Nº 3 por defecto en `CFG_General`: QR vigente desde **30 min** antes del inicio; devolución hasta **24 h** tras el fin. Nº 7: términos de ejemplo marcados **borrador** hasta el texto de Jurídica.
 
-5. n8n: ¿expuesto a internet por HTTPS? versión (1.x/2.x).
+5. ~~n8n: ¿expuesto a internet por HTTPS? versión.~~ **Cerrada (2026-09-23):** sin n8n; notifica Apps Script.
 6. ¿Control Interno exige PDF archivado?
 7. Texto final de términos (Jurídica).
 8. Plan de Vercel.

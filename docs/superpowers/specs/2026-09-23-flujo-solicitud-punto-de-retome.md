@@ -1,5 +1,14 @@
 # Punto de retome — flujo por solicitud con enlace (2026-09-23)
 
+> ✅ **CERRADO (2026-09-23, sesión siguiente).** Los 3 hechos-ancla se confirmaron en disco. Punto 6
+> completo: deudas 1-2 (`612b966`: la vista trae `tokenVence` y `recepcionDesde`), e2e reescritos
+> (`ingreso`, `centro-gestion`, `solicitud-por-enlace` + `apoyo.ts`), control negativo en núcleo y
+> e2e, revisión con `feature-dev:code-reviewer` sin hallazgos de confianza alta, formulario muerto
+> de «Crear evento» retirado, spec y `CLAUDE.md` al día. Puerta: `pnpm check` ✓ · núcleo 31/31 ·
+> build ✓ · `pnpm e2e` 5/5. Deuda 3 (`/mi-solicitud` con filas del flujo anterior) se acepta: esas
+> filas no tienen enlace personal y ven «personal». **Queda solo el punto 7 (despliegue), que hace
+> la cuenta dueña.** Este documento ya no es un retome vivo.
+
 > Frontera: **limpia** — construcción terminada por fases y en commits; falta la verificación de extremo a extremo (e2e) y la documentación.
 
 1. **Objetivo:** construir la spec `2026-09-23-flujo-solicitud-por-enlace.md` (esta carpeta) con los

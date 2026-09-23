@@ -1,6 +1,8 @@
 # Flujo por solicitud con enlace personal y notificaciones desde Apps Script
 
-**Fecha:** 2026-09-23 · **Estado:** aprobado por Leonardo, pendiente de construir.
+**Fecha:** 2026-09-23 · **Estado:** construida en la rama `flujo-solicitud` (núcleo, web, correo y
+pruebas en verde); pendiente de desplegar en el orden de §10.bis. Donde la construcción difiere del
+diseño original, esta spec ya describe lo construido.
 **Sustituye:** en el flujo de negocio (§1 de `CLAUDE.md`), la creación del evento por el gestor y la
 validación de presencia; en la arquitectura (§2), n8n como pieza de notificaciones.
 
@@ -67,19 +69,29 @@ Se **añaden** `INVITADA`, `SOLICITADA` y `RECHAZADA` a `ESTADOS_ASIGNACION`
 **`Asignaciones`: columnas nuevas, añadidas al final** (la hoja se lee por nombre; no se borra ni
 renombra ninguna):
 
-| Columna                                                                                             | Qué guarda                                                                                       |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `invitado_correo`                                                                                   | La única cuenta que puede abrir el enlace                                                        |
-| `motivo_rechazo`                                                                                    | El último motivo (el histórico completo, en `Bitacora`)                                          |
-| `receptor_rol`, `receptor_dependencia`, `receptor_cargo`, `receptor_celular`, `receptor_asistentes` | Lo que diligenció el solicitante, para que el gestor decida y para **precargar** la confirmación |
-| `autoriza_datos_en`                                                                                 | Hora del servidor en que autorizó el tratamiento de datos en la solicitud (Ley 1581)             |
-| `notificacion`, `notif_intentos`, `notif_reserva_hasta`                                             | Bandeja de salida del correo de confirmación y de la alerta de devolución vencida                |
+| Columna                                                                                                  | Qué guarda                                                                                                                       |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `invitado_correo`                                                                                        | La única cuenta que puede abrir el enlace                                                                                        |
+| `solicitada_en`                                                                                          | Hora de la última versión diligenciada: es la **versión** que el gestor aprueba (si cambió entre abrir y decidir, no se aprueba) |
+| `motivo_rechazo`                                                                                         | El último motivo (el histórico completo, en `Bitacora`)                                                                          |
+| `solicitud_rol`, `solicitud_dependencia`, `solicitud_cargo`, `solicitud_celular`, `solicitud_asistentes` | Lo que diligenció el solicitante, para que el gestor decida y para **precargar** la confirmación                                 |
+| `autoriza_datos_en`, `autoriza_datos_version`, `autoriza_datos_sha256`                                   | Hora del servidor, versión y huella del texto de autorización aceptado en la solicitud (Ley 1581)                                |
+| `notif_decision`, `notif_decision_intentos`, `notif_decision_reserva`                                    | Bandeja del correo «aprobada / devuelta para corregir»                                                                           |
+| `notif_confirmacion`, `notif_confirmacion_intentos`, `notif_confirmacion_reserva`                        | Bandeja del correo «Confirma la recepción»                                                                                       |
+| `notif_vencida`, `notif_vencida_intentos`, `notif_vencida_reserva`                                       | Bandeja de la alerta de devolución vencida                                                                                       |
+
+Cada correo tiene **su propia bandeja** (estado, intentos, reserva): uno que falla no bloquea ni
+reenvía los otros. `token_vence` cambia de sentido con el estado: al invitar vale
+`creada_en + horas_vigencia_invitacion`; al diligenciar, el `inicio` propuesto (una solicitud que
+nadie aprueba vence cuando llega su fecha, no por la lentitud del gestor); al aprobar, el `fin`.
 
 Al emitir la invitación, `evento` queda en `Por definir` e `inicio = fin = creada_en`, porque
 `asignacionSchema` los exige. Toda vista que liste asignaciones debe mostrar «Por definir» en vez de
 fechas para `INVITADA` (tabla, línea de tiempo, CSV).
 
-**`CFG_General`:** clave nueva `horas_vigencia_invitacion` = `72` (también en `semilla.ts`).
+**`CFG_General`:** claves nuevas `horas_vigencia_invitacion` = `72` y `notificaciones_desde`
+(`instalar()` la llena con la hora de instalación: las constancias selladas antes no reciben correo
+de golpe). `instalar()` añade a un libro existente las claves que falten, con su valor por defecto.
 
 **Sello y constancias existentes.** `contenidoRecepcion` (`apps/gas/src/dominio/sello.ts:30`)
 **no cambia**: `rol`, `dependencia`, `celular`, etc. se siguen guardando en `Recepciones` al
@@ -96,14 +108,20 @@ rechazada o expirada conserva sus datos en la hoja. **Pendiente de Jurídica:** 
 
 Acciones **nuevas** (ninguna se retira):
 
-| Acción                  | Entrada                                                                           | Resultado                  |
-| ----------------------- | --------------------------------------------------------------------------------- | -------------------------- |
-| `invitacion.crear`      | `id`, `correoSolicitante`, `entregadoPor`, `tokenSha256`                          | `INVITADA`                 |
-| `solicitud.diligenciar` | `id`, `receptor` (identidad de la sesión), `datos: SolicitudInput`                | `SOLICITADA`               |
-| `solicitud.decidir`     | `id`, `decision: APROBAR\|RECHAZAR`, `motivo?` (obligatorio al rechazar), `actor` | `PROGRAMADA` o `RECHAZADA` |
-| `recepcion.iniciar`     | `id`, `receptor`                                                                  | `EN_DILIGENCIAMIENTO`      |
+| Acción                  | Entrada                                                                                      | Resultado                  |
+| ----------------------- | -------------------------------------------------------------------------------------------- | -------------------------- |
+| `invitacion.crear`      | `id`, `correoSolicitante`, `referencia?`, `entregadoPor`, `tokenSha256`                      | `INVITADA`                 |
+| `solicitud.diligenciar` | `id`, `receptor` (identidad de la sesión), `datos: SolicitudInput`                           | `SOLICITADA`               |
+| `solicitud.decidir`     | `id`, `decision: APROBAR\|RECHAZAR`, `motivo?` (obligatorio al rechazar), `version`, `actor` | `PROGRAMADA` o `RECHAZADA` |
+| `recepcion.iniciar`     | `id`, `receptor`                                                                             | `EN_DILIGENCIAMIENTO`      |
 
-`recepcion.registrar` **no cambia**.
+`recepcion.registrar` **no cambia**. `qr.reclamar` (flujo anterior) rechaza toda fila con
+`invitado_correo`: el enlace personal no se puede usar por la puerta vieja.
+
+**La vista `Asignacion` trae los plazos ya calculados** — `tokenVence` y `recepcionDesde`
+(`inicio − minutos_vigencia_qr_antes`) — para que la web no repita reglas de la hoja: si
+Infraestructura cambia un plazo en `CFG_General`, el panel y el solicitante lo muestran sin
+desplegar nada.
 
 `solicitudInputSchema` (en `esquemas.ts`): `evento`, `inicio`, `fin` (con `fin > inicio`), `rol`,
 `dependencia`, `cargo`, `celular`, `asistentesEstimados` (mismas reglas que
@@ -117,8 +135,10 @@ si `CAT_Espacios` no tiene exactamente uno activo; la hora es la del servidor.
 
 ## 6. Notificaciones sin n8n
 
-**Dónde:** `apps/gas/src/infraestructura/gas/activador.ts`, función global `procesarOutbox`
-exportada desde `main.ts` como `doGet`, `doPost` e `instalar`.
+**Dónde:** la lógica, pura y probada en memoria, en `apps/gas/src/aplicacion/casos/notificaciones.ts`
+(`procesarNotificaciones`); las plantillas en `aplicacion/correo/plantillas.ts`; el adaptador de
+`MailApp` en `infraestructura/gas/correo-gas.ts`; la función global `procesarOutbox` en `main.ts`,
+junto a `doGet`, `doPost` e `instalar`.
 
 **Instalación:** `instalar()` crea, si no existe, un activador `timeBased().everyMinutes(10)` que
 llama a `procesarOutbox`. `appsscript.json` gana el permiso
@@ -127,19 +147,28 @@ el script: se avisa a Leonardo antes del `push`; no lo hace el agente.**
 
 **Qué envía:**
 
-| Correo                | Cuándo                          | A quién                                       | Columna de bandeja          |
-| --------------------- | ------------------------------- | --------------------------------------------- | --------------------------- |
-| Confirma la recepción | `PROGRAMADA` y `ahora ≥ inicio` | Solicitante                                   | `Asignaciones.notificacion` |
-| Constancia sellada    | Al quedar `RECIBIDA`            | Solicitante + `CFG_Destinatarios` (recepcion) | `Recepciones.notificacion`  |
-| Devolución vencida    | `DEVOLUCION_VENCIDA` derivado   | `CFG_Destinatarios` (vencida)                 | `Asignaciones.notificacion` |
+| Correo                   | Cuándo                                             | A quién                         | Bandeja                       |
+| ------------------------ | -------------------------------------------------- | ------------------------------- | ----------------------------- |
+| Aprobada / devuelta      | Al aprobar o devolver (si sigue vigente al enviar) | Solicitante                     | `Asignaciones.notif_decision` |
+| Confirma la recepción    | `PROGRAMADA` y `ahora ≥ inicio`                    | Solicitante                     | `notif_confirmacion`          |
+| Constancia (solicitante) | Al quedar `RECIBIDA`, con enlace de devolución     | Solicitante                     | `Recepciones.notificacion`    |
+| Constancia (fijos)       | En el mismo turno, sin celular ni enlaces          | `CFG_Destinatarios` (recepcion) | `Recepciones.notificacion`    |
+| Devolución vencida       | `DEVOLUCION_VENCIDA` derivado                      | `CFG_Destinatarios` (vencida)   | `notif_vencida`               |
+
+Un aviso que dejó de tener sentido antes de enviarse (la solicitud se corrigió, se anuló o venció)
+se marca omitido, no se envía. Los correos enlazan a `/mi-solicitud/[id]`, nunca al token del QR:
+el token lo deriva la web con `BETTER_AUTH_SECRET` y Apps Script no lo conoce.
 
 **Cómo:** con el **mismo** `LockService` de `doPost` (`servicios-gas.ts`), para que la hoja siga
-teniendo un solo escritor.
+teniendo un solo escritor, pero **sin enviar dentro del bloqueo** (las firmas de los usuarios lo
+esperan 20 s y `MailApp` tarda segundos):
 
-1. Reserva: `ENVIANDO` + `notif_reserva_hasta = ahora + 5 min` (una reserva vencida se puede retomar).
-2. Envía con `MailApp.sendEmail` desde la cuenta dueña.
-3. Éxito ⇒ `ENVIADO`. Fallo ⇒ `notif_intentos + 1`; al 3.º ⇒ `FALLIDO` + evento en `Bitacora`.
-4. Si `MailApp.getRemainingDailyQuota() < 10`, corta y sigue en el próximo turno.
+1. Con bloqueo: reserva los pendientes — `ENVIANDO` + reserva de 10 min, más que la ejecución
+   máxima de Apps Script (6 min); una reserva vencida la retoma otro turno.
+2. Sin bloqueo: envía con `MailApp.sendEmail` desde la cuenta dueña (HTML + texto plano).
+3. Con bloqueo corto: éxito ⇒ `ENVIADO`; fallo ⇒ intentos + 1, y al 3.º ⇒ `FALLIDO` + `Bitacora`.
+4. Si la cuota diaria (`getRemainingDailyQuota`) no alcanza, libera la reserva sin gastar intento y
+   sigue en el próximo turno.
 
 **Límites aceptados:** el correo puede llegar hasta 10 min después del inicio. Un fallo justo entre
 enviar y marcar `ENVIADO` puede duplicar un correo (misma naturaleza que la escritura no
@@ -148,8 +177,8 @@ confirman en la cuenta real antes de producción.
 
 ## 7. Plantilla de correo (calidad institucional)
 
-**Dónde:** `apps/gas/src/infraestructura/gas/correo/` — `plantilla.ts` (funciones puras, sin APIs
-de Google, probadas con `node:test`), `colores.ts` y `enviar.ts` (el único que llama a `MailApp`).
+**Dónde:** `apps/gas/src/aplicacion/correo/` — `plantillas.ts` (funciones puras, sin APIs de
+Google) y `colores.ts`; `infraestructura/gas/correo-gas.ts` es el único que llama a `MailApp`.
 Vista previa: `pnpm --filter @check-auditorio/gas vista-correo` escribe los HTML en `apps/gas/tmp/`
 (ignorado por git) y se revisan en navegador y en Gmail real.
 
@@ -160,7 +189,7 @@ Vista previa: `pnpm --filter @check-auditorio/gas vista-correo` escribe los HTML
   oscuro) que pueden perderse sin romper nada.
 - Botón «a prueba de clientes»: `<a>` con `display:inline-block`, padding y fondo en línea dentro de
   una celda con el mismo fondo; debajo, **el enlace en texto** por si el botón no se pinta.
-- Tipografía de sistema con Inter primero (`Inter, Segoe UI, Arial, sans-serif`): las fuentes web no
+- Tipografía de sistema (`Segoe UI, Roboto, Helvetica, Arial`): las fuentes web no
   cargan en la mayoría de clientes.
 - Escudo servido desde `${url_app}/logo-americana.png` con `alt`, ancho y alto fijos; si el cliente
   bloquea imágenes, el correo se entiende igual.
@@ -174,29 +203,34 @@ Vista previa: `pnpm --filter @check-auditorio/gas vista-correo` escribe los HTML
 con el mismo nombre (el correo no puede leer variables CSS). Si cambia un token, se cambia en los dos
 sitios; una prueba compara ambos ficheros para que no se desalineen.
 
-| Rol                           | Token                            | Valor                 |
-| ----------------------------- | -------------------------------- | --------------------- |
-| Banda de cabecera             | `navy-900`                       | `#0b1f3a`             |
-| Botón principal               | `navy-800` / texto `pearl-50`    | `#12305a` / `#ffffff` |
-| Filete de acento (decorativo) | `gold-500`                       | `#c9a227`             |
-| Fondo exterior                | `pearl-100`                      | `#f4f6f8`             |
-| Tarjeta                       | `pearl-50`                       | `#ffffff`             |
-| Bordes                        | `pearl-200`                      | `#e3e7ed`             |
-| Texto                         | `ink-900` / secundario `ink-600` | `#111827` / `#5b6472` |
-| Aviso de novedad              | `danger-700` sobre `danger-50`   | `#a8261b` / `#fbeceb` |
+Construido con la paleta **Sage Garden** (oficial desde el 2026-09-23), no con la navy/pearl de
+este diseño original. Los valores viven solo en `apps/gas/src/aplicacion/correo/colores.ts`:
+
+| Rol                           | Token                                          |
+| ----------------------------- | ---------------------------------------------- |
+| Banda de cabecera             | `foreground` (texto blanco, subtítulo `muted`) |
+| Botón principal               | `primary-strong`, texto blanco                 |
+| Filete de acento (decorativo) | `attention-accent` (el dorado del escudo)      |
+| Fondo exterior / tarjeta      | `background` / `card`                          |
+| Bordes                        | `border`                                       |
+| Texto / secundario            | `foreground` / `muted-foreground`              |
+| Avisos                        | `destructive-*`, `attention-*`, `success-*`    |
+
+Tipografía de sistema (`Segoe UI, Roboto, Helvetica, Arial`): Antic no carga en los clientes de
+correo. Las plantillas viven en `aplicacion/correo/plantillas.ts` (puras, probadas con `node:test`).
 
 **Estructura del correo «Confirma la recepción»:**
 
 1. Preheader: «Tu evento en el Auditorio empezó. Confirma la recepción del espacio.»
-2. Cabecera `navy-900` con el escudo y «Infraestructura · Corporación Universitaria Americana»,
-   filete `gold-500` debajo.
+2. Cabecera `foreground` con el escudo y «Infraestructura · Corporación Universitaria Americana»,
+   filete `attention-accent` debajo.
 3. Saludo con el nombre y una frase: qué se pide y por qué (queda constancia).
 4. Ficha del evento en tabla clave–valor: evento, espacio, fecha, franja, consecutivo de la
    solicitud.
 5. Botón **«Confirmar recepción»** + enlace en texto.
 6. Nota: «Si algo no está en buen estado, repórtalo desde el mismo enlace con una foto.» y plazo
    (hasta el fin del evento).
-7. Pie `pearl-100`: correo automático, a quién escribir, sin datos personales del destinatario más
+7. Pie `background`: correo automático, a quién escribir, sin datos personales del destinatario más
    allá del nombre.
 
 La constancia y la alerta de vencida reutilizan la misma carcasa (cabecera, ficha, pie) con otro
@@ -265,6 +299,20 @@ Cada fase cierra con su comprobación en verde antes de abrir la siguiente.
 
 Antes de la fase 6: confirmar en el Sheet real que no hay filas en `EN_VALIDACION` o
 `EN_DILIGENCIAMIENTO` en tránsito.
+
+### 10.bis Orden de despliegue (lo hace la cuenta dueña; no el agente)
+
+1. `pnpm --filter @check-auditorio/gas push` (sube el código; aún no cambia la versión publicada).
+2. En el editor, **ejecutar `instalar()` con `auxdiradministrativa@`**: autoriza el permiso nuevo
+   `script.send_mail`, añade las columnas y claves nuevas y crea el activador `procesarOutbox`.
+3. Nueva **versión** de la implementación web.
+4. `pnpm --filter @check-auditorio/web probar-gas` (GET + POST firmado).
+5. Merge de `flujo-solicitud` a `main` y push (Vercel despliega la web).
+
+⚠️ **El orden importa:** publicar la versión antes del paso 2 tumba todos los `doPost` (el permiso
+no está autorizado), y desplegar la web antes del paso 2 hace fallar toda escritura de asignaciones
+a propósito: `tabla-gas` exige las columnas nuevas («Faltan columnas… Ejecuta instalar()»).
+**Condición de producción:** el texto de autorización de datos de Jurídica.
 
 **Revertir:** las columnas nuevas no estorban al código viejo; el código vuelve con git; el activador
 se borra desde el editor de Apps Script. Lo que no se revierte gratis son las solicitudes reales que
