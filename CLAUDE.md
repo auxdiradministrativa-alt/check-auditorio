@@ -45,10 +45,10 @@ La Fase 2 está **escrita y probada en modo local**: el flujo entero corre contr
 irá a Apps Script, sobre un libro en memoria. **Google conectado y producción desplegada el
 2026-09-15** en `https://check-auditorio-web.vercel.app`: prueba de uso completa en producción con
 la sesión real (REC-000001). Guía y estado de Google en
-[`docs/google-workspace.md`](docs/google-workspace.md). **Flujo por enlace (2026-09-23): construido
-y probado en la rama `flujo-solicitud`, pendiente de desplegar** — el orden exacto (`push` →
-`instalar()` con la cuenta dueña → nueva versión → `probar-gas` → merge) está en la spec §10.bis;
-saltárselo tumba los `doPost` o las escrituras. Latencia medida de Apps Script: páginas 2–4 s,
+[`docs/google-workspace.md`](docs/google-workspace.md). **Flujo por enlace en producción desde el
+2026-09-23** (web en Vercel desde `main`; Apps Script verificado por huella). Para cambios futuros
+del esquema, el orden (`instalar()` con la cuenta dueña → `publicar` → push de la web) está en la
+spec §10.bis; saltárselo tumba los `doPost` o las escrituras. Latencia medida de Apps Script: páginas 2–4 s,
 escrituras 13–20 s.
 
 ```
@@ -103,7 +103,7 @@ Costuras que no se ven leyendo un solo fichero:
 - **Los esquemas zod usan camelCase y la hoja snake_case**: el mapeo vive en `apps/gas/src/infraestructura/hojas/repositorios.ts`, que lee y escribe por **nombre** de columna (reordenar columnas a mano no rompe nada).
 - **Regla «cantidad ≠ esperada con CONFORME»**: el esquema compartido no conoce el catálogo, así que está dos veces a propósito — `features/recepcion/validacion.ts` (cliente, para el mensaje) y el dominio del núcleo (servidor, contra el catálogo de la hoja). «Novedad exige observación y foto» sí está en el esquema compartido.
 - **`revalidatePath` dentro de una Server Action repinta la página actual**: un estado de éxito que solo vive en el cliente se pierde. Por eso las confirmaciones las pinta el servidor desde el registro (ver `/devolucion/[id]`).
-- **El POST a Apps Script no se reintenta; la lectura de su respuesta sí** (`registro/cliente-gas.ts`): doPost ejecuta y responde 302 a un eco en googleusercontent que a veces da 404 o redirige a `/exec` (se leería doGet). Se sigue la redirección a mano, se relee el eco hasta 4 veces y se valida la forma. Repetir el POST duplicaría la acción.
+- **El POST a Apps Script solo se reenvía si la conexión ni se abrió; la lectura de su respuesta sí se reintenta** (`registro/cliente-gas.ts`): doPost ejecuta y responde 302 a un eco en googleusercontent que a veces da 404 o redirige a `/exec` (se leería doGet). Se sigue la redirección a mano, se relee el eco hasta 4 veces y se valida la forma. Repetir un POST que llegó duplicaría la acción; por eso el reenvío (3 intentos, solo ante `UND_ERR_CONNECT_TIMEOUT`, `ECONNREFUSED`, DNS…) usa **el mismo sobre y nonce**, que Apps Script rechazaría si llegara dos veces.
 - **`RefrescoAutomatico` espera a que termine el refresco anterior**: con GAS un refresco dura segundos; un `setInterval` de 4 s cancelaba cada uno y el panel no se enteraba de la solicitud del receptor. En memoria no se ve.
 - **Escritura no transaccional**: si Apps Script falla a mitad de `recepcion.registrar`, pueden quedar filas parciales. La clave de idempotencia permite reintentar; no hay rollback.
 - **El enlace personal tiene dos puertas y las dos cuentan**: la web (`app/r/[token]/page.tsx`, `features/solicitud/acciones.ts`, `/mi-solicitud`) compara el correo de la sesión con `invitadoCorreo` antes de pintar nada, y el núcleo lo exige otra vez (`exigirInvitado` + `exigirReceptor` por `sub`). La web decide qué se ve; el núcleo, qué se escribe.
