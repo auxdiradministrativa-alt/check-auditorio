@@ -30,6 +30,9 @@ test-results/
 playwright-report/
 .playwright-mcp/
 
+# testigo local del hook de fronteras (estado de sesión de este PC)
+docs/superpowers/specs/.retome-activo.json
+
 # sistema / editor
 .DS_Store
 Thumbs.db
