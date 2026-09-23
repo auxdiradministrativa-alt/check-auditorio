@@ -4,79 +4,36 @@ import { cn } from '@/lib/cn'
 
 type Etapa = { clave: string; titulo: string; detalle: string }
 
-/** Flujo anterior: Infraestructura crea el evento y valida a quien escanea el QR. */
-const ETAPAS_QR: Etapa[] = [
-  { clave: 'programada', titulo: 'Programada', detalle: 'QR disponible para escanear' },
+const ETAPAS: Etapa[] = [
+  { clave: 'creada', titulo: 'Entrega creada', detalle: 'Enlace y QR listos para compartir' },
   {
-    clave: 'validada',
-    titulo: 'Identidad validada',
-    detalle: 'Infraestructura confirma a quien recibe',
+    clave: 'recepcion',
+    titulo: 'Recepción del espacio',
+    detalle: 'Revisión del estado del espacio',
   },
-  { clave: 'recibida', titulo: 'Constancia firmada', detalle: 'Checklist y términos aceptados' },
+  { clave: 'acta', titulo: 'Acta firmada', detalle: 'Conformidad y novedades registradas' },
   {
     clave: 'devuelta',
-    titulo: 'Devolución declarada',
-    detalle: 'Quien recibió cierra el préstamo',
+    titulo: 'Espacio devuelto',
+    detalle: 'Devolución declarada por quien recibió',
   },
 ]
-
-const ORDEN_QR: Record<EstadoAsignacion, number> = {
+const ORDEN: Record<EstadoAsignacion, number> = {
   INVITADA: -1,
   SOLICITADA: -1,
   RECHAZADA: -1,
   PROGRAMADA: 0,
   EN_VALIDACION: 0.5,
-  EN_DILIGENCIAMIENTO: 1.5,
+  EN_DILIGENCIAMIENTO: 0.5,
   RECIBIDA: 2,
   DEVOLUCION_VENCIDA: 2.5,
   DEVUELTA: 3,
   ANULADA: -1,
   EXPIRADA: -1,
 }
-
-/** Flujo por enlace (spec 2026-09-23): quien solicita propone y Infraestructura aprueba. */
-const ETAPAS_ENLACE: Etapa[] = [
-  {
-    clave: 'emitido',
-    titulo: 'Enlace emitido',
-    detalle: 'Infraestructura lo envía a quien solicita',
-  },
-  { clave: 'solicitada', titulo: 'Solicitud diligenciada', detalle: 'Evento, horario y datos' },
-  { clave: 'aprobada', titulo: 'Aprobada', detalle: 'El espacio queda reservado' },
-  { clave: 'recibida', titulo: 'Constancia firmada', detalle: 'Checklist y términos aceptados' },
-  {
-    clave: 'devuelta',
-    titulo: 'Devolución declarada',
-    detalle: 'Quien recibió cierra el préstamo',
-  },
-]
-
-const ORDEN_ENLACE: Record<EstadoAsignacion, number> = {
-  // Medio paso = la etapa siguiente está en curso.
-  INVITADA: 0.5,
-  // Devuelta para corregir: vuelve a quedar en curso la etapa de diligenciar.
-  RECHAZADA: 0.5,
-  SOLICITADA: 1.5,
-  PROGRAMADA: 2,
-  EN_VALIDACION: 2,
-  EN_DILIGENCIAMIENTO: 2.5,
-  RECIBIDA: 3,
-  DEVOLUCION_VENCIDA: 3.5,
-  DEVUELTA: 4,
-  ANULADA: -1,
-  EXPIRADA: -1,
-}
-
-export function LineaTiempo({
-  estado,
-  porEnlace = false,
-}: {
-  estado: EstadoAsignacion
-  /** La asignación nació de un enlace personal (`invitadoCorreo` presente). */
-  porEnlace?: boolean
-}) {
-  const etapas = porEnlace ? ETAPAS_ENLACE : ETAPAS_QR
-  const actual = (porEnlace ? ORDEN_ENLACE : ORDEN_QR)[estado]
+export function LineaTiempo({ estado }: { estado: EstadoAsignacion }) {
+  const etapas = ETAPAS
+  const actual = ORDEN[estado]
   return (
     <ol className="flex flex-col">
       {etapas.map((etapa, i) => {
@@ -116,11 +73,7 @@ export function LineaTiempo({
                   {hecho ? ' (completado)' : enCurso ? ' (en curso)' : ' (pendiente)'}
                 </span>
               </span>
-              <span className="text-sm text-muted-foreground">
-                {enCurso && estado === 'RECHAZADA' && etapa.clave === 'solicitada'
-                  ? 'Devuelta para corregir'
-                  : etapa.detalle}
-              </span>
+              <span className="text-sm text-muted-foreground">{etapa.detalle}</span>
             </div>
           </li>
         )

@@ -82,7 +82,7 @@ export function FiltrosRegistro({
           <Input
             type="search"
             value={busqueda}
-            placeholder="Buscar en todas las reservas"
+            placeholder="Buscar en todas las entregas"
             onChange={(e) => onCambiar('busqueda', e.target.value)}
           />
         </label>
@@ -129,7 +129,7 @@ export function FiltrosRegistro({
           </Select>
         </label>
         <p role="status" aria-atomic="true" className="text-xs text-muted-foreground">
-          {activos ? resumen : 'Los filtros se aplican a las reservas y al registro histórico.'}
+          {activos ? resumen : 'Los filtros se aplican a las entregas y al registro histórico.'}
         </p>
       </div>
       {fechasInvalidas && (

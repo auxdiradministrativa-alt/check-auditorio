@@ -16,12 +16,35 @@ export function registrarDevolucion(
   return ctx.srv.conBloqueo(() => {
     const a = exigirAsignacion(ctx, asignacionId)
     exigirReceptor(a, receptor.sub)
-    if (ctx.devoluciones.porClave(datos.claveIdempotencia)) return releer(ctx, asignacionId)
+    const previa = ctx.devoluciones.porClave(datos.claveIdempotencia)
+    if (previa) {
+      if (previa.consecutivo !== a.consecutivo)
+        fallar('DATOS_INVALIDOS', 'La clave de envío pertenece a otra devolución.')
+      return releer(ctx, asignacionId)
+    }
+    if (
+      typeof datos.claveIdempotencia !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        datos.claveIdempotencia,
+      )
+    )
+      fallar('DATOS_INVALIDOS', 'La clave de envío no es válida.')
+    if (
+      datos.declaracion !== true ||
+      !['BUENAS_CONDICIONES', 'CON_NOVEDADES'].includes(datos.resultado)
+    )
+      fallar('DATOS_INVALIDOS', 'Confirma la declaración y el estado de devolución.')
     if (a.estado !== 'RECIBIDA' || !a.consecutivo)
       fallar('ESTADO_INVALIDO', 'Esta asignación no tiene una devolución pendiente.')
 
     const ids = new Set(ctx.catalogo.elementos(a.espacioId).map((e) => e.id))
     const novedades = normalizarNovedades(datos, ids)
+    for (const novedad of novedades) {
+      for (const fotoId of novedad.fotoIds) {
+        if (!ctx.srv.fotoPertenece(fotoId, asignacionId))
+          fallar('DATOS_INVALIDOS', 'Una foto no pertenece a esta entrega. Vuelve a adjuntarla.')
+      }
+    }
     const registro: RegistroDevolucion = {
       consecutivo: a.consecutivo!,
       resultado: datos.resultado,

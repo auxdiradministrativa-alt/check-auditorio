@@ -14,7 +14,7 @@ export function BotonAnular({ asignacionId }: { asignacionId: string }) {
   const [error, setError] = useState<string | null>(null)
 
   const anular = () => {
-    if (!window.confirm('¿Anular esta asignación? El QR dejará de funcionar.')) return
+    if (!window.confirm('¿Anular esta entrega? El QR dejará de funcionar.')) return
     iniciar(async () => {
       const r = await anularAsignacion(asignacionId)
       if (!r.ok) setError(r.mensaje)
@@ -26,7 +26,7 @@ export function BotonAnular({ asignacionId }: { asignacionId: string }) {
     <div className="flex flex-col items-start gap-2">
       <Button variante="peligro" tamano="sm" onClick={anular} disabled={pendiente}>
         <Ban aria-hidden />
-        {pendiente ? 'Anulando…' : 'Anular asignación'}
+        {pendiente ? 'Anulando…' : 'Anular entrega'}
       </Button>
       {error && (
         <p role="alert" className="text-sm font-medium text-destructive">

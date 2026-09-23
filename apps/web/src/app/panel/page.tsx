@@ -57,16 +57,14 @@ export default function Panel({ searchParams }: { searchParams: Consulta }) {
   return (
     <>
       <PageHeader
-        titulo="Gestión de espacios"
-        descripcion="Emite enlaces de solicitud, aprueba reservas y controla cada una hasta su devolución. Todo el registro en un solo lugar."
+        titulo="Entrega de espacios"
+        descripcion="Registra la entrega del espacio y consulta las actas de recepción y devolución."
       />
       <Suspense
         fallback={
           <div role="status" className="rounded-2xl border border-border bg-card p-6">
             <h2 className="text-card-title">Preparando el centro de gestión</h2>
-            <p className="mt-1 mb-4 text-sm text-muted-foreground">
-              Consultando reservas y espacios disponibles…
-            </p>
+            <p className="mt-1 mb-4 text-sm text-muted-foreground">Consultando entregas y actas…</p>
             <SkeletonFilas />
           </div>
         }

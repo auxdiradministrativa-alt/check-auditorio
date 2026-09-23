@@ -5,7 +5,6 @@ import {
   Mail,
   MapPin,
   ShieldCheck,
-  Undo2,
   UserRound,
 } from 'lucide-react'
 import type { Asignacion, Espacio, ElementoCatalogo } from '@check-auditorio/shared'
@@ -18,12 +17,7 @@ import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/compon
 import { BotonAnular } from '@/features/panel/boton-anular'
 import { LineaTiempo } from '@/features/panel/linea-tiempo'
 import { ResumenCatalogo } from '@/features/panel/resumen-catalogo'
-import {
-  ListaDatos,
-  TarjetaSolicitud,
-  type DatoSolicitud,
-} from '@/features/panel/tarjeta-solicitud'
-import { TarjetaValidacion } from '@/features/panel/tarjeta-validacion'
+import { ListaDatos, type DatoEntrega } from '@/features/panel/lista-datos'
 import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
 import { qrSvg } from '@/servidor/qr'
 import { UtilidadesQr } from './utilidades-qr'
@@ -39,7 +33,7 @@ const ANULABLES = [
 ]
 
 /** Lo que diligenció quien solicita, ya formateado en hora de Bogotá. */
-function datosSolicitud(a: Asignacion, espacio: Espacio | undefined): DatoSolicitud[] {
+function datosSolicitud(a: Asignacion, espacio: Espacio | undefined): DatoEntrega[] {
   const s = a.solicitud
   return [
     { etiqueta: 'Evento', valor: a.evento },
@@ -59,19 +53,14 @@ function datosSolicitud(a: Asignacion, espacio: Espacio | undefined): DatoSolici
   ]
 }
 
-/** Texto para pegar en WhatsApp o en un correo, con todo lo que la persona necesita saber. */
+/** Mensaje listo para compartir con quien recibe el espacio. */
 function mensajeInvitacion(a: Asignacion, correo: string, enlace: string) {
-  const referencia = a.evento !== 'Por definir' ? ` para «${a.evento}»` : ''
   return [
-    'Hola,',
-    '',
-    `Te comparto el enlace para solicitar el auditorio de la Corporación Universitaria Americana${referencia}. Allí registras el nombre del evento, la fecha, el horario y tus datos; Infraestructura revisa la solicitud y te confirma.`,
-    '',
-    `Entra con tu cuenta institucional ${correo}: el enlace solo funciona con esa cuenta.`,
-    `El enlace vence el ${formatearFechaHora(a.tokenVence)}.`,
-    '',
+    `Hola. Te comparto la entrega de espacio para «${a.evento}».`,
+    `Ingresa con ${correo} para revisar el estado del espacio y firmar el acta de recepción.`,
+    `Horario: ${formatearFechaLarga(a.inicio)}, ${formatearFranja(a.inicio, a.fin)}.`,
+    `Disponible desde ${formatearFechaHora(a.recepcionDesde)} hasta ${formatearFechaHora(a.fin)}.`,
     enlace,
-    '',
     'Infraestructura',
   ].join('\n')
 }
@@ -98,9 +87,6 @@ export async function DetalleEvento({
     consecutivo,
     entregadoPor,
     invitadoCorreo,
-    solicitadaEn,
-    motivoRechazo,
-    tokenVence,
     recepcionDesde,
   } = asignacion
   const porEnlace = invitadoCorreo !== null
@@ -108,14 +94,11 @@ export async function DetalleEvento({
   const sinFranja = estado === 'INVITADA'
   // En el flujo por enlace, el mismo enlace sirve para diligenciar, corregir y confirmar la recepción.
   const muestraQr = porEnlace
-    ? ['INVITADA', 'RECHAZADA', 'PROGRAMADA'].includes(estado)
+    ? ['PROGRAMADA', 'EN_DILIGENCIAMIENTO'].includes(estado)
     : estado === 'PROGRAMADA'
   const enlace = urlRecepcion(id)
   const svg = muestraQr ? await qrSvg(enlace) : null
   const anulable = ANULABLES.includes(estado)
-  const solicitante =
-    receptor ?? (invitadoCorreo ? { nombre: invitadoCorreo, correo: invitadoCorreo } : null)
-
   return (
     <>
       <div className="mb-6 flex flex-col gap-3 sm:mb-8">
@@ -170,35 +153,11 @@ export async function DetalleEvento({
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          {estado === 'SOLICITADA' && solicitante && solicitadaEn && (
-            <TarjetaSolicitud
-              asignacionId={id}
-              version={solicitadaEn}
-              solicitante={solicitante}
-              datos={datosSolicitud(asignacion, espacio)}
-            />
-          )}
-
-          {estado === 'RECHAZADA' && (
-            <Card>
-              <CardHeader>
-                <CardTitle as="h4">Devuelta para corregir</CardTitle>
-                <CardDescription>
-                  {solicitante?.nombre ?? 'Quien solicita'} verá este motivo al abrir su enlace.
-                  Cuando corrija, la solicitud volverá a quedar por aprobar.
-                </CardDescription>
-              </CardHeader>
-              <CardBody className="flex flex-col gap-5">
-                <Alert tono="peligro" icono={<Undo2 aria-hidden />} titulo="Motivo">
-                  {motivoRechazo || 'Sin motivo registrado.'}
-                </Alert>
-                <ListaDatos datos={datosSolicitud(asignacion, espacio)} />
-              </CardBody>
-            </Card>
-          )}
-
-          {estado === 'EN_VALIDACION' && receptor && (
-            <TarjetaValidacion asignacionId={id} solicitante={receptor} />
+          {['INVITADA', 'SOLICITADA', 'RECHAZADA'].includes(estado) && (
+            <Alert tono="info" titulo="Registro anterior" icono={<CalendarDays aria-hidden />}>
+              Este registro se creó antes del flujo de entrega directa. Crea una entrega con el
+              evento, horario y correo de quien recibe; luego anula este registro.
+            </Alert>
           )}
 
           {estado === 'EN_DILIGENCIAMIENTO' && receptor && (
@@ -216,7 +175,9 @@ export async function DetalleEvento({
           {svg && (
             <Card>
               <CardHeader>
-                <CardTitle as="h4">{porEnlace ? 'Enlace personal' : 'QR de recepción'}</CardTitle>
+                <CardTitle as="h4">
+                  {porEnlace ? 'Enlace y QR de recepción' : 'QR de recepción'}
+                </CardTitle>
                 <CardDescription>
                   {porEnlace
                     ? `Envíalo a ${invitadoCorreo} por WhatsApp, correo o el canal que uses. Solo esa cuenta puede abrirlo.`
@@ -236,40 +197,19 @@ export async function DetalleEvento({
                   dangerouslySetInnerHTML={{ __html: svg }}
                 />
                 <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-3 text-sm text-muted-foreground">
-                  {porEnlace ? (
-                    <ul className="flex flex-col gap-2">
-                      {estado === 'PROGRAMADA' ? (
-                        <>
-                          <li>• Con este mismo enlace confirma la recepción del espacio.</li>
-                          <li>
-                            • El botón se habilita el{' '}
-                            <span className="tabular">{formatearFechaHora(recepcionDesde)}</span>.
-                          </li>
-                        </>
-                      ) : (
-                        <>
-                          <li>• Quien solicita propone el evento, la fecha y el horario.</li>
-                          <li>
-                            • Vence el{' '}
-                            <span className="tabular">{formatearFechaHora(tokenVence)}</span> si no
-                            se {estado === 'RECHAZADA' ? 'corrige' : 'diligencia'}.
-                          </li>
-                          <li>• Tú apruebas o devuelves la solicitud desde este panel.</li>
-                        </>
-                      )}
-                    </ul>
-                  ) : (
-                    <ul className="flex flex-col gap-2">
-                      <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
-                      <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
-                      <li>• Si rechazas, el QR queda libre de nuevo.</li>
-                    </ul>
-                  )}
+                  <ul className="flex flex-col gap-2">
+                    <li>Abre directamente el acta de recepción del espacio.</li>
+                    <li>
+                      La persona revisa los elementos, registra novedades y firma con su cuenta
+                      institucional.
+                    </li>
+                    <li>Puede comenzar el {formatearFechaHora(recepcionDesde)}.</li>
+                  </ul>
                   <UtilidadesQr
                     svg={svg}
                     enlace={enlace}
                     evento={evento}
-                    {...(invitadoCorreo && estado !== 'PROGRAMADA'
+                    {...(invitadoCorreo
                       ? { mensaje: mensajeInvitacion(asignacion, invitadoCorreo, enlace) }
                       : {})}
                   />
@@ -291,7 +231,7 @@ export async function DetalleEvento({
           {porEnlace && estado === 'PROGRAMADA' && asignacion.solicitud && (
             <Card>
               <CardHeader>
-                <CardTitle as="h4">Solicitud aprobada</CardTitle>
+                <CardTitle as="h4">Datos de la entrega</CardTitle>
               </CardHeader>
               <CardBody>
                 <ListaDatos datos={datosSolicitud(asignacion, espacio)} />
@@ -332,7 +272,7 @@ export async function DetalleEvento({
               <CardTitle as="h4">Seguimiento</CardTitle>
             </CardHeader>
             <CardBody>
-              <LineaTiempo estado={estado} porEnlace={porEnlace} />
+              <LineaTiempo estado={estado} />
             </CardBody>
           </Card>
           {anulable && <BotonAnular asignacionId={id} />}

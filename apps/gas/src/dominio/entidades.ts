@@ -25,13 +25,13 @@ export interface RegistroAsignacion {
   /* ─── Flujo por enlace (vacíos en las filas del flujo anterior) ─── */
   /** Única cuenta que puede diligenciar y recibir; en minúsculas. */
   invitadoCorreo: string | null
-  /** Hora de la última versión diligenciada: el gestor aprueba la que vio. */
+  /** Dato histórico: hora de diligenciamiento anterior. */
   solicitadaEn: string | null
   motivoRechazo: string | null
   solicitud: DatosSolicitante | null
   /** Prueba de la autorización de datos (Ley 1581): cuándo y sobre qué texto exacto. */
   autorizacion: { en: string; version: string; sha256: string } | null
-  /** Aviso a quien solicitó de que su solicitud fue aprobada o devuelta. */
+  /** Aviso de entrega creada; conserva el nombre de columna para compatibilidad. */
   notifDecision: Notificacion
   notifConfirmacion: Notificacion
   notifVencida: Notificacion

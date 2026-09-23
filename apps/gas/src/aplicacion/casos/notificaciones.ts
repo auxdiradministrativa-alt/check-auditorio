@@ -6,7 +6,7 @@ import {
   correoConfirmacion,
   correoConstanciaDestinatarios,
   correoConstanciaReceptor,
-  correoDecision,
+  correoEntrega,
   correoVencida,
   type DatosEvento,
 } from '../correo/plantillas'
@@ -94,16 +94,14 @@ export function procesarNotificaciones(ctx: Contexto, correo: Correo): ResumenNo
 
       if (disponible(a.notifDecision, ahoraIso)) {
         const canal: Canal = { hoja: 'asignacion', id: a.id, campo: 'notifDecision' }
-        // Se avisa la decisión vigente; si ya no lo es (corrigió, anulada, vencida), sobra.
-        if ((a.estado === 'PROGRAMADA' || a.estado === 'RECHAZADA') && a.invitadoCorreo)
+        // Avisa la entrega vigente; si ya se recibió, anuló o venció, se omite.
+        if (estado === 'PROGRAMADA' && a.invitadoCorreo)
           tomar(canal, a.notifDecision, [
-            correoDecision(
+            correoEntrega(
               {
                 ...evento(a),
                 para: a.invitadoCorreo,
                 nombre: nombre(a),
-                aprobada: a.estado === 'PROGRAMADA',
-                motivo: a.motivoRechazo,
               },
               cfg.minutosQrAntes,
             ),

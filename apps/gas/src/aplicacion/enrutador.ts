@@ -12,12 +12,7 @@ import { obtenerConstancia } from './casos/constancia'
 import { registrarDevolucion } from './casos/devolucion'
 import { decidirValidacion, estadoQr, reclamarQr } from './casos/qr-validacion'
 import { registrarRecepcion, subirFoto } from './casos/recepcion'
-import {
-  crearInvitacion,
-  decidirSolicitud,
-  diligenciarSolicitud,
-  iniciarRecepcion,
-} from './casos/solicitud'
+import { iniciarRecepcion } from './casos/iniciar-recepcion'
 import type { Contexto } from './puertos'
 
 type Tabla = { [A in NombreAccion]: (ctx: Contexto, e: Entrada<A>) => Salida<A> }
@@ -34,9 +29,6 @@ const CASOS: Tabla = {
   'qr.estado': estadoQr,
   'qr.reclamar': reclamarQr,
   'validacion.decidir': decidirValidacion,
-  'invitacion.crear': crearInvitacion,
-  'solicitud.diligenciar': diligenciarSolicitud,
-  'solicitud.decidir': decidirSolicitud,
   'recepcion.iniciar': iniciarRecepcion,
   'foto.subir': subirFoto,
   'recepcion.registrar': registrarRecepcion,

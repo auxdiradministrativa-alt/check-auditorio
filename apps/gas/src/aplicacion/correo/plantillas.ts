@@ -213,41 +213,28 @@ const fichaEvento = (e: DatosEvento): [string, string][] => [
 ]
 const logo = (e: DatosEvento) => `${e.urlApp}/logo-americana.png`
 /** Enlace estable para quien solicitó: la web exige su sesión y lo lleva al paso que toque. */
-const miSolicitud = (e: DatosEvento) => `${e.urlApp}/mi-solicitud/${encodeURIComponent(e.id)}`
+const miEntrega = (e: DatosEvento) => `${e.urlApp}/mi-entrega/${encodeURIComponent(e.id)}`
 
 /* ─── Los cuatro correos ─── */
 
-export function correoDecision(
-  e: DatosEvento & { para: string; nombre: string; aprobada: boolean; motivo: string | null },
+export function correoEntrega(
+  e: DatosEvento & { para: string; nombre: string },
   minutosAntes: number,
 ): Mensaje {
-  if (e.aprobada)
-    return mensaje([e.para], `Solicitud aprobada · ${e.evento}`, {
-      preheader: `Tu reserva del ${fechaLarga(e.inicio)} está confirmada.`,
-      etiqueta: 'Solicitud aprobada',
-      titulo: 'Tu reserva está aprobada',
-      parrafos: [
-        `Hola, ${e.nombre}. Infraestructura aprobó tu solicitud del espacio.`,
-        'El día del evento te enviaremos un correo para que confirmes la recepción del espacio y su estado.',
-      ],
-      ficha: fichaEvento(e),
-      nota: {
-        tono: 'info',
-        texto: `Podrás confirmar la recepción desde ${minutosAntes} minutos antes del inicio y hasta la hora de finalización.`,
-      },
-      cta: { texto: 'Ver mi solicitud', url: miSolicitud(e) },
-      logoUrl: logo(e),
-    })
-  return mensaje([e.para], `Tu solicitud necesita cambios · ${e.evento}`, {
-    preheader: 'Infraestructura te pide corregir tu solicitud del espacio.',
-    etiqueta: 'Solicitud devuelta',
-    titulo: 'Revisa y corrige tu solicitud',
+  return mensaje([e.para], `Entrega programada · ${e.evento}`, {
+    preheader: `La entrega del ${fechaLarga(e.inicio)} está programada.`,
+    etiqueta: 'Entrega programada',
+    titulo: 'Tu entrega está programada',
     parrafos: [
-      `Hola, ${e.nombre}. Infraestructura revisó tu solicitud y te pide un ajuste antes de aprobarla.`,
+      `Hola, ${e.nombre}. Infraestructura preparó la entrega del espacio para ti.`,
+      'El día del evento te enviaremos un correo para que confirmes la recepción del espacio y su estado.',
     ],
     ficha: fichaEvento(e),
-    nota: { tono: 'atencion', texto: `Motivo: ${e.motivo ?? ''}` },
-    cta: { texto: 'Corregir mi solicitud', url: miSolicitud(e) },
+    nota: {
+      tono: 'info',
+      texto: `Podrás confirmar la recepción desde ${minutosAntes} minutos antes del inicio y hasta la hora de finalización.`,
+    },
+    cta: { texto: 'Ver mi entrega', url: miEntrega(e) },
     logoUrl: logo(e),
   })
 }
@@ -266,7 +253,7 @@ export function correoConfirmacion(e: DatosEvento & { para: string; nombre: stri
       tono: 'atencion',
       texto: `Si algo no está en buen estado, repórtalo desde el mismo enlace con una foto. Puedes confirmar hasta las ${hora(e.fin)}.`,
     },
-    cta: { texto: 'Confirmar recepción', url: miSolicitud(e) },
+    cta: { texto: 'Confirmar recepción', url: miEntrega(e) },
     logoUrl: logo(e),
   })
 }
@@ -300,7 +287,7 @@ export function correoConstanciaReceptor(d: DatosConstancia): Mensaje {
       tono: 'info',
       texto: `Al terminar, declara la devolución desde tu enlace antes del ${fechaLarga(d.devolverAntesDe)} a las ${hora(d.devolverAntesDe)}.`,
     },
-    cta: { texto: 'Ver mi constancia y devolver', url: miSolicitud(d) },
+    cta: { texto: 'Ver mi constancia y devolver', url: miEntrega(d) },
     logoUrl: logo(d),
   })
 }

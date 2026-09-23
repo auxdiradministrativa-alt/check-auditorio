@@ -86,6 +86,7 @@ export interface Servicios {
   sha256Hex(texto: string): string
   hmacSha256Hex(secreto: string, texto: string): string
   guardarFoto(nombre: string, mime: string, base64: string): string
+  fotoPertenece(id: string, asignacionId: string): boolean
   secretoHmac(): string
   ahora(): Date
   uuid(): string

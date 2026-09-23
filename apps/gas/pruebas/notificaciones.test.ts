@@ -41,56 +41,31 @@ function preparar() {
   let ahora = new Date('2026-09-15T08:00:00-05:00')
   const { nucleo, tabla } = crearNucleoMemoria({ ahora: () => ahora })
   const mover = (iso: string) => (ahora = new Date(iso))
-  const aprobada = () => {
-    const a = ok(
-      nucleo.ejecutar('invitacion.crear', {
+  const programada = () =>
+    ok(
+      nucleo.ejecutar('asignacion.crear', {
         id: randomUUID(),
-        correoSolicitante: laura.correo,
-        referencia: '',
+        espacioId: 'esp-auditorio',
+        evento: 'Foro <b>de</b> contaduría',
+        inicio: '2026-09-15T10:00:00-05:00',
+        fin: '2026-09-15T12:00:00-05:00',
+        correoReceptor: laura.correo,
         entregadoPor: infra,
         tokenSha256: sha(randomUUID()),
       }),
-    )
-    const s = ok(
-      nucleo.ejecutar('solicitud.diligenciar', {
-        id: a.id,
-        receptor: laura,
-        datos: {
-          evento: 'Foro <b>de</b> contaduría',
-          inicio: '2026-09-15T10:00:00-05:00',
-          fin: '2026-09-15T12:00:00-05:00',
-          rol: 'DOCENTE',
-          dependencia: 'Contaduría',
-          cargo: '',
-          celular: '3001234567',
-          asistentesEstimados: 80,
-          autorizaDatos: true,
-        },
-      }),
-    )
-    ok(
-      nucleo.ejecutar('solicitud.decidir', {
-        id: a.id,
-        decision: 'APROBAR',
-        motivo: '',
-        version: s.solicitadaEn!,
-        actor: infra,
-      }),
-    )
-    return a.id
-  }
+    ).id
   const notif = (id: string) => tabla.leer('Asignaciones').find((f) => f.id === id)!
-  return { nucleo, tabla, mover, aprobada, notif }
+  return { nucleo, tabla, mover, programada, notif }
 }
 
-test('aprobar avisa al solicitante; la confirmación sale solo desde la hora de inicio', () => {
+test('crear entrega avisa al receptor; la confirmación sale solo desde la hora de inicio', () => {
   const p = preparar()
   const c = correoFalso()
-  const id = p.aprobada()
+  const id = p.programada()
 
   const r1 = p.nucleo.procesarNotificaciones(c.correo)
-  assert.equal(r1.enviados, 1, 'solo el aviso de aprobación')
-  assert.match(c.enviados[0]!.asunto, /Solicitud aprobada/)
+  assert.equal(r1.enviados, 1, 'solo el aviso de entrega')
+  assert.match(c.enviados[0]!.asunto, /Entrega programada/)
   assert.deepEqual(c.enviados[0]!.para, [laura.correo])
   assert.equal(p.notif(id).notif_decision, 'ENVIADO')
   assert.equal(p.notif(id).notif_confirmacion, 'PENDIENTE')
@@ -100,7 +75,7 @@ test('aprobar avisa al solicitante; la confirmación sale solo desde la hora de 
   p.mover('2026-09-15T10:00:00-05:00')
   assert.equal(p.nucleo.procesarNotificaciones(c.correo).enviados, 1)
   assert.match(c.enviados[1]!.asunto, /Confirma la recepción/)
-  assert.match(c.enviados[1]!.html, new RegExp(`/mi-solicitud/${id}`))
+  assert.match(c.enviados[1]!.html, new RegExp(`/mi-entrega/${id}`))
   assert.doesNotMatch(c.enviados[1]!.html, /<b>de<\/b>/, 'texto del usuario escapado')
   assert.equal(p.nucleo.procesarNotificaciones(c.correo).enviados, 0, 'un solo correo por fila')
 })
@@ -108,7 +83,7 @@ test('aprobar avisa al solicitante; la confirmación sale solo desde la hora de 
 test('si ya confirmó antes del correo, la confirmación se omite', () => {
   const p = preparar()
   const c = correoFalso()
-  const id = p.aprobada()
+  const id = p.programada()
   p.mover('2026-09-15T09:40:00-05:00')
   ok(p.nucleo.ejecutar('recepcion.iniciar', { id, receptor: laura }))
   p.mover('2026-09-15T10:05:00-05:00')
@@ -120,7 +95,7 @@ test('si ya confirmó antes del correo, la confirmación se omite', () => {
 test('fallos: reintenta y al tercero queda FALLIDO con bitácora', () => {
   const p = preparar()
   const c = correoFalso()
-  const id = p.aprobada()
+  const id = p.programada()
   c.fallar(true)
   p.nucleo.procesarNotificaciones(c.correo)
   p.nucleo.procesarNotificaciones(c.correo)
@@ -141,7 +116,7 @@ test('fallos: reintenta y al tercero queda FALLIDO con bitácora', () => {
 test('sin cuota no se gasta intento; una reserva viva no se toma dos veces', () => {
   const p = preparar()
   const c = correoFalso()
-  const id = p.aprobada()
+  const id = p.programada()
   c.cuota(0)
   const r = p.nucleo.procesarNotificaciones(c.correo)
   assert.equal(r.reintentar, 1)
@@ -167,7 +142,7 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
     { correo: 'jefe@americana.edu.co', nombre: 'Jefe', evento: 'recepcion', activo: 'SI' },
     { correo: 'alertas@americana.edu.co', nombre: 'Alertas', evento: 'vencida', activo: 'SI' },
   ])
-  const id = p.aprobada()
+  const id = p.programada()
   p.mover('2026-09-15T09:45:00-05:00')
   ok(p.nucleo.ejecutar('recepcion.iniciar', { id, receptor: laura }))
   const elementos = ok(p.nucleo.ejecutar('catalogo.listar', {})).elementos
@@ -198,7 +173,7 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
   const constancias = c.enviados.filter((m) => m.asunto.includes(sello.consecutivo))
   assert.equal(constancias.length, 2, 'receptor + destinatarios fijos')
   const fijos = constancias.find((m) => m.para.includes('jefe@americana.edu.co'))!
-  assert.doesNotMatch(fijos.html, /3001234567|mi-solicitud/, 'sin celular ni enlace personal')
+  assert.doesNotMatch(fijos.html, /3001234567|mi-entrega/, 'sin celular ni enlace personal')
   // La constancia sigue íntegra aunque se escribió su bandeja.
   assert.equal(
     ok(p.nucleo.ejecutar('constancia.obtener', { consecutivo: sello.consecutivo }))?.integra,
@@ -217,7 +192,7 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
   q.tabla.actualizar('CFG_General', 'clave', 'notificaciones_desde', {
     valor: '2099-01-01T00:00:00-05:00',
   })
-  const id2 = q.aprobada()
+  const id2 = q.programada()
   q.mover('2026-09-15T09:45:00-05:00')
   ok(q.nucleo.ejecutar('recepcion.iniciar', { id: id2, receptor: laura }))
   const s2 = ok(

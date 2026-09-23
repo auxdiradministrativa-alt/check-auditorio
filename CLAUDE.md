@@ -10,18 +10,17 @@ Idioma de UI, dominio y commits: **español**. Zona horaria: `America/Bogota`.
 
 ## 1. Flujo de negocio (fuente de verdad)
 
-**Flujo por solicitud con enlace personal (decisión de Leo, 2026-09-23)** — spec completa en
-[`docs/superpowers/specs/2026-09-23-flujo-solicitud-por-enlace.md`](docs/superpowers/specs/2026-09-23-flujo-solicitud-por-enlace.md).
+**Entrega directa, sin reservas (decisión de Leo, 2026-09-23, tarde)** — sustituye al flujo por
+solicitud de la mañana ([spec archivada](docs/superpowers/specs/2026-09-23-flujo-solicitud-por-enlace.md)):
+ya no hay solicitud, aprobación ni devolución con motivo.
 
-1. La solicitud llega por **cualquier canal**. **Infraestructura emite un enlace/QR amarrado al correo `@americana.edu.co` de quien solicita** (`INVITADA`): solo esa cuenta de Google lo abre; otra cuenta ve «Este enlace es personal» sin ningún dato del evento. Caduca a las `horas_vigencia_invitacion` (72) si no se diligencia.
-2. **Quien solicita** abre el enlace, inicia sesión con **esa** cuenta y diligencia evento, fecha, franja y sus datos (rol, dependencia, cargo opc., celular, asistentes) + **autorización de datos** (Ley 1581, sin marcar por defecto) → `SOLICITADA`. Un solo espacio (el auditorio): no lo elige.
-3. **Infraestructura aprueba** (`PROGRAMADA`, revalida el cruce de franja y aprueba solo la versión que vio) **o devuelve con motivo** (`RECHAZADA`); quien solicita corrige con sus datos precargados y vuelve a `SOLICITADA`. Sin aprobar, la solicitud vence en el `inicio` propuesto.
-4. **No hay validación de presencia por el gestor.** Desde `inicio − minutos_vigencia_qr_antes` (30) hasta `fin`, el mismo enlace muestra «Confirmar recepción» (y a la hora de inicio llega un correo que lo recuerda). **Riesgo aceptado:** la constancia prueba la cuenta que confirmó, no la presencia física.
-5. **Checklist solo de infraestructura** (decisión de Leo, 2026-09-23; spec [`2026-09-23-checklist-solo-infraestructura.md`](docs/superpowers/specs/2026-09-23-checklist-solo-infraestructura.md)): un paso con los 10 aspectos oficiales (pisos, muros, iluminación, aire, sillas…), cada uno `CONFORME`/`NOVEDAD`; **sin equipos electrónicos, sin cantidades ni categorías**; **foto obligatoria solo si hay novedad**; atajo «Todo en buen estado» que no pisa una novedad ya descrita → **términos + autorización** (casillas separadas, sin marcar) → envía.
-6. El servidor **sella**: consecutivo `REC-000123`, hora del servidor, SHA-256 del registro canónico, código de verificación. Queda `RECIBIDA`. **No hay acta Doc/PDF**: constancia = fila en Sheets + correo HTML + `/verificar/[consecutivo]` (recalcula hash; PDF solo con imprimir).
-7. **Devolución**: la declara **solo quien recibió**, desde su enlace personal (buenas condiciones / con novedades + foto). Infraestructura **no participa**. Si vence el plazo → `DEVOLUCION_VENCIDA` + alerta. Control cruzado: diferencias en la siguiente entrega se asocian al turno anterior.
+1. La entrega se coordina por **cualquier canal**. **Infraestructura la registra en `/panel`** («Crear entrega»: evento, fecha, franja y **correo `@americana.edu.co` de quien recibe**) → nace en `PROGRAMADA`, revalidando el cruce de franja. Un solo espacio (el auditorio). El enlace/QR queda **amarrado a esa cuenta**: otra cuenta ve «Este enlace es personal» sin ningún dato del evento. Al crearla sale un correo «Entrega programada» a quien recibe.
+2. **No hay validación de presencia por el gestor.** Desde `inicio − minutos_vigencia_qr_antes` (30) hasta `fin`, el enlace (`/r/[token]` o `/mi-entrega/[id]`) abre el acta; antes muestra cuándo podrá empezar, y a la hora de inicio llega un correo que lo recuerda. **Riesgo aceptado:** la constancia prueba la cuenta que confirmó, no la presencia física.
+3. Quien recibe diligencia **una sola vez, en el acta**, sus datos (rol, dependencia, cargo opc., celular, asistentes) y el **checklist solo de infraestructura** (decisión de Leo, 2026-09-23; spec [`2026-09-23-checklist-solo-infraestructura.md`](docs/superpowers/specs/2026-09-23-checklist-solo-infraestructura.md)): un paso con los 10 aspectos oficiales (pisos, muros, iluminación, aire, sillas…), cada uno `CONFORME`/`NOVEDAD`; **sin equipos electrónicos, sin cantidades ni categorías**; **foto obligatoria solo si hay novedad**; atajo «Todo en buen estado» que no pisa una novedad ya descrita → **términos + autorización** (casillas separadas, sin marcar) → envía.
+4. El servidor **sella**: consecutivo `REC-000123`, hora del servidor, SHA-256 del registro canónico, código de verificación. Queda `RECIBIDA`. **No hay acta Doc/PDF**: constancia = fila en Sheets + correo HTML + `/verificar/[consecutivo]` (recalcula hash; PDF solo con imprimir).
+5. **Devolución**: la declara **solo quien recibió**, desde su enlace personal (buenas condiciones / con novedades + foto). Infraestructura **no participa**. Si vence el plazo → `DEVOLUCION_VENCIDA` + alerta. Control cruzado: diferencias en la siguiente entrega se asocian al turno anterior.
 
-Estados: `INVITADA → SOLICITADA ⇄ RECHAZADA → PROGRAMADA → EN_DILIGENCIAMIENTO → RECIBIDA → DEVUELTA | DEVOLUCION_VENCIDA`; terminales `ANULADA`, `EXPIRADA`. **Flujo anterior** (`PROGRAMADA → EN_VALIDACION` por QR de un solo uso y validación del gestor): su código se conserva solo para filas históricas; la web ya no crea filas nuevas por ahí y `qr.reclamar` rechaza toda fila con enlace personal.
+Estados: `PROGRAMADA → EN_DILIGENCIAMIENTO → RECIBIDA → DEVUELTA | DEVOLUCION_VENCIDA`; terminales `ANULADA`, `EXPIRADA`. **Solo para leer filas históricas:** `INVITADA`/`SOLICITADA`/`RECHAZADA` (flujo por solicitud: ya no hay acción que las avance; el panel las marca «Registro anterior», se anulan y se recrean, y expiran solas en su `token_vence`) y `EN_VALIDACION` (QR genérico con validación del gestor; `qr.reclamar` rechaza toda fila con enlace personal). Se retiraron `invitacion.crear`, `solicitud.diligenciar` y `solicitud.decidir`; `/mi-solicitud/[id]` reexporta `/mi-entrega/[id]` para no romper correos ya enviados.
 Fuera de alcance v1: **externos** (sin cuenta del dominio), integración con SIGAF.
 
 ## 2. Arquitectura (decidida, no reabrir)
@@ -37,7 +36,7 @@ Navegador ─► Vercel · Next.js 16 (UI + auth + validación + sello)
 
 - **BD = Google Sheets** (lo opera Infraestructura sin TI). Nunca escribir la hoja desde Vercel.
 - **Sin n8n en notificaciones (decisión de Leo, 2026-09-23).** Los correos los envía el propio Apps Script desde la cuenta dueña: bandeja de salida por correo en las columnas `notif_*`, reservada con el mismo `LockService`, **enviada fuera del bloqueo**, 3 intentos y respeto de la cuota diaria. El flujo de n8n (commit `d0e0275`, `docs/superpowers/specs/2026-09-15-n8n-punto-de-partida.md`) queda **archivado, sin borrar**, hasta probar el activador en la cuenta real.
-- **Primero guardar, luego notificar.** El correo nunca es el registro: todo lo que avisa ya se ve en la web, y los correos enlazan a `/mi-solicitud/[id]` (el token del QR lo deriva la web; Apps Script no lo conoce).
+- **Primero guardar, luego notificar.** El correo nunca es el registro: todo lo que avisa ya se ve en la web, y los correos enlazan a `/mi-entrega/[id]` (el token del QR lo deriva la web; Apps Script no lo conoce).
 
 ## 3. Estado actual del repo (Bloque 1 terminado: mecanismo completo sin credenciales)
 
@@ -46,7 +45,8 @@ irá a Apps Script, sobre un libro en memoria. **Google conectado y producción 
 2026-09-15** en `https://check-auditorio-web.vercel.app`: prueba de uso completa en producción con
 la sesión real (REC-000001). Guía y estado de Google en
 [`docs/google-workspace.md`](docs/google-workspace.md). **Flujo por enlace en producción desde el
-2026-09-23** (web en Vercel desde `main`; Apps Script verificado por huella). Para cambios futuros
+2026-09-23** (web en Vercel desde `main`; Apps Script verificado por huella); la **entrega directa** (§1)
+está en el árbol local, **sin commit ni publicar**. Para cambios futuros
 del esquema, el orden (`instalar()` con la cuenta dueña → `publicar` → push de la web) está en la
 spec §10.bis; saltárselo tumba los `doPost` o las escrituras. Latencia medida de Apps Script: páginas 2–4 s,
 escrituras 13–20 s.
@@ -59,7 +59,7 @@ packages/shared/          contrato, sin build (se consume como TS fuente)
 apps/gas/                 núcleo del registro — Clean Architecture, esbuild → dist/codigo.js
   src/dominio/            reglas puras: asignación, recepción, devolución, sello, errores
   src/aplicacion/         puertos · enrutador (acción → caso) · sobre (HMAC, ventana, nonce)
-                          casos/ un módulo por caso de uso (solicitud.ts: invitar, diligenciar, decidir, iniciar;
+                          casos/ un módulo por caso de uso (asignaciones.ts: crear la entrega; iniciar-recepcion.ts;
                           notificaciones.ts: la bandeja de correo)
                           correo/ plantillas HTML puras + colores.ts (Sage Garden en hex)
   src/infraestructura/
@@ -70,19 +70,19 @@ apps/gas/                 núcleo del registro — Clean Architecture, esbuild �
   src/nucleo.ts           raíz de composición: crearNucleo(tabla, servicios)
   pruebas/                node:test contra el núcleo en memoria
 apps/web/                 Next.js 16.3.5 · React 19.3 · Tailwind 4.3 · lucide-react
-  src/app/                / · /panel (operación, reservas, registro y constancias)
+  src/app/                / · /panel (operación, entregas, registro y constancias)
                           /panel?evento=<id>#operacion · /panel?nuevo=1#operacion
                           /panel/asignaciones(/nueva|/[id]) y /panel/recepciones redirigen al centro
                           /r/[token](/confirmada) · /devolucion/[id]?t= · /verificar/[consecutivo]
-                          /mi-solicitud/[id] (enlace estable de los correos: sesión → paso que toca)
-  src/features/<f>/       UI del caso + acciones.ts (Server Actions) en auth · panel · fotos · recepcion · solicitud · devolucion; verificacion solo UI
+                          /mi-entrega/[id] (enlace estable de los correos: sesión → paso que toca; /mi-solicitud lo reexporta)
+  src/features/<f>/       UI del caso + acciones.ts (Server Actions) en auth · panel · fotos · recepcion · devolucion; verificacion solo UI
   src/servidor/           solo servidor (`server-only`)
     entorno.ts            variables validadas; modos gas|memoria y google|local
     registro/             ÚNICO puerto de datos: index → cliente-gas (POST firmado) | cliente-memoria
                           lecturas: catálogo con revalidación a 60 s en GAS; estados sin caché persistente
     auth/                 better-auth (Google, sin BD) · sesion-local · sesion · permisos (guardas)
     tokens.ts · qr.ts · accion.ts (ejecutarAccion → Resultado)
-  e2e/                    Playwright: solicitud por enlace de punta a punta, gestión (enlace, filtros, CSV,
+  e2e/                    Playwright: entrega directa de punta a punta, gestión (enlace, filtros, CSV,
                           móvil) e ingreso; apoyo.ts con cuentas y franjas compartidas
 n8n/workflows/            vacío (notificaciones sin n8n desde 2026-09-23)
 ```
@@ -104,11 +104,12 @@ Costuras que no se ven leyendo un solo fichero:
 - **El checklist debe cubrir exactamente el catálogo vigente**: el esquema compartido no conoce el catálogo, así que eso lo exige el dominio del núcleo (`dominio/recepcion.ts`, contra la hoja). «Novedad exige observación y foto» está en el esquema compartido y otra vez en el núcleo.
 - **`revalidatePath` dentro de una Server Action repinta la página actual**: un estado de éxito que solo vive en el cliente se pierde. Por eso las confirmaciones las pinta el servidor desde el registro (ver `/devolucion/[id]`).
 - **El POST a Apps Script solo se reenvía si la conexión ni se abrió; la lectura de su respuesta sí se reintenta** (`registro/cliente-gas.ts`): doPost ejecuta y responde 302 a un eco en googleusercontent que a veces da 404 o redirige a `/exec` (se leería doGet). Se sigue la redirección a mano, se relee el eco hasta 4 veces y se valida la forma. Repetir un POST que llegó duplicaría la acción; por eso el reenvío (3 intentos, solo ante `UND_ERR_CONNECT_TIMEOUT`, `ECONNREFUSED`, DNS…) usa **el mismo sobre y nonce**, que Apps Script rechazaría si llegara dos veces.
-- **`RefrescoAutomatico` espera a que termine el refresco anterior**: con GAS un refresco dura segundos; un `setInterval` de 4 s cancelaba cada uno y el panel no se enteraba de la solicitud del receptor. En memoria no se ve.
+- **`RefrescoAutomatico` espera a que termine el refresco anterior**: con GAS un refresco dura segundos; un `setInterval` de 4 s cancelaba cada uno y el panel no se enteraba de la recepción. En memoria no se ve.
 - **Escritura no transaccional**: si Apps Script falla a mitad de `recepcion.registrar`, pueden quedar filas parciales. La clave de idempotencia permite reintentar; no hay rollback.
-- **El enlace personal tiene dos puertas y las dos cuentan**: la web (`app/r/[token]/page.tsx`, `features/solicitud/acciones.ts`, `/mi-solicitud`) compara el correo de la sesión con `invitadoCorreo` antes de pintar nada, y el núcleo lo exige otra vez (`exigirInvitado` + `exigirReceptor` por `sub`). La web decide qué se ve; el núcleo, qué se escribe.
+- **El enlace personal tiene dos puertas y las dos cuentan**: la web (`app/r/[token]/page.tsx`, `features/recepcion/acciones.ts`, `/mi-entrega`) compara el correo de la sesión con `invitadoCorreo` antes de pintar nada, y el núcleo lo exige otra vez (`exigirInvitado` + `exigirReceptor` por `sub`). La web decide qué se ve; el núcleo, qué se escribe.
 - **La vista `Asignacion` trae los plazos calculados** (`tokenVence`, `recepcionDesde`): la web nunca escribe 72 h ni 30 min. Si Infraestructura cambia `CFG_General`, el panel y el solicitante lo muestran solos.
-- **`solicitadaEn` es la versión de la solicitud**: `solicitud.decidir` exige la que el gestor vio. Si quien solicita corrigió entre medias, la aprobación falla y hay que volver a revisar.
+- **`asignacion.crear` es idempotente por `id`** (lo genera la web): reintentar con los mismos datos devuelve la misma entrega; el mismo `id` con otros datos se rechaza.
+- **Publicar primero el núcleo y enseguida la web**: la entrega directa quitó acciones del protocolo. Con la web vieja sobre el núcleo nuevo, «Emitir enlace» falla (acción desconocida); con la web nueva sobre el núcleo viejo, la entrega se crearía sin cuenta amarrada. El esquema de columnas no cambió: no hace falta `instalar()`.
 - **`tabla-gas` es estricto con las columnas**: si falta una, falla con «Faltan columnas… Ejecuta instalar()». Tras un cambio de esquema, toda escritura falla hasta ejecutar `instalar()` en el libro real — a propósito, para no escribir filas a medias.
 - **La bandeja de correo reserva con bloqueo y envía sin él**: las firmas de los usuarios esperan el bloqueo 20 s y `MailApp` tarda segundos. Hueco aceptado: si Apps Script muere entre enviar y marcar, ese correo sale dos veces.
 - **Publicar el núcleo = `pnpm --filter @check-auditorio/gas publicar`, nunca a mano en el editor**: una «Nueva implementación» crea otra URL y la web se queda en la versión vieja sin error visible (pasó el 2026-09-23). `doGet` devuelve la `huella` del bundle; `publicar` falla si la URL de la web no sirve la recién compilada. Las sondas fuerzan IPv4 (en esta red Node se cuelga por IPv6 con Google).
@@ -151,7 +152,7 @@ Pestañas **protegidas (solo el script)** — nunca se editan ni borran; anular 
 
 Siempre IDs estables (uuid/consecutivo), **nunca número de fila**. Límite: 20 M celdas por libro.
 La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esquema.ts` (la escribe `instalar()`); esta tabla la resume.
-Las columnas del flujo por enlace (2026-09-23) van **al final** y `instalar()` las añade a un libro existente sin tocar filas; ninguna entra en el sello (`contenidoRecepcion`), así que las constancias anteriores siguen «Íntegra». `token_vence` cambia de sentido con el estado (invitación: +72 h; solicitada: el `inicio` propuesto; aprobada: el `fin`).
+Las columnas del flujo por enlace (2026-09-23) van **al final** y `instalar()` las añade a un libro existente sin tocar filas; ninguna entra en el sello (`contenidoRecepcion`), así que las constancias anteriores siguen «Íntegra». `token_vence` es el `fin` de la entrega (en filas históricas: invitación +72 h, solicitada el `inicio` propuesto). `solicitada_en`, `motivo_rechazo` y `solicitud_*` ya no se escriben; `notif_decision` guarda el correo «Entrega programada».
 `receptor_nombre` (Asignaciones) se añadió en el Bloque 1: la tarjeta de validación lo necesita sin cruzar hojas. `categoria`, `cantidad_esperada` y `cantidad_recibida` se retiraron el 2026-09-23: `instalar()` solo añade columnas, así que en el libro real las quita `reiniciarRegistroDePrueba()` (copia el libro, vacía el registro de pruebas y vuelve a sembrar catálogo y términos; exige la propiedad `PERMITIR_REINICIO=SI` y la borra al terminar). Todas las celdas de las pestañas protegidas son texto plano. `DEVOLUCION_VENCIDA` no se escribe: se deriva al leer (`dominio/asignacion.ts`).
 
 ## 6. Fase 2 — Mecanismo (orden sugerido, criterios de aceptación)
