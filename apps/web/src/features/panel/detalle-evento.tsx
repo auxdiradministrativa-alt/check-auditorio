@@ -40,7 +40,7 @@ export async function DetalleEvento({
             <span className="text-sm font-semibold text-navy-700 tabular">{consecutivo}</span>
           )}
         </div>
-        <h3 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">{evento}</h3>
+        <h3 className="text-section">{evento}</h3>
         <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-600">
           <div className="flex items-center gap-1.5">
             <dt>
@@ -71,8 +71,8 @@ export async function DetalleEvento({
         </dl>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-        <div className="flex flex-col gap-6">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           {estado === 'EN_VALIDACION' && receptor && (
             <TarjetaValidacion asignacionId={id} solicitante={receptor} />
           )}
@@ -80,7 +80,7 @@ export async function DetalleEvento({
           {estado === 'EN_DILIGENCIAMIENTO' && receptor && (
             <Card>
               <CardHeader>
-                <CardTitle>Diligenciando la constancia</CardTitle>
+                <CardTitle as="h4">Diligenciando la constancia</CardTitle>
                 <CardDescription>
                   {receptor.nombre} ({receptor.correo}) está revisando los elementos en su celular.
                 </CardDescription>
@@ -91,21 +91,21 @@ export async function DetalleEvento({
           {svg && (
             <Card>
               <CardHeader>
-                <CardTitle>QR de recepción</CardTitle>
+                <CardTitle as="h4">QR de recepción</CardTitle>
                 <CardDescription>
                   Muéstralo a la persona que recibe. Es de un solo uso y funciona desde 30 minutos
                   antes del inicio hasta el fin del evento.
                 </CardDescription>
               </CardHeader>
-              <CardBody className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+              <CardBody className="flex flex-wrap items-start gap-6">
                 <div
                   role="img"
                   aria-label={`Código QR para recibir ${evento}`}
-                  className="aspect-square w-60 shrink-0 rounded-2xl border border-pearl-200 bg-white p-3 [&_svg]:size-full"
+                  className="aspect-square w-full max-w-60 shrink-0 rounded-2xl border border-pearl-200 bg-white p-3 [&_svg]:size-full"
                   // SVG generado en servidor a partir de una URL propia.
                   dangerouslySetInnerHTML={{ __html: svg }}
                 />
-                <div className="flex min-w-0 flex-col gap-3 text-sm text-ink-600">
+                <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-3 text-sm text-ink-600">
                   <ul className="flex flex-col gap-2">
                     <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
                     <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
@@ -129,7 +129,7 @@ export async function DetalleEvento({
           {consecutivo && receptor && (
             <Card>
               <CardHeader>
-                <CardTitle>Constancia de recepción</CardTitle>
+                <CardTitle as="h4">Constancia de recepción</CardTitle>
                 <CardDescription>
                   Firmada por {receptor.nombre} ({receptor.correo}).
                 </CardDescription>
@@ -145,7 +145,7 @@ export async function DetalleEvento({
 
           <Card>
             <CardHeader>
-              <CardTitle>Elementos del espacio</CardTitle>
+              <CardTitle as="h4">Elementos del espacio</CardTitle>
             </CardHeader>
             <CardBody>
               <ResumenCatalogo catalogo={catalogo} />
@@ -153,10 +153,10 @@ export async function DetalleEvento({
           </Card>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <Card className="h-fit">
             <CardHeader>
-              <CardTitle>Seguimiento</CardTitle>
+              <CardTitle as="h4">Seguimiento</CardTitle>
             </CardHeader>
             <CardBody>
               <LineaTiempo estado={estado} />

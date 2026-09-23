@@ -34,7 +34,7 @@ export function UtilidadesQr({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
         <Button variante="secundario" tamano="sm" onClick={copiar}>
           <Copy aria-hidden />

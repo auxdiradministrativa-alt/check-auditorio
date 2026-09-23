@@ -31,14 +31,14 @@ export function Segmented<T extends string>({
   className?: string
 }) {
   return (
-    <div role="radiogroup" aria-label={etiqueta} className={cn('flex gap-2', className)}>
+    <div role="radiogroup" aria-label={etiqueta} className={cn('flex flex-wrap gap-2', className)}>
       {opciones.map((op) => {
         const seleccionado = valor === op.valor
         return (
           <label
             key={op.valor}
             className={cn(
-              'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold-500',
+              'flex min-h-11 flex-[1_1_8rem] cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold-500',
               seleccionado
                 ? activo[op.tono ?? 'navy']
                 : 'border-pearl-300 bg-white text-navy-800 hover:border-navy-500/40',

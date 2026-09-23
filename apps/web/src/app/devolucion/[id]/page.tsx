@@ -31,10 +31,10 @@ export default async function Devolucion({ params, searchParams }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold tracking-[0.14em] text-gold-700 uppercase tabular">
+        <p className="text-sm font-medium text-ink-600 tabular">
           Devolución · {asignacion.consecutivo}
         </p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">{asignacion.evento}</h1>
+        <h1 className="text-page sm:text-page-lg">{asignacion.evento}</h1>
         <dl className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-ink-600">
           <div className="flex items-center gap-1.5">
             <dt>
@@ -61,7 +61,7 @@ export default async function Devolucion({ params, searchParams }: Props) {
           <span className="grid size-20 place-items-center rounded-full bg-ok-50 ring-1 ring-ok-700/20">
             <CircleCheckBig className="size-10 text-ok-700" aria-hidden />
           </span>
-          <h2 className="font-display text-3xl font-semibold">Devolución registrada</h2>
+          <h2 className="text-section">Devolución registrada</h2>
           <p className="max-w-sm text-ink-600">
             Infraestructura recibió tu declaración del{' '}
             {formatearFechaHora(constancia.devolucion.declaradaEn)}.

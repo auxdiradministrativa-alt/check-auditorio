@@ -23,25 +23,11 @@ export default async function PaginaIngreso({ searchParams }: Props) {
   if (sesion && (await esEntregador(sesion))) redirect('/panel')
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-navy-900">
-      {/*
-       * Fondo en tres capas, todas en CSS: resplandor radial detrás de la tarjeta
-       * y dos arcos dorados en las esquinas opuestas. Van en una capa aparte con
-       * `overflow-hidden` para que los círculos no generen scroll horizontal; el
-       * contenedor que sí debe poder desplazarse (el de arriba) no lo recorta.
-       */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 size-168 max-w-[140vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-navy-600/35 blur-[120px]" />
-        <div className="absolute -top-56 -right-40 size-168 rounded-full border border-gold-500/25" />
-        <div className="absolute -top-32 -right-16 size-120 rounded-full border border-gold-500/15" />
-        <div className="absolute -bottom-64 -left-48 size-184 rounded-full border border-gold-500/25" />
-        <div className="absolute -bottom-40 -left-24 size-128 rounded-full border border-gold-500/15" />
-      </div>
-
+    <div className="flex min-h-dvh flex-col border-t-4 border-navy-900 bg-pearl-100">
       <AvisoDemo />
 
       <main className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
-        <section className="w-full max-w-115 rounded-3xl border border-gold-500/40 bg-pearl-75 p-7 text-center shadow-[0_1px_2px_rgb(8_21_40/0.2),0_30px_60px_-24px_rgb(8_21_40/0.55)] sm:p-10">
+        <section className="w-full max-w-115 min-w-0 rounded-card border border-pearl-200 bg-white p-6 text-center shadow-card sm:p-10">
           <Image
             src="/logo-americana-completo.png"
             alt="Corporación Universitaria Americana"
@@ -53,14 +39,10 @@ export default async function PaginaIngreso({ searchParams }: Props) {
 
           <span aria-hidden className="mx-auto mt-7 block h-px w-12 bg-gold-600/60" />
 
-          <p className="mt-6 text-[0.6875rem] font-semibold tracking-[0.3em] text-gold-700 uppercase">
-            Infraestructura
-          </p>
+          <p className="mt-6 text-sm font-medium text-ink-600">Infraestructura</p>
 
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-navy-900">
-            Bienvenido
-          </h1>
-          <p className="mt-2 text-[0.9375rem] text-ink-600">Ingresa con tu cuenta institucional</p>
+          <h1 className="mt-3 text-page text-navy-900 sm:text-page-lg">Bienvenido</h1>
+          <p className="mt-2 text-base text-ink-600">Ingresa con tu cuenta institucional</p>
 
           {error && (
             <p
@@ -98,7 +80,7 @@ export default async function PaginaIngreso({ searchParams }: Props) {
         </section>
       </main>
 
-      <footer className="relative px-4 pb-8 text-center text-xs tracking-wide text-navy-100/70">
+      <footer className="px-4 pb-8 text-center text-xs text-ink-600">
         Corporación Universitaria Americana
       </footer>
     </div>

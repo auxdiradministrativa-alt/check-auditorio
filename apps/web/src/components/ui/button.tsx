@@ -13,9 +13,9 @@ const variantes = {
 } as const
 
 const tamanos = {
-  sm: 'h-9 gap-1.5 rounded-lg px-3 text-sm',
-  md: 'h-11 gap-2 rounded-xl px-4 text-[0.9375rem]',
-  lg: 'h-13 gap-2.5 rounded-xl px-6 text-base',
+  sm: 'min-h-11 gap-2 py-2 sm:min-h-9 rounded-lg px-3 text-sm',
+  md: 'min-h-11 gap-2 py-2.5 rounded-xl px-4 text-base',
+  lg: 'min-h-13 gap-3 py-3 rounded-xl px-6 text-base',
 } as const
 
 type Estilo = {
@@ -25,7 +25,7 @@ type Estilo = {
 }
 
 const base =
-  'inline-flex select-none items-center justify-center font-semibold whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-[1.1em] [&_svg]:shrink-0'
+  'inline-flex max-w-full select-none items-center justify-center text-center font-medium whitespace-normal transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-[1.1em] [&_svg]:shrink-0'
 
 export function Button({
   variante = 'primario',

@@ -23,7 +23,7 @@ function Pantalla({
   return (
     <div className="flex flex-col items-center gap-6 py-8 text-center">
       {icono}
-      <h1 className="font-display text-3xl font-semibold">{titulo}</h1>
+      <h1 className="text-page sm:text-page-lg">{titulo}</h1>
       {children}
     </div>
   )
@@ -33,8 +33,8 @@ function TarjetaEvento({ asignacion }: { asignacion: Asignacion }) {
   return (
     <Card className="w-full max-w-sm text-left">
       <CardBody className="flex flex-col gap-1">
-        <p className="text-xs font-semibold tracking-wide text-gold-700 uppercase">Entrega</p>
-        <p className="font-display text-lg font-semibold">{asignacion.evento}</p>
+        <p className="text-sm font-medium text-ink-600">Entrega</p>
+        <p className="text-card">{asignacion.evento}</p>
         <p className="text-sm text-ink-600 first-letter:uppercase">
           {formatearFechaLarga(asignacion.inicio)} ·{' '}
           <span className="tabular">{formatearFranja(asignacion.inicio, asignacion.fin)}</span>

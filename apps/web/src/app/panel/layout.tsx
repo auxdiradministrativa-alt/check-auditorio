@@ -22,7 +22,7 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
             </div>
           </header>
           <main className="mx-auto max-w-6xl space-y-5 px-4 py-8 sm:px-6">
-            <h1 className="font-display text-3xl font-semibold">Gestión de espacios</h1>
+            <h1 className="text-page sm:text-page-lg">Gestión de espacios</h1>
             <p role="status" className="text-sm text-ink-600">
               Verificando acceso al centro de gestión…
             </p>

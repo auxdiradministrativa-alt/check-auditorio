@@ -6,7 +6,7 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
 }, testInfo) => {
   const errores: string[] = []
   page.on('pageerror', (error) => errores.push(error.message))
-  const evento = `=Encuentro académico ${Date.now()}`
+  const evento = `=Encuentro académico de investigación y planeación institucional con docentes y administrativos ${Date.now()}`
   await page.goto('/')
   await page.getByLabel('Nombre').fill('Infraestructura')
   await page.getByLabel('Correo institucional').fill('auxdiradministrativa@americana.edu.co')
@@ -20,12 +20,25 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
   await operacion.getByLabel('Fecha', { exact: true }).fill('2035-06-15')
   await operacion.getByLabel('Hora de inicio').fill('09:00')
   await operacion.getByLabel('Hora de fin').fill('11:00')
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: testInfo.outputPath(`formulario-${width}.png`), fullPage: true })
+  }
   await operacion.getByRole('button', { name: 'Crear evento y generar QR' }).click()
   await expect(
     operacion.getByRole('img', { name: `Código QR para recibir ${evento}` }),
   ).toBeVisible()
   const id = new URL(page.url()).searchParams.get('evento')!
   expect(id).toMatch(/^[0-9a-f-]{36}$/)
+  await expect(operacion.getByRole('heading', { name: 'QR de recepción' })).toHaveCSS(
+    'font-size',
+    '16px',
+  )
+  await expect(operacion.getByRole('heading', { name: 'QR de recepción' })).toHaveCSS(
+    'font-weight',
+    '600',
+  )
 
   const qrDescarga = page.waitForEvent('download')
   await operacion.getByRole('button', { name: 'Descargar QR' }).click()
@@ -36,7 +49,17 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
   await expect(operacion.getByRole('status')).toContainText('Enlace copiado')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('/r/')
 
+  for (const width of [320, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: testInfo.outputPath(`detalle-${width}.png`), fullPage: true })
+  }
+
   await operacion.getByRole('link', { name: 'Cerrar detalle' }).click()
+  // La lista ya está visible antes de terminar esta navegación. Esperar su cierre
+  // evita contar la petición de navegación como si la hubieran causado los filtros.
+  await expect(page).toHaveURL(/\/panel#reservas$/)
+  await expect(operacion.getByRole('link', { name: 'Cerrar detalle' })).toHaveCount(0)
   const reservas = page.getByRole('region', { name: 'Reservas y seguimiento' })
   const historico = page.getByRole('region', { name: 'Registro histórico y constancias' })
   await expect(reservas.getByRole('link', { name: evento, exact: true })).toBeVisible()

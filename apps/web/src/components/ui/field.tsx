@@ -20,8 +20,8 @@ export function Field({
   children: ReactNode
 }) {
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-semibold text-navy-900">
+    <div className={cn('flex min-w-0 flex-col gap-2', className)}>
+      <label htmlFor={id} className="text-sm font-medium text-navy-900">
         {label}
         {opcional && <span className="ml-1.5 font-normal text-ink-500">(opcional)</span>}
       </label>
@@ -42,7 +42,7 @@ export function Field({
 }
 
 const control =
-  'w-full rounded-xl border border-pearl-300 bg-white px-3.5 text-[0.9375rem] text-navy-900 placeholder:text-ink-500 transition-colors hover:border-navy-500/40 focus:border-navy-600 focus:ring-3 focus:ring-navy-600/15 focus:outline-none disabled:bg-pearl-100 disabled:text-ink-600 aria-invalid:border-danger-700 aria-invalid:ring-danger-700/15'
+  'min-w-0 w-full rounded-xl border border-pearl-300 bg-white px-3.5 text-base text-navy-900 placeholder:text-ink-500 transition-colors hover:border-navy-500/40 focus:border-navy-600 focus:ring-3 focus:ring-navy-600/15 focus:outline-none disabled:bg-pearl-100 disabled:text-ink-600 aria-invalid:border-danger-700 aria-invalid:ring-danger-700/15'
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(control, 'h-11', className)} {...props} />

@@ -28,9 +28,9 @@ export function TablaEventos({
     return datos.map((a) => (
       <tr
         key={a.id}
-        className="grid grid-cols-[1fr_auto] gap-3 px-5 py-4 align-top hover:bg-navy-50/60 sm:table-row sm:p-0"
+        className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-5 py-4 align-top hover:bg-navy-50/60 md:table-row md:p-0"
       >
-        <td className="col-span-2 min-w-0 break-words sm:px-5 sm:py-4">
+        <td className="col-span-2 min-w-0 [overflow-wrap:anywhere] break-words md:px-5 md:py-4">
           <Link
             href={`/panel?evento=${a.id}#operacion`}
             prefetch={false}
@@ -45,14 +45,14 @@ export function TablaEventos({
             <p className="mt-1 text-xs text-ink-600">{a.receptor?.nombre ?? 'Sin receptor'}</p>
           )}
         </td>
-        <td className="text-sm tabular sm:px-3 sm:py-4">
+        <td className="text-sm tabular md:px-3 md:py-4">
           <p>{formatearFechaCorta(a.inicio)}</p>
           <p className="mt-1 text-xs text-ink-600">{formatearFranja(a.inicio, a.fin)}</p>
         </td>
-        <td className="text-right sm:px-3 sm:py-4 sm:text-left">
+        <td className="text-right md:px-3 md:py-4 md:text-left">
           <EstadoBadge estado={a.estado} />
         </td>
-        <td className="col-span-2 border-t border-pearl-200 pt-3 sm:border-0 sm:px-5 sm:py-4 sm:text-right">
+        <td className="col-span-2 border-t border-pearl-200 pt-3 md:border-0 md:px-5 md:py-4 md:text-right">
           {historial && a.consecutivo ? (
             <Link
               href={`/verificar/${a.consecutivo}`}
@@ -86,27 +86,27 @@ export function TablaEventos({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="block w-full text-left text-sm sm:table sm:min-w-[640px]">
+        <table className="block w-full text-left text-sm md:table md:min-w-[640px] md:table-fixed">
           <caption className="sr-only">
             {historial ? 'Registro histórico de eventos y recepciones' : 'Reservas activas'}
           </caption>
-          <thead className="sr-only border-y border-pearl-200 bg-pearl-100/60 text-xs text-ink-600 sm:not-sr-only">
+          <thead className="sr-only border-y border-pearl-200 bg-pearl-100/60 text-xs text-ink-600 md:not-sr-only">
             <tr>
-              <th scope="col" className="px-5 py-3 font-medium">
+              <th scope="col" className="px-5 py-3 font-medium md:w-[32%]">
                 Evento y espacio
               </th>
-              <th scope="col" className="px-3 py-3 font-medium">
+              <th scope="col" className="px-3 py-3 font-medium md:w-[24%]">
                 Fecha y horario
               </th>
-              <th scope="col" className="px-3 py-3 font-medium">
+              <th scope="col" className="px-3 py-3 font-medium md:w-[26%]">
                 Estado
               </th>
-              <th scope="col" className="px-5 py-3 text-right font-medium">
+              <th scope="col" className="px-5 py-3 text-right font-medium md:w-[18%]">
                 {historial ? 'Constancia / gestión' : 'Operación'}
               </th>
             </tr>
           </thead>
-          <tbody className="block divide-y divide-pearl-200 sm:table-row-group">
+          <tbody className="block divide-y divide-pearl-200 md:table-row-group">
             {filas(datos.slice((numero - 1) * POR_PAGINA, numero * POR_PAGINA), historial)}
           </tbody>
         </table>

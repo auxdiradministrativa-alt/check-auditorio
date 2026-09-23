@@ -106,6 +106,7 @@ Costuras que no se ven leyendo un solo fichero:
 - Validación en los bordes con los esquemas de `@check-auditorio/shared`; el servidor revalida todo. **Nunca confiar en el cliente** para identidad, hora, catálogo, cantidades esperadas ni versión de términos.
 - Secretos solo en server (`import 'server-only'`). Verificar sesión **dentro de cada Server Action/Route Handler**, no solo en `proxy.ts` (Next 16 renombró `middleware` → `proxy`).
 - Tokens de colores: `navy-*`, `pearl-*`, `gold-*`, `ink-*`, `ok-*`, `danger-*` (en `globals.css`, contraste AA verificado). `gold-600` es solo decorativo; texto dorado sobre perla = `gold-700`.
+- Diseño: Inter variable como familia única. `text-page` / `sm:text-page-lg` para título de página, `text-section` para secciones y `text-card` para tarjetas. Etiquetas medium, cuerpo regular y metadatos `text-xs`; evitar tamaños arbitrarios y mayúsculas decorativas. Fondo `pearl-100` gris neutro, cards blancas, encabezados y pies `pearl-75`. Usar `CardHeader`, `CardBody` y `CardFooter` con padding compartido (16/24 px); `CardTitle` admite `as` para respetar niveles de títulos anidados.
 - Archivos kebab-case; componentes y dominio con nombres en español; sin `any`; sin dependencias nuevas sin justificarlas.
 - Antes de dar algo por terminado: `pnpm check` (typecheck + lint + format) y `pnpm build` en verde.
 

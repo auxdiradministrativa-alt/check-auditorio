@@ -38,12 +38,15 @@ export function FiltrosRegistro({
   const { busqueda, espacio, estado, desde, hasta } = filtros
   const fechasInvalidas = !!(desde && hasta && desde > hasta)
   return (
-    <section aria-labelledby="titulo-filtros" className="space-y-4">
+    <section
+      aria-labelledby="titulo-filtros"
+      className="flex flex-col gap-4 rounded-card border border-pearl-200 bg-white p-4 sm:p-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="titulo-filtros" className="text-lg font-semibold">
+        <h2 id="titulo-filtros" className="text-section">
           Buscar en la gestión
         </h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variante="fantasma" tamano="sm" onClick={onLimpiar}>
             Limpiar filtros
           </Button>
@@ -56,8 +59,8 @@ export function FiltrosRegistro({
           </Button>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <label className="flex flex-col gap-1.5 text-xs font-medium lg:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(14rem,1.5fr)_repeat(2,minmax(0,1fr))]">
+        <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
           <span className="flex items-center gap-1">
             <Search className="size-3.5" aria-hidden />
             Evento, receptor o consecutivo
@@ -69,7 +72,7 @@ export function FiltrosRegistro({
             onChange={(e) => onCambiar('busqueda', e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-xs font-medium">
+        <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
           Espacio
           <Select value={espacio} onChange={(e) => onCambiar('espacio', e.target.value)}>
             <option value="">Todos los espacios</option>
@@ -80,11 +83,11 @@ export function FiltrosRegistro({
             ))}
           </Select>
         </label>
-        <label className="flex flex-col gap-1.5 text-xs font-medium">
+        <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
           Desde
           <Input type="date" value={desde} onChange={(e) => onCambiar('desde', e.target.value)} />
         </label>
-        <label className="flex flex-col gap-1.5 text-xs font-medium">
+        <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
           Hasta
           <Input
             type="date"
@@ -96,10 +99,10 @@ export function FiltrosRegistro({
         </label>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex max-w-full min-w-0 flex-wrap items-center gap-2 text-sm">
           Estado
           <Select
-            className="w-auto"
+            className="w-full sm:w-auto"
             value={estado}
             onChange={(e) => onCambiar('estado', e.target.value)}
           >

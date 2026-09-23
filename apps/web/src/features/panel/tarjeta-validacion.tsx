@@ -34,21 +34,21 @@ export function TarjetaValidacion({
   return (
     <Card className="border-gold-500/50 ring-4 ring-gold-500/10">
       <CardHeader>
-        <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-gold-700 uppercase">
+        <p className="flex items-center gap-2 text-sm font-medium text-ink-600">
           <span className="relative flex size-2">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold-500 opacity-60 motion-reduce:animate-none" />
             <span className="relative inline-flex size-2 rounded-full bg-gold-500" />
           </span>
           Solicitud de recepción
         </p>
-        <CardTitle className="text-lg">¿Es la persona que tienes en frente?</CardTitle>
+        <CardTitle as="h4">¿Es la persona que tienes en frente?</CardTitle>
       </CardHeader>
       <CardBody className="flex flex-col gap-4">
         <div className="flex items-center gap-3 rounded-xl border border-pearl-200 bg-white p-3">
           <Avatar nombre={solicitante.nombre} className="size-12 text-base" />
           <div className="min-w-0">
-            <p className="truncate font-semibold text-navy-900">{solicitante.nombre}</p>
-            <p className="truncate text-sm text-ink-600">{solicitante.correo}</p>
+            <p className="font-semibold break-words text-navy-900">{solicitante.nombre}</p>
+            <p className="text-sm break-all text-ink-600">{solicitante.correo}</p>
           </div>
         </div>
         {error && (

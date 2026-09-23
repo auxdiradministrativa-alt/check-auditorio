@@ -76,16 +76,24 @@ test.describe('Ingreso', () => {
   })
 })
 
-test('entrega, recepción con novedad, verificación y devolución', async ({ browser }) => {
+test('entrega, recepción con novedad, verificación y devolución', async ({ browser }, testInfo) => {
   const evento = `Foro de Investigación ${Date.now().toString(36)}`
   const entrega = await navegador(browser)
   const recibe = await navegador(browser)
   const intruso = await navegador(browser)
+  await recibe.setViewportSize({ width: 320, height: 900 })
+  async function revisarVista(nombre: string, pagina = recibe) {
+    expect(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    )
+    await pagina.screenshot({ path: testInfo.outputPath(`${nombre}.png`), fullPage: true })
+  }
   let enlaceQr = ''
   let consecutivo = ''
 
   await test.step('Infraestructura ingresa y programa la entrega', async () => {
     await entrega.goto('/')
+    await revisarVista('ingreso', entrega)
     await ingresar(entrega, ENTREGADOR)
     await expect(entrega).toHaveURL(/\/panel$/)
 
@@ -136,7 +144,9 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
   await test.step('El docente diligencia sus datos', async () => {
     await expect(recibe.getByRole('heading', { name: 'Recepción del espacio' })).toBeVisible()
     await expect(recibe.getByText('Identidad validada')).toBeVisible()
+    await revisarVista('recepcion-inicio')
     await recibe.getByRole('button', { name: 'Comenzar' }).click()
+    await revisarVista('recepcion-datos')
 
     await recibe.getByRole('button', { name: 'Continuar' }).click()
     await expect(recibe.getByText('Selecciona tu rol.')).toBeVisible()
@@ -150,6 +160,7 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
   })
 
   await test.step('Checklist: las reglas de cantidad y novedad se hacen cumplir', async () => {
+    await revisarVista('recepcion-checklist')
     const sillas = recibe.locator('#item-el-sillas')
 
     // CONFORME con una cantidad distinta de la esperada → rechazado.
@@ -203,6 +214,7 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
     await expect(recibe.getByRole('heading', { name: 'Recepción confirmada' })).toBeVisible()
     consecutivo = (await recibe.getByText(/^REC-\d{6}$/).textContent())!
     expect(consecutivo).toMatch(/^REC-\d{6}$/)
+    await revisarVista('recepcion-confirmada')
   })
 
   await test.step('La constancia se verifica íntegra', async () => {
@@ -212,6 +224,8 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
     await expect(recibe.getByText(`${RECEPTOR.nombre} (${RECEPTOR.correo})`)).toBeVisible()
     await expect(recibe.getByText('149/150 · Novedad')).toBeVisible()
     await expect(recibe.getByText('Pendiente', { exact: true })).toBeVisible()
+    await expect(recibe.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '28px')
+    await revisarVista('constancia')
   })
 
   await test.step('Infraestructura ve la recepción en su panel', async () => {
@@ -242,6 +256,7 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
     await expect(intruso.getByRole('button', { name: 'Declarar devolución' })).toHaveCount(0)
 
     await recibe.goto(enlaceDevolucion)
+    await revisarVista('devolucion')
     await recibe.getByRole('button', { name: 'Declarar devolución' }).click()
     await expect(recibe.getByText('• Debes confirmar la declaración.')).toBeVisible()
 

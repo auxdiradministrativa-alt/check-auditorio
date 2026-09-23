@@ -39,7 +39,7 @@ export default function ErrorDeAplicacion({
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <div className="flex flex-col items-center gap-4 py-16 text-center">
           <ServerCrash className="size-10 text-gold-600" aria-hidden />
-          <h1 className="font-display text-3xl font-semibold">No pudimos cargar esta página</h1>
+          <h1 className="text-page sm:text-page-lg">No pudimos cargar esta página</h1>
           <p className="max-w-md text-ink-600">
             El registro no respondió a tiempo. Vuelve a intentarlo en unos segundos. Si estabas
             firmando una constancia, no la envíes de nuevo sin confirmar con Infraestructura si

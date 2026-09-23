@@ -6,6 +6,7 @@ import { Download } from 'lucide-react'
 import { type Asignacion, type Espacio, type ElementoCatalogo } from '@check-auditorio/shared'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader } from '@/components/ui/card'
 import { RefrescoAutomatico } from '@/components/refresco-automatico'
 import { OperacionEventos } from './operacion-eventos'
 import { TablaEventos } from './tabla-eventos'
@@ -98,7 +99,7 @@ export function CentroGestion({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-6 sm:gap-8">
       {seguimiento && (
         <RefrescoAutomatico
           ms={
@@ -121,17 +122,17 @@ export function CentroGestion({
         detalle={detalle}
       />
 
-      <dl className="grid grid-cols-2 divide-x divide-pearl-300 border-y border-pearl-300 py-5 lg:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 rounded-card border border-pearl-200 bg-white p-4 sm:gap-6 sm:p-6 lg:grid-cols-4">
         {[
           ['Reservas activas', asignaciones.filter((a) => !CERRADAS.has(a.estado)).length],
           ['Requieren atención', pendientes],
           ['Constancias firmadas', asignaciones.filter((a) => a.consecutivo).length],
           ['Eventos cerrados', asignaciones.filter((a) => CERRADAS.has(a.estado)).length],
         ].map(([etiqueta, valor]) => (
-          <div key={etiqueta} className="px-4 py-2 sm:px-6">
-            <dt className="text-xs text-ink-600 sm:text-sm">{etiqueta}</dt>
+          <div key={etiqueta} className="flex min-w-0 flex-col gap-2">
+            <dt className="text-sm font-medium text-ink-600">{etiqueta}</dt>
             <dd
-              className={`mt-1 text-3xl font-semibold tabular ${etiqueta === 'Requieren atención' && pendientes ? 'text-danger-700' : 'text-navy-900'}`}
+              className={`text-2xl font-semibold tabular ${etiqueta === 'Requieren atención' && pendientes ? 'text-danger-700' : 'text-navy-900'}`}
             >
               {valor}
             </dd>
@@ -150,14 +151,10 @@ export function CentroGestion({
         onActualizar={() => actualizar(() => router.refresh())}
       />
 
-      <section
-        id="reservas"
-        aria-labelledby="titulo-reservas"
-        className="scroll-mt-6 overflow-hidden rounded-2xl border border-pearl-200 bg-white"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
+      <Card id="reservas" aria-labelledby="titulo-reservas" className="scroll-mt-6">
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 id="titulo-reservas" className="text-xl font-semibold">
+            <h2 id="titulo-reservas" className="text-section">
               Reservas y seguimiento
             </h2>
             <p className="mt-1 text-sm text-ink-600">
@@ -173,7 +170,7 @@ export function CentroGestion({
             />
             Solo requieren atención
           </label>
-        </div>
+        </CardHeader>
         <TablaEventos
           datos={activas}
           espacios={espacios}
@@ -181,16 +178,12 @@ export function CentroGestion({
           setPagina={setPagina}
           hayRegistros={!!asignaciones.length}
         />
-      </section>
+      </Card>
 
-      <section
-        id="historico"
-        aria-labelledby="titulo-historico"
-        className="scroll-mt-6 overflow-hidden rounded-2xl border border-pearl-200 bg-white"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
+      <Card id="historico" aria-labelledby="titulo-historico" className="scroll-mt-6">
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 id="titulo-historico" className="text-xl font-semibold">
+            <h2 id="titulo-historico" className="text-section">
               Registro histórico y constancias
             </h2>
             <p className="mt-1 text-sm text-ink-600">
@@ -206,8 +199,8 @@ export function CentroGestion({
             <Download aria-hidden />
             Exportar CSV
           </Button>
-        </div>
-        <label className="mb-5 ml-5 flex items-center gap-2 text-sm sm:ml-6">
+        </CardHeader>
+        <label className="mx-4 my-4 flex items-center gap-2 text-sm sm:mx-6">
           <input
             type="checkbox"
             className="size-4 accent-navy-900"
@@ -224,7 +217,7 @@ export function CentroGestion({
           setPagina={setPaginaHistorico}
           hayRegistros={!!asignaciones.length}
         />
-      </section>
+      </Card>
     </div>
   )
 }

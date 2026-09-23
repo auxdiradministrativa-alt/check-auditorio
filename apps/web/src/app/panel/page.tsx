@@ -63,7 +63,7 @@ export default function Panel({ searchParams }: { searchParams: Consulta }) {
       <Suspense
         fallback={
           <div role="status" className="rounded-2xl border border-pearl-200 bg-white p-6">
-            <h2 className="text-lg font-semibold">Preparando el centro de gestión</h2>
+            <h2 className="text-card">Preparando el centro de gestión</h2>
             <p className="mt-1 mb-4 text-sm text-ink-600">
               Consultando reservas y espacios disponibles…
             </p>

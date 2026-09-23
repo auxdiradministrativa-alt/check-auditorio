@@ -95,7 +95,7 @@ export function FormDevolucion({
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-xl">¿Cómo devuelves el espacio?</CardTitle>
+          <CardTitle>¿Cómo devuelves el espacio?</CardTitle>
           <CardDescription>Declara el estado en que queda el espacio al terminar.</CardDescription>
         </CardHeader>
         <CardBody>

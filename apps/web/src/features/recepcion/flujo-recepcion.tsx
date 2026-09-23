@@ -206,9 +206,7 @@ export function FlujoRecepcion({
       {paso === 0 && (
         <>
           <div className="flex flex-col gap-2">
-            <h1 className="font-display text-3xl font-semibold tracking-tight">
-              Recepción del espacio
-            </h1>
+            <h1 className="text-page sm:text-page-lg">Recepción del espacio</h1>
             <p className="text-ink-600">
               Vas a dejar constancia de que recibes el espacio y sus elementos. Tu cuenta
               institucional funciona como firma.
@@ -229,8 +227,8 @@ export function FlujoRecepcion({
           </Card>
           <Card>
             <CardHeader>
-              <p className="text-xs font-semibold tracking-wide text-gold-700 uppercase">Entrega</p>
-              <CardTitle className="font-display text-xl">{asignacion.evento}</CardTitle>
+              <p className="text-sm font-medium text-ink-600">Entrega</p>
+              <CardTitle>{asignacion.evento}</CardTitle>
             </CardHeader>
             <CardBody>
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -271,7 +269,7 @@ export function FlujoRecepcion({
       {paso === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-display text-xl">Tus datos</CardTitle>
+            <CardTitle>Tus datos</CardTitle>
             <CardDescription>
               Tu nombre y correo se toman de tu cuenta institucional.
             </CardDescription>
@@ -361,7 +359,7 @@ export function FlujoRecepcion({
         <section className="flex flex-col gap-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="flex flex-col gap-1">
-              <h2 className="font-display text-2xl font-semibold">
+              <h2 className="text-section">
                 {paso === 2 ? 'Elementos que recibes' : 'Condiciones del espacio'}
               </h2>
               <p className="text-sm text-ink-600">
@@ -396,9 +394,7 @@ export function FlujoRecepcion({
       {paso === 4 && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-display text-xl">
-              Términos y condiciones de la entrega
-            </CardTitle>
+            <CardTitle>Términos y condiciones de la entrega</CardTitle>
             <CardDescription>
               Versión <span className="font-semibold tabular">{terminos.version}</span> · léelos
               antes de aceptar.
@@ -445,7 +441,7 @@ export function FlujoRecepcion({
       {paso === 5 && (
         <>
           <div className="flex flex-col gap-2">
-            <h2 className="font-display text-2xl font-semibold">Revisa y envía</h2>
+            <h2 className="text-section">Revisa y envía</h2>
             <p className="text-sm text-ink-600">
               Al enviar, la constancia queda sellada y no se puede modificar.
             </p>

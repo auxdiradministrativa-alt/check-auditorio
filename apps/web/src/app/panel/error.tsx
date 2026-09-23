@@ -29,9 +29,7 @@ export default function ErrorDePanel({
     <Card>
       <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
         <ServerCrash className="size-9 text-gold-600" aria-hidden />
-        <h1 className="font-display text-2xl font-semibold text-navy-900">
-          El registro no respondió
-        </h1>
+        <h1 className="text-page text-navy-900 sm:text-page-lg">El registro no respondió</h1>
         <p className="max-w-md text-sm text-ink-600">
           La hoja de cálculo tarda unos segundos en responder y esta vez agotó el tiempo de espera.
           Vuelve a intentarlo; si acabas de confirmar algo, recarga y revisa el estado antes de

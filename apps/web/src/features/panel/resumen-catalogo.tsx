@@ -9,9 +9,7 @@ export function ResumenCatalogo({ catalogo }: { catalogo: ElementoCatalogo[] }) 
         if (!items.length) return null
         return (
           <div key={categoria} className="flex flex-col gap-2">
-            <h3 className="text-xs font-semibold tracking-wide text-gold-700 uppercase">
-              {ETIQUETAS_CATEGORIA[categoria]}
-            </h3>
+            <p className="text-sm font-medium text-ink-600">{ETIQUETAS_CATEGORIA[categoria]}</p>
             <ul className="flex flex-wrap gap-2">
               {items.map((e) => (
                 <li

@@ -31,28 +31,20 @@ export default async function Confirmada({ params }: Props) {
         <CircleCheckBig className="size-10 text-ok-700" aria-hidden />
       </span>
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold tracking-[0.14em] text-gold-700 uppercase">
-          Constancia sellada
-        </p>
-        <h1 className="font-display text-3xl font-semibold sm:text-4xl">Recepción confirmada</h1>
+        <p className="text-sm font-medium text-ink-600">Constancia sellada</p>
+        <h1 className="text-page sm:text-page-lg">Recepción confirmada</h1>
         <p className="text-ink-600 tabular">{formatearFechaHora(sello.selladaEn)}</p>
       </div>
 
       <Card className="w-full overflow-hidden text-left">
         <div className="flex flex-col gap-4 bg-navy-900 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-wide text-gold-400 uppercase">
-              Consecutivo
-            </p>
-            <p className="font-display text-3xl font-semibold text-pearl-50 tabular">
-              {sello.consecutivo}
-            </p>
+            <p className="text-sm font-medium text-navy-100">Consecutivo</p>
+            <p className="text-page text-pearl-50 tabular sm:text-page-lg">{sello.consecutivo}</p>
           </div>
           <div className="sm:text-right">
-            <p className="text-xs font-semibold tracking-wide text-gold-400 uppercase">
-              Código de verificación
-            </p>
-            <p className="font-mono text-lg font-semibold tracking-wider text-pearl-50 tabular">
+            <p className="text-sm font-medium text-navy-100">Código de verificación</p>
+            <p className="font-mono text-card tracking-wider text-pearl-50 tabular">
               {sello.codigoVerificacion}
             </p>
           </div>

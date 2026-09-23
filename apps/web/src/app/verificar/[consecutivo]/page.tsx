@@ -65,10 +65,7 @@ export default async function Verificar({ params }: Props) {
         )}
         <div className="flex flex-col gap-1">
           <h1
-            className={cn(
-              'font-display text-2xl font-semibold',
-              integra ? 'text-ok-700' : 'text-danger-700',
-            )}
+            className={cn('text-page sm:text-page-lg', integra ? 'text-ok-700' : 'text-danger-700')}
           >
             {integra ? 'Constancia íntegra' : 'Constancia alterada'}
           </h1>
@@ -83,19 +80,21 @@ export default async function Verificar({ params }: Props) {
       <Card>
         <CardBody>
           <dl className="flex flex-col divide-y divide-pearl-200 text-sm">
-            <div className="grid gap-1 pb-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
+            <div className="grid gap-1 pb-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-4">
               <dt className="text-ink-600">Estado</dt>
               <dd>
                 <EstadoBadge estado={asignacion.estado} />
               </dd>
             </div>
             {filas.map(([k, v]) => (
-              <div key={k} className="grid gap-1 py-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
+              <div key={k} className="grid gap-1 py-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-4">
                 <dt className="text-ink-600">{k}</dt>
-                <dd className="font-medium text-navy-900 first-letter:uppercase">{v}</dd>
+                <dd className="min-w-0 font-medium [overflow-wrap:anywhere] text-navy-900 first-letter:uppercase">
+                  {v}
+                </dd>
               </div>
             ))}
-            <div className="grid gap-1 pt-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
+            <div className="grid gap-1 pt-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-4">
               <dt className="text-ink-600">Sello SHA-256</dt>
               <dd className="font-mono text-xs break-all text-navy-800">{sello.sha256}</dd>
             </div>

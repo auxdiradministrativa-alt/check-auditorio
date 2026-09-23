@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn'
 export function Stepper({ pasos, actual }: { pasos: readonly string[]; actual: number }) {
   return (
     <nav aria-label="Progreso">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-ink-600 uppercase">
+      <p className="mb-2 text-sm font-medium text-ink-600">
         Paso {actual + 1} de {pasos.length} · {pasos[actual]}
       </p>
       <ol className="flex gap-1.5">

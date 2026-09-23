@@ -71,11 +71,7 @@ export function Marca({
         aria-hidden
         className={cn(
           'font-semibold',
-          variante === 'completa'
-            ? // Mayúsculas con remate, como el «AMERICANA» del escudo: el área
-              // responsable se lee como parte de la marca, no como una etiqueta.
-              'font-display text-base tracking-[0.12em] uppercase sm:text-xl lg:text-2xl'
-            : 'text-xs tracking-[0.16em] uppercase sm:text-sm',
+          variante === 'completa' ? 'text-base sm:text-xl' : 'text-xs sm:text-sm',
           claro ? 'text-gold-400' : 'text-gold-700',
         )}
       >
