@@ -36,7 +36,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Field, Input } from '@/components/ui/field'
 import { Segmented } from '@/components/ui/segmented'
 import { Stepper } from '@/components/ui/stepper'
-import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { formatearFechaLarga, formatearFranja } from '@/lib/fechas'
 import { uuid } from '@/lib/uuid'
 
 import { cerrarSesion } from '@/features/auth/acciones'
@@ -59,14 +59,12 @@ export function FlujoRecepcion({
   catalogo,
   sesion,
   terminos,
-  disponible = true,
 }: {
   token: string
   asignacion: Asignacion
   espacio: Espacio
   catalogo: ElementoCatalogo[]
   sesion: Persona
-  disponible?: boolean
   terminos: Terminos
 }) {
   const router = useRouter()
@@ -288,12 +286,6 @@ export function FlujoRecepcion({
   return (
     <div ref={contenedorRef} className="flex flex-col gap-6 pb-28">
       <Stepper pasos={PASOS} actual={paso} />
-      {paso === 0 && !disponible && (
-        <Alert tono="info" icono={<Clock aria-hidden />} titulo="Entrega programada">
-          Podrás comenzar la recepción el {formatearFechaHora(asignacion.recepcionDesde)}. Vuelve a
-          abrir este enlace cuando recibas el espacio.
-        </Alert>
-      )}
       {paso === 0 && errorTerminos && (
         <p role="alert" className="text-sm text-destructive">
           {errorTerminos}
@@ -666,13 +658,7 @@ export function FlujoRecepcion({
             </Button>
           )}
           {paso < PASOS.length - 1 ? (
-            <Button
-              variante="primario"
-              tamano="lg"
-              bloque
-              onClick={continuar}
-              disabled={enviando || (paso === 0 && !disponible)}
-            >
+            <Button variante="primario" tamano="lg" bloque onClick={continuar} disabled={enviando}>
               {enviando ? 'Abriendo acta…' : paso === 0 ? 'Comenzar recepción' : 'Continuar'}
               <ArrowRight aria-hidden />
             </Button>

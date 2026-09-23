@@ -51,8 +51,8 @@ const constancia = (sobre: Partial<DatosConstancia> = {}): DatosConstancia => ({
 /** Los seis correos con los mismos datos, para barrer propiedades comunes. */
 function todos(e: DatosEvento, c: DatosConstancia, _motivo: string, nombre: string) {
   return {
-    aprobada: correoEntrega({ ...e, para: 'laura.perez@americana.edu.co', nombre }, 30),
-    devuelta: correoEntrega({ ...e, para: 'laura.perez@americana.edu.co', nombre }, 30),
+    aprobada: correoEntrega({ ...e, para: 'laura.perez@americana.edu.co', nombre }),
+    devuelta: correoEntrega({ ...e, para: 'laura.perez@americana.edu.co', nombre }),
     confirmacion: correoConfirmacion({ ...e, para: 'laura.perez@americana.edu.co', nombre }),
     receptor: correoConstanciaReceptor(c),
     destinatarios: correoConstanciaDestinatarios(['infraestructura@americana.edu.co'], c),
@@ -130,14 +130,11 @@ test('b) cada correo pesa menos que el límite de Gmail, con datos realistas y a
     }
 
   // Control negativo: la medida de verdad detecta un correo que se pasa del límite.
-  const inflado = correoEntrega(
-    {
-      ...evento(),
-      para: 'x@americana.edu.co',
-      nombre: largo(LIMITE_BYTES, 'ñ'),
-    },
-    30,
-  )
+  const inflado = correoEntrega({
+    ...evento(),
+    para: 'x@americana.edu.co',
+    nombre: largo(LIMITE_BYTES, 'ñ'),
+  })
   assert.ok(bytes(inflado.html) >= LIMITE_BYTES)
   // Y mide bytes, no caracteres: «ñ» vale 2.
   assert.equal(bytes('ñ'), 2)

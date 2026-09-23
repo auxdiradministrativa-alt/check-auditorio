@@ -63,7 +63,7 @@ test('gestión por enlace: emitir, compartir, filtros locales, exportación y an
   await expect(operacion.getByRole('status')).toContainText('Mensaje copiado')
   const mensaje = await page.evaluate(() => navigator.clipboard.readText())
   expect(mensaje).toContain(correo)
-  expect(mensaje).toMatch(/Disponible desde .+ hasta .+\./)
+  expect(mensaje).toContain('Puedes diligenciarla desde ya y hasta el fin del evento.')
   expect(mensaje).toContain('/r/')
 
   for (const width of [320, 768, 1024, 1440]) {

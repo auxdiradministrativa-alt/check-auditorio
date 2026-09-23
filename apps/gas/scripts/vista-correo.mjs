@@ -43,7 +43,7 @@ const c = {
 const fijos = ['infraestructura@americana.edu.co']
 
 export const correos = [
-  ['entrega-programada', 'Entrega programada', correoEntrega({ ...e, ...persona }, 30)],
+  ['entrega-programada', 'Entrega programada', correoEntrega({ ...e, ...persona })],
   ['confirmacion', 'Confirmación de recepción', correoConfirmacion({ ...e, ...persona })],
   ['constancia-receptor', 'Constancia · receptor', correoConstanciaReceptor(c)],
   ['constancia-destinatarios', 'Constancia · destinatarios fijos', correoConstanciaDestinatarios(fijos, c)],

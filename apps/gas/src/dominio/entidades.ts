@@ -98,7 +98,6 @@ export interface Entregador {
 }
 
 export interface Config {
-  minutosQrAntes: number
   horasDevolucion: number
   /** Plazo para diligenciar un enlace recién emitido. */
   horasVigenciaInvitacion: number

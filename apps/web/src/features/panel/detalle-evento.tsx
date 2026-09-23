@@ -59,7 +59,7 @@ function mensajeInvitacion(a: Asignacion, correo: string, enlace: string) {
     `Hola. Te comparto la entrega de espacio para «${a.evento}».`,
     `Ingresa con ${correo} para revisar el estado del espacio y firmar el acta de recepción.`,
     `Horario: ${formatearFechaLarga(a.inicio)}, ${formatearFranja(a.inicio, a.fin)}.`,
-    `Disponible desde ${formatearFechaHora(a.recepcionDesde)} hasta ${formatearFechaHora(a.fin)}.`,
+    'Puedes diligenciarla desde ya y hasta el fin del evento.',
     enlace,
     'Infraestructura',
   ].join('\n')
@@ -77,18 +77,8 @@ export async function DetalleEvento({
 }) {
   const espacio = espacios.find((e) => e.id === asignacion.espacioId)
   const catalogo = elementos.filter((e) => e.espacioId === asignacion.espacioId)
-  const {
-    id,
-    evento,
-    inicio,
-    fin,
-    estado,
-    receptor,
-    consecutivo,
-    entregadoPor,
-    invitadoCorreo,
-    recepcionDesde,
-  } = asignacion
+  const { id, evento, inicio, fin, estado, receptor, consecutivo, entregadoPor, invitadoCorreo } =
+    asignacion
   const porEnlace = invitadoCorreo !== null
   // Una invitación aún no tiene franja: inicio = fin = hora de emisión.
   const sinFranja = estado === 'INVITADA'
@@ -181,7 +171,7 @@ export async function DetalleEvento({
                 <CardDescription>
                   {porEnlace
                     ? `Envíalo a ${invitadoCorreo} por WhatsApp, correo o el canal que uses. Solo esa cuenta puede abrirlo.`
-                    : `Muéstralo a la persona que recibe. Es de un solo uso y funciona desde el ${formatearFechaHora(recepcionDesde)} hasta el fin del evento.`}
+                    : `Muéstralo a la persona que recibe. Es de un solo uso y funciona hasta el fin del evento.`}
                 </CardDescription>
               </CardHeader>
               <CardBody className="flex flex-wrap items-start gap-6">
@@ -203,7 +193,7 @@ export async function DetalleEvento({
                       La persona revisa los elementos, registra novedades y firma con su cuenta
                       institucional.
                     </li>
-                    <li>Puede comenzar el {formatearFechaHora(recepcionDesde)}.</li>
+                    <li>Puede diligenciarla desde ya y hasta el fin del evento.</li>
                   </ul>
                   <UtilidadesQr
                     svg={svg}

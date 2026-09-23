@@ -174,7 +174,7 @@ test('novedad sin foto u observación se rechaza', () => {
   assert.equal(r2.ok || r2.codigo, 'DATOS_INVALIDOS')
 })
 
-test('QR: otra cuenta no puede reclamarlo; la recepción es directa; fuera de vigencia no se reclama', () => {
+test('QR: otra cuenta no puede reclamarlo; la recepción es directa; sin franja previa al inicio', () => {
   const { nucleo, programar } = preparar()
   const { a, tokenSha256 } = programar(
     'Foro',
@@ -194,8 +194,13 @@ test('QR: otra cuenta no puede reclamarlo; la recepción es directa; fuera de vi
   )
 
   const futuro = programar('Tarde', '2026-09-15T18:00:00-05:00', '2026-09-15T20:00:00-05:00')
+  // Horas antes del inicio ya se puede recibir: diligenciar sin ver el espacio es decisión de quien recibe.
   const r = nucleo.ejecutar('qr.reclamar', { tokenSha256: futuro.tokenSha256, receptor: laura })
-  assert.equal(r.ok || r.codigo, 'QR_NO_VIGENTE')
+  assert.equal(ok(r).estado, 'EN_DILIGENCIAMIENTO')
+  assert.equal(
+    ok(nucleo.ejecutar('qr.estado', { tokenSha256: futuro.tokenSha256 }))?.vigencia,
+    'VIGENTE',
+  )
 })
 
 test('cruce de horario en el mismo espacio se rechaza', () => {

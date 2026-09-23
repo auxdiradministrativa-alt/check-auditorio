@@ -78,7 +78,7 @@ export function registrarRecepcion(
     if (a.estado !== 'EN_DILIGENCIAMIENTO')
       fallar('ESTADO_INVALIDO', 'La asignación no está lista para diligenciar.')
 
-    if (vigenciaQr(a, ctx.srv.ahora(), ctx.catalogo.config()) !== 'VIGENTE')
+    if (vigenciaQr(a, ctx.srv.ahora()) !== 'VIGENTE')
       fallar('QR_NO_VIGENTE', 'El plazo para recibir este espacio ha finalizado.')
 
     const terminos =

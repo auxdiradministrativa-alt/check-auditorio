@@ -184,13 +184,15 @@ test('entrega directa: identidad, acta con novedad, firma y devolución', async 
   })
 })
 
-test('entrega futura: muestra el acta y explica cuándo se puede comenzar', async ({ browser }) => {
+test('entrega futura: se puede comenzar la recepción sin esperar la franja', async ({
+  browser,
+}) => {
   const entrega = await navegador(browser)
   const recibe = await navegador(browser)
   const { enlace } = await crearEntrega(entrega, `Consejo ${Date.now()}`, franjaLejana())
   await recibe.goto(enlace)
   await ingresar(recibe, SOLICITANTE)
   await expect(recibe.getByRole('heading', { name: 'Recepción del espacio' })).toBeVisible()
-  await expect(recibe.getByText(/Podrás comenzar la recepción el/)).toBeVisible()
-  await expect(recibe.getByRole('button', { name: 'Comenzar recepción' })).toBeDisabled()
+  await recibe.getByRole('button', { name: 'Comenzar recepción' }).click()
+  await expect(recibe.getByText(/Paso 2 de 5/)).toBeVisible()
 })

@@ -217,10 +217,7 @@ const miEntrega = (e: DatosEvento) => `${e.urlApp}/mi-entrega/${encodeURICompone
 
 /* ─── Los cuatro correos ─── */
 
-export function correoEntrega(
-  e: DatosEvento & { para: string; nombre: string },
-  minutosAntes: number,
-): Mensaje {
+export function correoEntrega(e: DatosEvento & { para: string; nombre: string }): Mensaje {
   return mensaje([e.para], `Entrega programada · ${e.evento}`, {
     preheader: `La entrega del ${fechaLarga(e.inicio)} está programada.`,
     etiqueta: 'Entrega programada',
@@ -232,7 +229,8 @@ export function correoEntrega(
     ficha: fichaEvento(e),
     nota: {
       tono: 'info',
-      texto: `Podrás confirmar la recepción desde ${minutosAntes} minutos antes del inicio y hasta la hora de finalización.`,
+      texto:
+        'Puedes confirmar la recepción desde ahora y hasta la hora de finalización. Te recomendamos hacerlo cuando veas el espacio.',
     },
     cta: { texto: 'Ver mi entrega', url: miEntrega(e) },
     logoUrl: logo(e),

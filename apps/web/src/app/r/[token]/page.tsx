@@ -49,7 +49,6 @@ export default async function Recepcion({ params }: { params: Promise<{ token: s
       catalogo={elementos.filter((e) => e.espacioId === espacio.id)}
       sesion={sesion}
       terminos={terminos}
-      disponible={vigencia === 'VIGENTE'}
     />
   )
 }

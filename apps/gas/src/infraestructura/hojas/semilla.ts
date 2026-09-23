@@ -41,7 +41,6 @@ export const URL_APP_POR_DEFECTO = 'https://check-auditorio-web.vercel.app'
  * valor; `notificaciones_desde` vacía la completa con la hora de la instalación.
  */
 export const CFG_GENERAL: Fila<'CFG_General'>[] = [
-  { clave: 'minutos_vigencia_qr_antes', valor: '30' },
   { clave: 'horas_plazo_devolucion', valor: '24' },
   { clave: 'horas_vigencia_invitacion', valor: '72' },
   { clave: 'url_app', valor: URL_APP_POR_DEFECTO },

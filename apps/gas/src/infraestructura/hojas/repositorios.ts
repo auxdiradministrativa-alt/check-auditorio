@@ -355,7 +355,6 @@ export function crearContexto(tabla: Tabla, srv: Servicios): Contexto {
       config: () => {
         const m = new Map(tabla.leer('CFG_General').map((f) => [f.clave.trim(), f.valor.trim()]))
         return {
-          minutosQrAntes: entero(m.get('minutos_vigencia_qr_antes'), 30),
           horasDevolucion: entero(m.get('horas_plazo_devolucion'), 24),
           horasVigenciaInvitacion: entero(m.get('horas_vigencia_invitacion'), 72),
           urlApp: (m.get('url_app') || URL_APP_POR_DEFECTO).replace(/\/+$/, ''),

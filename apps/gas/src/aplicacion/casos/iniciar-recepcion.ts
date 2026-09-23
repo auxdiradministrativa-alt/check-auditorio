@@ -20,17 +20,14 @@ export function iniciarRecepcion(
     const cfg = ctx.catalogo.config()
     const ahora = ctx.srv.ahora()
     if (a.estado === 'EN_DILIGENCIAMIENTO') {
-      if (vigenciaQr(a, ahora, cfg) !== 'VIGENTE')
+      if (vigenciaQr(a, ahora) !== 'VIGENTE')
         fallar('QR_NO_VIGENTE', 'El plazo para recibir este espacio ha finalizado.')
       return vista(ctx, a)
     }
     if (estadoEfectivo(a, ahora, cfg) !== 'PROGRAMADA')
       fallar('ESTADO_INVALIDO', 'Esta entrega no está lista para recibir el espacio.')
-    if (vigenciaQr(a, ahora, cfg) !== 'VIGENTE')
-      fallar(
-        'QR_NO_VIGENTE',
-        `Podrás confirmar la recepción desde ${cfg.minutosQrAntes} minutos antes del inicio.`,
-      )
+    if (vigenciaQr(a, ahora) !== 'VIGENTE')
+      fallar('QR_NO_VIGENTE', 'El plazo para recibir este espacio ha finalizado.')
     ctx.asignaciones.actualizar(id, { estado: 'EN_DILIGENCIAMIENTO', receptor })
     ctx.bitacora.registrar('recepcion.iniciar', id, receptor.correo)
     return releer(ctx, id)

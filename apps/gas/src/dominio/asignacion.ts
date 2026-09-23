@@ -24,14 +24,16 @@ export function estadoEfectivo(a: RegistroAsignacion, ahora: Date, cfg: Config):
   return a.estado
 }
 
-/** Desde cuándo se puede recibir; la web lo muestra tal cual, sin repetir la regla. */
-const recepcionDesdeMs = (a: RegistroAsignacion, cfg: Config) =>
-  ms(a.inicio) - cfg.minutosQrAntes * 60_000
+/**
+ * Sin franja previa (decisión de Leo, 2026-09-23): se puede recibir desde que la entrega existe.
+ * Diligenciar sin haber visto el espacio queda a criterio de quien recibe.
+ */
+const recepcionDesdeMs = (a: RegistroAsignacion) => ms(a.creadaEn)
 
-/** El QR vale desde `inicio − N min` hasta el `fin` del evento. */
-export function vigenciaQr(a: RegistroAsignacion, ahora: Date, cfg: Config): VigenciaQr {
+/** El enlace vale desde que se crea la entrega hasta el `fin` del evento. */
+export function vigenciaQr(a: RegistroAsignacion, ahora: Date): VigenciaQr {
   const t = ahora.getTime()
-  if (t < recepcionDesdeMs(a, cfg)) return 'ANTES'
+  if (t < recepcionDesdeMs(a)) return 'ANTES'
   if (t > ms(a.fin)) return 'VENCIDO'
   return 'VIGENTE'
 }
@@ -116,7 +118,7 @@ export function aVista(
     consecutivo: a.consecutivo,
     creadaEn: a.creadaEn,
     tokenVence: a.tokenVence,
-    recepcionDesde: isoBogota(new Date(recepcionDesdeMs(a, cfg))),
+    recepcionDesde: isoBogota(new Date(recepcionDesdeMs(a))),
     invitadoCorreo: a.invitadoCorreo,
     solicitadaEn: a.solicitadaEn,
     motivoRechazo: a.motivoRechazo,

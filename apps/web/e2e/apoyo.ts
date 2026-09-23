@@ -75,7 +75,7 @@ export function ahoraBogota() {
 
 /**
  * Franja de hoy que empieza dentro de `minutosHastaInicio` (redondeado a 5 min, porque el campo
- * de hora usa step=300). Con menos de 30 min, la recepción ya está habilitada al aprobarla.
+ * de hora usa step=300). La recepción está habilitada desde que se crea la entrega.
  */
 export function franjaDeHoy(minutosHastaInicio: number, duracion = 60) {
   const { fecha, minutos } = ahoraBogota()

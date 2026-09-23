@@ -13,7 +13,7 @@ export function estadoQr(
   if (!a) return null
   return {
     asignacion: vista(ctx, a),
-    vigencia: vigenciaQr(a, ctx.srv.ahora(), ctx.catalogo.config()),
+    vigencia: vigenciaQr(a, ctx.srv.ahora()),
   }
 }
 
@@ -31,7 +31,7 @@ export function reclamarQr(
     if (
       a.receptor?.sub === receptor.sub &&
       (a.estado === 'EN_DILIGENCIAMIENTO' || a.estado === 'EN_VALIDACION') &&
-      vigenciaQr(a, ctx.srv.ahora(), ctx.catalogo.config()) !== 'VIGENTE'
+      vigenciaQr(a, ctx.srv.ahora()) !== 'VIGENTE'
     )
       fallar('QR_NO_VIGENTE', 'El plazo para recibir este espacio ha finalizado.')
     if (a.receptor?.sub === receptor.sub && a.estado === 'EN_DILIGENCIAMIENTO') return vista(ctx, a)
@@ -42,7 +42,7 @@ export function reclamarQr(
     const cfg = ctx.catalogo.config()
     if (estadoEfectivo(a, ctx.srv.ahora(), cfg) !== 'PROGRAMADA')
       fallar('QR_NO_VIGENTE', 'Este código ya fue usado.')
-    if (vigenciaQr(a, ctx.srv.ahora(), cfg) !== 'VIGENTE')
+    if (vigenciaQr(a, ctx.srv.ahora()) !== 'VIGENTE')
       fallar('QR_NO_VIGENTE', 'El código no está vigente en este momento.')
     ctx.asignaciones.actualizar(a.id, {
       estado: 'EN_DILIGENCIAMIENTO',

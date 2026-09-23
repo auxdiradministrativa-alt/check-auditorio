@@ -97,14 +97,7 @@ export function procesarNotificaciones(ctx: Contexto, correo: Correo): ResumenNo
         // Avisa la entrega vigente; si ya se recibió, anuló o venció, se omite.
         if (estado === 'PROGRAMADA' && a.invitadoCorreo)
           tomar(canal, a.notifDecision, [
-            correoEntrega(
-              {
-                ...evento(a),
-                para: a.invitadoCorreo,
-                nombre: nombre(a),
-              },
-              cfg.minutosQrAntes,
-            ),
+            correoEntrega({ ...evento(a), para: a.invitadoCorreo, nombre: nombre(a) }),
           ])
         else omitir(canal, a.notifDecision)
       }
