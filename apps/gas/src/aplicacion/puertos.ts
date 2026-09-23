@@ -22,7 +22,10 @@ export interface RepoAsignaciones {
   actualizar(
     id: string,
     cambios: Partial<
-      Omit<RegistroAsignacion, 'id' | 'espacioId' | 'entregadoPorCorreo' | 'creadaEn' | 'tokenSha256'>
+      Omit<
+        RegistroAsignacion,
+        'id' | 'espacioId' | 'entregadoPorCorreo' | 'creadaEn' | 'tokenSha256'
+      >
     >,
   ): void
 }

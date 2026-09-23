@@ -54,7 +54,11 @@ type Tono = 'info' | 'atencion' | 'alerta' | 'exito'
 const TONOS: Record<Tono, { fondo: string; texto: string; borde: string }> = {
   info: { fondo: C['primary-soft'], texto: C.foreground, borde: C['primary-strong'] },
   atencion: { fondo: C['attention-soft'], texto: C.attention, borde: C['attention-accent'] },
-  alerta: { fondo: C['destructive-soft'], texto: C['destructive-strong'], borde: C['destructive-strong'] },
+  alerta: {
+    fondo: C['destructive-soft'],
+    texto: C['destructive-strong'],
+    borde: C['destructive-strong'],
+  },
   exito: { fondo: C['success-soft'], texto: C.success, borde: C.success },
 }
 
@@ -80,7 +84,10 @@ export function carcasa(c: Carcasa): string {
     ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 24px;border-collapse:separate;background:${C.background};border:1px solid ${C.border};border-radius:8px;">
 ${c.ficha
   .map(
-    ([k, v], i) => `<tr><td style="padding:12px 16px;${i ? `border-top:1px solid ${C.border};` : ''}font-family:${FUENTE};">
+    (
+      [k, v],
+      i,
+    ) => `<tr><td style="padding:12px 16px;${i ? `border-top:1px solid ${C.border};` : ''}font-family:${FUENTE};">
 <div style="font-size:12px;line-height:16px;color:${C['muted-foreground']};">${escapar(k)}</div>
 <div style="font-size:15px;line-height:22px;color:${C.foreground};font-weight:600;">${escapar(v)}</div>
 </td></tr>`,
@@ -245,9 +252,7 @@ export function correoDecision(
   })
 }
 
-export function correoConfirmacion(
-  e: DatosEvento & { para: string; nombre: string },
-): Mensaje {
+export function correoConfirmacion(e: DatosEvento & { para: string; nombre: string }): Mensaje {
   return mensaje([e.para], `Confirma la recepción del espacio · ${e.evento}`, {
     preheader: 'Tu evento empezó. Confirma el estado del espacio que recibiste.',
     etiqueta: 'Hoy es tu evento',
@@ -316,7 +321,8 @@ export function correoConstanciaDestinatarios(para: string[], d: DatosConstancia
       ? {
           nota: {
             tono: 'alerta' as const,
-            texto: 'Hay novedades con foto en la constancia. Revísalas antes de la siguiente entrega.',
+            texto:
+              'Hay novedades con foto en la constancia. Revísalas antes de la siguiente entrega.',
           },
         }
       : {}),
@@ -347,7 +353,8 @@ export function correoVencida(
     ],
     nota: {
       tono: 'alerta',
-      texto: 'Verifica el estado del espacio. Las diferencias que encuentres en la siguiente entrega se asociarán a este turno.',
+      texto:
+        'Verifica el estado del espacio. Las diferencias que encuentres en la siguiente entrega se asociarán a este turno.',
     },
     cta: {
       texto: 'Abrir en el panel',

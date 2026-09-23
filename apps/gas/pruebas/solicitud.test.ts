@@ -60,12 +60,8 @@ function preparar(inicioReloj = '2026-09-15T08:00:00-05:00') {
   const diligenciar = (id: string, quien = laura, d = datos()) =>
     nucleo.ejecutar('solicitud.diligenciar', { id, receptor: quien, datos: d })
 
-  const decidir = (
-    id: string,
-    decision: 'APROBAR' | 'RECHAZAR',
-    version: string,
-    motivo = '',
-  ) => nucleo.ejecutar('solicitud.decidir', { id, decision, motivo, version, actor: infra })
+  const decidir = (id: string, decision: 'APROBAR' | 'RECHAZAR', version: string, motivo = '') =>
+    nucleo.ejecutar('solicitud.decidir', { id, decision, motivo, version, actor: infra })
 
   const checklist = () =>
     ok(nucleo.ejecutar('catalogo.listar', {})).elementos.map((e) => ({
@@ -93,7 +89,10 @@ test('camino feliz: invitar → diligenciar → aprobar → confirmar → sello 
   assert.equal(aprobada.estado, 'PROGRAMADA')
 
   p.mover('2026-09-15T09:45:00-05:00')
-  assert.equal(ok(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })).estado, 'EN_DILIGENCIAMIENTO')
+  assert.equal(
+    ok(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })).estado,
+    'EN_DILIGENCIAMIENTO',
+  )
   const sello = ok(
     p.nucleo.ejecutar('recepcion.registrar', {
       asignacionId: a.id,
@@ -140,16 +139,29 @@ test('el enlace es personal: otra cuenta no diligencia ni confirma, tampoco por 
   p.mover('2026-09-15T09:45:00-05:00')
 
   // Hallazgo 1 del revisor: `qr.reclamar` sobre una fila con invitado debe rechazarse.
-  assert.equal(codigo(p.nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: intruso })), 'NO_AUTORIZADO')
-  assert.equal(codigo(p.nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: laura })), 'NO_AUTORIZADO')
   assert.equal(
-    codigo(p.nucleo.ejecutar('validacion.decidir', { id: a.id, decision: 'CONFIRMAR', actor: infra })),
+    codigo(p.nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: intruso })),
+    'NO_AUTORIZADO',
+  )
+  assert.equal(
+    codigo(p.nucleo.ejecutar('qr.reclamar', { tokenSha256, receptor: laura })),
+    'NO_AUTORIZADO',
+  )
+  assert.equal(
+    codigo(
+      p.nucleo.ejecutar('validacion.decidir', { id: a.id, decision: 'CONFIRMAR', actor: infra }),
+    ),
     'ESTADO_INVALIDO',
   )
-  assert.equal(codigo(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: intruso })), 'NO_AUTORIZADO')
+  assert.equal(
+    codigo(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: intruso })),
+    'NO_AUTORIZADO',
+  )
   // Misma dirección, otra cuenta de Google (otro `sub`): tampoco.
   assert.equal(
-    codigo(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: { ...laura, sub: 'otra' } })),
+    codigo(
+      p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: { ...laura, sub: 'otra' } }),
+    ),
     'NO_AUTORIZADO',
   )
 })
@@ -162,7 +174,10 @@ test('diligenciar solo desde INVITADA o RECHAZADA: nada cambia una solicitud env
   assert.equal(codigo(p.diligenciar(a.id, laura, otraFranja)), 'ESTADO_INVALIDO', 'en revisión')
   ok(p.decidir(a.id, 'APROBAR', s.solicitadaEn!))
   assert.equal(codigo(p.diligenciar(a.id, laura, otraFranja)), 'ESTADO_INVALIDO', 'aprobada')
-  assert.equal(ok(p.nucleo.ejecutar('asignacion.obtener', { id: a.id }))?.inicio, '2026-09-15T10:00:00-05:00')
+  assert.equal(
+    ok(p.nucleo.ejecutar('asignacion.obtener', { id: a.id }))?.inicio,
+    '2026-09-15T10:00:00-05:00',
+  )
 })
 
 test('rechazar con motivo devuelve para corregir; el gestor aprueba solo la versión que vio', () => {
@@ -175,7 +190,9 @@ test('rechazar con motivo devuelve para corregir; el gestor aprueba solo la vers
   assert.equal(rechazada.motivoRechazo, 'La hora de inicio no coincide con la sala')
 
   p.mover('2026-09-15T08:05:00-05:00')
-  const v2 = ok(p.diligenciar(a.id, laura, p.datos('2026-09-15T11:00:00-05:00', '2026-09-15T13:00:00-05:00'))).solicitadaEn!
+  const v2 = ok(
+    p.diligenciar(a.id, laura, p.datos('2026-09-15T11:00:00-05:00', '2026-09-15T13:00:00-05:00')),
+  ).solicitadaEn!
   assert.notEqual(v1, v2)
   // Otro gestor dejó la pantalla abierta con la versión 1: su aprobación no pasa.
   assert.equal(codigo(p.decidir(a.id, 'APROBAR', v1)), 'ESTADO_INVALIDO')
@@ -214,7 +231,9 @@ test('vencimientos: la invitación caduca a las 72 h; la solicitud vive hasta el
 
   const q = preparar()
   const b = q.invitar()
-  const v = ok(q.diligenciar(b.a.id, laura, q.datos('2026-09-20T10:00:00-05:00', '2026-09-20T12:00:00-05:00'))).solicitadaEn!
+  const v = ok(
+    q.diligenciar(b.a.id, laura, q.datos('2026-09-20T10:00:00-05:00', '2026-09-20T12:00:00-05:00')),
+  ).solicitadaEn!
   // Hallazgo 5: pasan más de 72 h con el gestor sin responder y la solicitud sigue viva.
   q.mover('2026-09-19T08:00:00-05:00')
   assert.equal(ok(q.nucleo.ejecutar('asignacion.obtener', { id: b.a.id }))?.estado, 'SOLICITADA')
@@ -227,10 +246,16 @@ test('confirmar la recepción solo dentro de la vigencia; entrar dos veces es id
   const p = preparar()
   const { a } = p.invitar()
   ok(p.decidir(a.id, 'APROBAR', ok(p.diligenciar(a.id)).solicitadaEn!))
-  assert.equal(codigo(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })), 'QR_NO_VIGENTE')
+  assert.equal(
+    codigo(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })),
+    'QR_NO_VIGENTE',
+  )
   p.mover('2026-09-15T09:30:00-05:00')
   ok(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura }))
-  assert.equal(ok(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })).estado, 'EN_DILIGENCIAMIENTO')
+  assert.equal(
+    ok(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })).estado,
+    'EN_DILIGENCIAMIENTO',
+  )
 })
 
 test('la autorización guarda versión y huella del texto aceptado (Ley 1581)', () => {
@@ -249,7 +274,9 @@ test('datos inválidos se rechazan en el núcleo aunque la web los deje pasar', 
   const base = p.datos()
   assert.equal(codigo(p.diligenciar(a.id, laura, { ...base, celular: '12345' })), 'DATOS_INVALIDOS')
   assert.equal(
-    codigo(p.diligenciar(a.id, laura, p.datos('2026-09-15T07:00:00-05:00', '2026-09-15T09:00:00-05:00'))),
+    codigo(
+      p.diligenciar(a.id, laura, p.datos('2026-09-15T07:00:00-05:00', '2026-09-15T09:00:00-05:00')),
+    ),
     'DATOS_INVALIDOS',
     'evento en el pasado',
   )

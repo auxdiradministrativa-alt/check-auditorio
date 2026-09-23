@@ -68,7 +68,15 @@ function preparar() {
         },
       }),
     )
-    ok(nucleo.ejecutar('solicitud.decidir', { id: a.id, decision: 'APROBAR', motivo: '', version: s.solicitadaEn!, actor: infra }))
+    ok(
+      nucleo.ejecutar('solicitud.decidir', {
+        id: a.id,
+        decision: 'APROBAR',
+        motivo: '',
+        version: s.solicitadaEn!,
+        actor: infra,
+      }),
+    )
     return a.id
   }
   const notif = (id: string) => tabla.leer('Asignaciones').find((f) => f.id === id)!
@@ -123,7 +131,11 @@ test('fallos: reintenta y al tercero queda FALLIDO con bitácora', () => {
   assert.equal(p.notif(id).notif_decision, 'FALLIDO')
   assert.ok(p.tabla.leer('Bitacora').some((b) => b.evento === 'notificacion.fallida'))
   c.fallar(false)
-  assert.equal(p.nucleo.procesarNotificaciones(c.correo).enviados, 0, 'FALLIDO no se reintenta solo')
+  assert.equal(
+    p.nucleo.procesarNotificaciones(c.correo).enviados,
+    0,
+    'FALLIDO no se reintenta solo',
+  )
 })
 
 test('sin cuota no se gasta intento; una reserva viva no se toma dos veces', () => {
@@ -189,7 +201,10 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
   const fijos = constancias.find((m) => m.para.includes('jefe@americana.edu.co'))!
   assert.doesNotMatch(fijos.html, /3001234567|mi-solicitud/, 'sin celular ni enlace personal')
   // La constancia sigue íntegra aunque se escribió su bandeja.
-  assert.equal(ok(p.nucleo.ejecutar('constancia.obtener', { consecutivo: sello.consecutivo }))?.integra, true)
+  assert.equal(
+    ok(p.nucleo.ejecutar('constancia.obtener', { consecutivo: sello.consecutivo }))?.integra,
+    true,
+  )
 
   // Vence el plazo de devolución (fin 12:00 + 24 h).
   p.mover('2026-09-16T12:00:01-05:00')
@@ -200,7 +215,9 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
   // Una constancia sellada antes de `notificaciones_desde` no se notifica.
   const q = preparar()
   const d = correoFalso()
-  q.tabla.actualizar('CFG_General', 'clave', 'notificaciones_desde', { valor: '2099-01-01T00:00:00-05:00' })
+  q.tabla.actualizar('CFG_General', 'clave', 'notificaciones_desde', {
+    valor: '2099-01-01T00:00:00-05:00',
+  })
   const id2 = q.aprobada()
   q.mover('2026-09-15T09:45:00-05:00')
   ok(q.nucleo.ejecutar('recepcion.iniciar', { id: id2, receptor: laura }))

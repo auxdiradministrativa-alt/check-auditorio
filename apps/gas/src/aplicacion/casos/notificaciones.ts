@@ -31,7 +31,11 @@ const INTENTOS_MAX = 3
 const HORA_MS = 3_600_000
 
 type Canal =
-  | { hoja: 'asignacion'; id: string; campo: 'notifDecision' | 'notifConfirmacion' | 'notifVencida' }
+  | {
+      hoja: 'asignacion'
+      id: string
+      campo: 'notifDecision' | 'notifConfirmacion' | 'notifVencida'
+    }
   | { hoja: 'recepcion'; consecutivo: string }
 
 interface Trabajo {
@@ -165,7 +169,9 @@ export function procesarNotificaciones(ctx: Contexto, correo: Correo): ResumenNo
         dependencia: r.dependencia,
         novedades: ctx.recepciones.detalle(consecutivo).filter((d) => d.estado === 'NOVEDAD')
           .length,
-        devolverAntesDe: isoBogota(new Date(new Date(a.fin).getTime() + cfg.horasDevolucion * HORA_MS)),
+        devolverAntesDe: isoBogota(
+          new Date(new Date(a.fin).getTime() + cfg.horasDevolucion * HORA_MS),
+        ),
       }
       const fijos = ctx.catalogo.destinatarios('recepcion')
       tomar(canal, notif, [

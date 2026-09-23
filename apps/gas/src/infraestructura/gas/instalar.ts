@@ -41,7 +41,10 @@ export function instalar() {
       if (faltan.length) {
         const desde = hoja.getLastColumn() + 1
         if (hoja.getMaxColumns() < desde + faltan.length - 1)
-          hoja.insertColumnsAfter(hoja.getMaxColumns(), desde + faltan.length - 1 - hoja.getMaxColumns())
+          hoja.insertColumnsAfter(
+            hoja.getMaxColumns(),
+            desde + faltan.length - 1 - hoja.getMaxColumns(),
+          )
         hoja.getRange(1, desde, hoja.getMaxRows(), faltan.length).setNumberFormat('@')
         hoja.getRange(1, desde, 1, faltan.length).setValues([faltan]).setFontWeight('bold')
         console.log(`${nombre}: columnas añadidas ${faltan.join(', ')}`)
@@ -75,7 +78,10 @@ export function instalar() {
   const filasCfg = general.getRange(1, 1, general.getLastRow(), 2).getDisplayValues()
   const iDesde = filasCfg.findIndex(([c]) => c === 'notificaciones_desde')
   if (iDesde >= 0 && !filasCfg[iDesde]![1])
-    general.getRange(iDesde + 1, 2).setNumberFormat('@').setValue(isoBogota(new Date()))
+    general
+      .getRange(iDesde + 1, 2)
+      .setNumberFormat('@')
+      .setValue(isoBogota(new Date()))
 
   // Activador de la bandeja de correo. Corre como la cuenta que ejecuta `instalar()`: debe ser la
   // dueña, o los correos saldrían desde otra cuenta.
