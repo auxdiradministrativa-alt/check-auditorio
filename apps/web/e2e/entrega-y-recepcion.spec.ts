@@ -89,16 +89,17 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
     await ingresar(entrega, ENTREGADOR)
     await expect(entrega).toHaveURL(/\/panel$/)
 
-    await entrega.goto('/panel/asignaciones/nueva')
+    await entrega.getByRole('button', { name: 'Crear evento', exact: true }).click()
     const franja = franjaQueEmpiezaYa()
     await entrega.getByLabel('Evento o actividad').fill(evento)
     await entrega.getByLabel('Fecha').fill(franja.fecha)
     await entrega.getByLabel('Hora de inicio').fill(franja.inicio)
     await entrega.getByLabel('Hora de fin').fill(franja.fin)
-    await entrega.getByRole('button', { name: 'Programar y generar QR' }).click()
+    await entrega.getByRole('button', { name: 'Crear evento y generar QR' }).click()
 
-    await expect(entrega).toHaveURL(/\/panel\/asignaciones\/[0-9a-f-]{36}$/)
-    await expect(entrega.getByRole('heading', { level: 1 })).toHaveText(evento)
+    await expect(entrega).toHaveURL(/\/panel\?evento=[0-9a-f-]{36}#operacion$/)
+    await expect(entrega.getByRole('heading', { level: 1 })).toHaveText('Gestión de espacios')
+    await expect(entrega.getByRole('heading', { name: evento, exact: true })).toBeVisible()
     await expect(
       entrega.getByRole('img', { name: `Código QR para recibir ${evento}` }),
     ).toBeVisible()
@@ -214,7 +215,9 @@ test('entrega, recepción con novedad, verificación y devolución', async ({ br
   })
 
   await test.step('Infraestructura ve la recepción en su panel', async () => {
-    await expect(entrega.getByText(consecutivo)).toBeVisible()
+    await expect(
+      entrega.locator('#operacion').getByText(consecutivo, { exact: true }),
+    ).toBeVisible()
     await expect(entrega.getByText('Constancia de recepción')).toBeVisible()
     await expect(entrega.getByRole('img', { name: /Código QR/ })).toHaveCount(0)
   })

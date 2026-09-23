@@ -34,6 +34,7 @@ export function configurar({ contraGas }: { contraGas: boolean }) {
       reuseExistingServer: false,
       timeout: 180_000,
       env: {
+        CHECK_E2E: '1',
         NEXT_PUBLIC_APP_URL: URL_BASE,
         // Vacías = ausentes (Next no pisa con .env.local una variable ya definida): login local.
         GOOGLE_CLIENT_ID: '',

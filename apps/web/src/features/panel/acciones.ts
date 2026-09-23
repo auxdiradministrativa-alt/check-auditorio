@@ -43,7 +43,7 @@ export async function decidirValidacion(
     const sesion = await requerirEntregador()
     const d = decision.parse({ id, decision: valor })
     await registro('validacion.decidir', { ...d, actor: persona(sesion) })
-    revalidatePath(`/panel/asignaciones/${d.id}`)
+    revalidatePath('/panel', 'layout')
   })
 }
 

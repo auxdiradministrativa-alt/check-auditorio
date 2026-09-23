@@ -10,7 +10,7 @@ import {
 export default function CargandoPanel() {
   return (
     <>
-      <AvisoCargando>Cargando las entregas de hoy…</AvisoCargando>
+      <AvisoCargando>Cargando el centro de gestión…</AvisoCargando>
       <SkeletonPageHeader conAccion />
       <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (

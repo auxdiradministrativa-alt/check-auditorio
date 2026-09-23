@@ -4,11 +4,13 @@ import { CalendarPlus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 
-import type { Espacio } from '@check-auditorio/shared'
+import type { Espacio, ElementoCatalogo } from '@check-auditorio/shared'
 import { LIMITES, nuevaAsignacionInputSchema } from '@check-auditorio/shared'
 
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/field'
+
+import { ResumenCatalogo } from './resumen-catalogo'
 
 import { programarAsignacion } from './acciones'
 
@@ -19,7 +21,16 @@ type Errores = Partial<
 /** Convierte fecha (AAAA-MM-DD) y hora (HH:MM) locales de Bogotá a ISO con offset. */
 const aIsoBogota = (fecha: string, hora: string) => `${fecha}T${hora}:00-05:00`
 
-export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
+export function FormNuevaAsignacion({
+  espacios,
+  elementos = [],
+  onCreada,
+}: {
+  espacios: Espacio[]
+  elementos?: ElementoCatalogo[]
+  onCreada?: () => void
+}) {
+  const [espacioId, setEspacioId] = useState(espacios[0]?.id ?? '')
   const router = useRouter()
   const [errores, setErrores] = useState<Errores>({})
   const [enviando, setEnviando] = useState(false)
@@ -65,7 +76,8 @@ export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
       setEnviando(false)
       return
     }
-    router.push(`/panel/asignaciones/${r.datos.id}`)
+    router.push(`/panel?evento=${r.datos.id}#operacion`)
+    onCreada?.()
   }
 
   return (
@@ -74,7 +86,8 @@ export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
         <Select
           id="espacioId"
           name="espacioId"
-          defaultValue={espacios[0]?.id}
+          value={espacioId}
+          onChange={(ev) => setEspacioId(ev.target.value)}
           aria-invalid={!!errores.espacioId}
         >
           {espacios.map((e) => (
@@ -118,10 +131,23 @@ export function FormNuevaAsignacion({ espacios }: { espacios: Espacio[] }) {
         </p>
       )}
 
+      <details className="rounded-xl border border-pearl-200 p-4">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Ver elementos del espacio seleccionado
+        </summary>
+        <div className="pt-4">
+          <ResumenCatalogo catalogo={elementos.filter((e) => e.espacioId === espacioId)} />
+        </div>
+      </details>
       <div className="flex justify-end border-t border-pearl-200 pt-5">
-        <Button type="submit" variante="primario" tamano="lg" disabled={enviando}>
+        <Button
+          type="submit"
+          variante="primario"
+          tamano="lg"
+          disabled={enviando || !espacios.length}
+        >
           <CalendarPlus aria-hidden />
-          {enviando ? 'Programando…' : 'Programar y generar QR'}
+          {enviando ? 'Programando…' : 'Crear evento y generar QR'}
         </Button>
       </div>
     </form>

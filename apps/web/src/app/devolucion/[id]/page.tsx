@@ -6,6 +6,7 @@ import { FormDevolucion } from '@/features/devolucion/form-devolucion'
 import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
 import { exigirSesion } from '@/servidor/auth/sesion'
 import { registro } from '@/servidor/registro'
+import { listarCatalogo } from '@/servidor/registro/lecturas'
 import { tokenDevolucionValido } from '@/servidor/tokens'
 
 export const metadata: Metadata = { title: 'Declarar devolución' }
@@ -22,7 +23,7 @@ export default async function Devolucion({ params, searchParams }: Props) {
   if (asignacion.receptor?.correo.toLowerCase() !== sesion.correo.toLowerCase()) notFound()
 
   const [{ espacios, elementos }, constancia] = await Promise.all([
-    registro('catalogo.listar', {}),
+    listarCatalogo(),
     registro('constancia.obtener', { consecutivo: asignacion.consecutivo }),
   ])
   const espacio = espacios.find((e) => e.id === asignacion.espacioId)

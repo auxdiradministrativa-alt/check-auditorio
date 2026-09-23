@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { cache } from 'react'
+
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
@@ -20,7 +22,7 @@ const esInstitucional = (correo: string) =>
   correo.toLowerCase().endsWith(`@${DOMINIO_INSTITUCIONAL}`)
 
 /** Sesión verificada en servidor, o null. Revalida el dominio aunque el proveedor ya lo hizo. */
-export async function obtenerSesion(): Promise<Sesion | null> {
+export const obtenerSesion = cache(async (): Promise<Sesion | null> => {
   await connection()
   exigirEntornoCompleto()
   let sesion: Sesion | null
@@ -38,7 +40,7 @@ export async function obtenerSesion(): Promise<Sesion | null> {
       : null
   }
   return sesion && esInstitucional(sesion.correo) ? sesion : null
-}
+})
 
 /** Para páginas: sin sesión, al ingreso con retorno a `destino`. */
 export async function exigirSesion(destino: string): Promise<Sesion> {
@@ -48,7 +50,18 @@ export async function exigirSesion(destino: string): Promise<Sesion> {
 }
 
 export async function esEntregador(sesion: Sesion) {
-  return (await registro('entregador.autorizado', { correo: sesion.correo })).autorizado
+  return entregadorAutorizado(sesion.correo)
+}
+
+const entregadorAutorizado = cache(
+  async (correo: string) => (await registro('entregador.autorizado', { correo })).autorizado,
+)
+
+/** Misma guarda para el layout y los datos: deduplicada dentro de cada petición. */
+export async function exigirAccesoPanel() {
+  const sesion = await exigirSesion('/panel')
+  if (!(await esEntregador(sesion))) redirect('/')
+  return sesion
 }
 
 /** Reautenticación reciente antes de firmar (equipos compartidos). */

@@ -1,42 +1,5 @@
-import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
-import { PageHeader } from '@/components/layout/page-header'
-import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormNuevaAsignacion } from '@/features/panel/form-nueva-asignacion'
-import { ResumenCatalogo } from '@/features/panel/resumen-catalogo'
-import { registro } from '@/servidor/registro'
-
-export const metadata: Metadata = { title: 'Programar entrega' }
-
-export default async function NuevaAsignacion() {
-  const { espacios, elementos } = await registro('catalogo.listar', {})
-  const catalogo = elementos.filter((e) => e.espacioId === espacios[0]?.id)
-
-  return (
-    <>
-      <PageHeader
-        antetitulo="Nueva asignación"
-        titulo="Programar entrega"
-        descripcion="Al programarla se genera el QR que escaneará la persona que recibe el espacio."
-      />
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-        <Card>
-          <CardBody>
-            <FormNuevaAsignacion espacios={espacios} />
-          </CardBody>
-        </Card>
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Se entregará</CardTitle>
-            <CardDescription>
-              Lista definida por Infraestructura. Quien recibe la verifica elemento por elemento.
-            </CardDescription>
-          </CardHeader>
-          <CardBody>
-            <ResumenCatalogo catalogo={catalogo} />
-          </CardBody>
-        </Card>
-      </div>
-    </>
-  )
+export default function NuevaAsignacion() {
+  redirect('/panel?nuevo=1#operacion')
 }

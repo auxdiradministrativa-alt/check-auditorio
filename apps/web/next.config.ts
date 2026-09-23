@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // Las pruebas no comparten compilación ni bloqueo con el servidor de desarrollo.
+  distDir: process.env.CHECK_E2E === '1' ? '.next-e2e' : '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   // Los paquetes del monorepo se consumen como TypeScript fuente.

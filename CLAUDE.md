@@ -65,17 +65,27 @@ apps/gas/                 núcleo del registro — Clean Architecture, esbuild �
   src/nucleo.ts           raíz de composición: crearNucleo(tabla, servicios)
   pruebas/                node:test contra el núcleo en memoria
 apps/web/                 Next.js 16.3.5 · React 19.3 · Tailwind 4.3 · lucide-react
-  src/app/                / · /panel(/asignaciones(/nueva|/[id]) | /recepciones)
+  src/app/                / · /panel (operación, reservas, registro y constancias)
+                          /panel?evento=<id>#operacion · /panel?nuevo=1#operacion
+                          /panel/asignaciones(/nueva|/[id]) y /panel/recepciones redirigen al centro
                           /r/[token](/confirmada) · /devolucion/[id]?t= · /verificar/[consecutivo]
   src/features/<f>/       UI del caso + acciones.ts (Server Actions) en auth · panel · fotos · recepcion · devolucion; verificacion solo UI
   src/servidor/           solo servidor (`server-only`)
     entorno.ts            variables validadas; modos gas|memoria y google|local
     registro/             ÚNICO puerto de datos: index → cliente-gas (POST firmado) | cliente-memoria
+                          lecturas: catálogo con revalidación a 60 s en GAS; estados sin caché persistente
     auth/                 better-auth (Google, sin BD) · sesion-local · sesion · permisos (guardas)
     tokens.ts · qr.ts · accion.ts (ejecutarAccion → Resultado)
-  e2e/                    Playwright: prueba de uso entregador/receptor/intruso
+  e2e/                    Playwright: entrega/recepción y gestión unificada (QR, filtros, CSV, móvil)
 n8n/workflows/            vacío (después del MVP)
 ```
+
+Centro de gestión: `features/panel/centro-gestion.tsx` compone operación, filtros y tablas paginadas.
+`detalle-evento.tsx` reutiliza la asignación y el catálogo leídos por `/panel`, sin consultas propias.
+El formulario se carga al abrirlo; la búsqueda, filtros, paginación y exportación trabajan sobre el
+listado ya recibido. Los enlaces antiguos conservan compatibilidad mediante redirecciones.
+Permisos y sesiones se deduplican con `React.cache` **solo dentro de una petición**, nunca entre usuarios.
+Las pruebas usan `.next-e2e` (`CHECK_E2E=1`) para no interferir con el servidor de desarrollo abierto.
 
 Costuras que no se ven leyendo un solo fichero:
 
@@ -147,7 +157,7 @@ La fuente de verdad de las columnas es `apps/gas/src/infraestructura/hojas/esque
 
 - ✅ Cuenta Gmail personal o de otro dominio → rechazada aunque manipule la URL de login.
 
-**2.3 QR** — token aleatorio 32 bytes base64url; en la hoja solo su SHA-256; vigente desde `inicio − N min` hasta `inicio`; un solo uso. URL `${APP_URL}/r/${token}`; QR SVG generado en servidor (paquete `qrcode`). Panel consulta el estado cada ~4 s solo mientras hay `EN_VALIDACION`.
+**2.3 QR** — token derivado en servidor; en la hoja solo su SHA-256; vigente desde `inicio − N min` hasta `fin`; un solo uso. URL `${APP_URL}/r/${token}`; QR SVG generado en servidor (paquete `qrcode`), descargable desde la operación del evento. Panel refresca cada ~4 s cuando el evento seleccionado está programado, en validación o diligenciándose; el seguimiento general usa ~30 s mientras haya reservas abiertas. Cada refresco espera al anterior y respeta la visibilidad de la pestaña.
 
 - ✅ Token usado, vencido o inexistente → pantalla "QR no vigente"; rechazar vuelve a `PROGRAMADA`.
 
@@ -220,7 +230,7 @@ pnpm --filter @check-auditorio/shared typecheck
 
 - **Pruebas** (sin credenciales, todo en modo local):
   - `pnpm --filter @check-auditorio/gas prueba` → núcleo en memoria con `node:test` (flujo, idempotencia, «Alterada», cantidades, QR, cruce, HMAC).
-  - `pnpm e2e` → Playwright (`apps/web/e2e/`): levanta su propio `next dev` en el **puerto 3100** y hace la prueba de uso con tres navegadores: entregador, receptor e intruso. **Falla si ya hay otro `next dev` corriendo en `apps/web`** (Next 16 no admite dos): detenlo antes. La franja del evento se calcula con la hora actual de Bogotá, así que no corre después de las 23:55.
+  - `pnpm e2e` → Playwright (`apps/web/e2e/`): levanta su propio `next dev` en el **puerto 3100**, con compilación aislada en `.next-e2e`, y prueba la gestión unificada y el flujo con tres navegadores: entregador, receptor e intruso. Puede coexistir con `pnpm dev` en 3001. La franja del evento se calcula con la hora actual de Bogotá, así que no corre después de las 23:55.
 - Git: rama `main`, remoto `origin` = `github.com/auxdiradministrativa-alt/check-auditorio`.
 - `next dev` crea y vuelve a crear `apps/web/AGENTS.md` y `apps/web/CLAUDE.md` (reglas de Next para agentes): se versionan, no se borran.
 - `pnpm dev` usa el puerto **3001 fijo** (`next dev -p 3001`): el redirect OAuth de localhost apunta ahí y `NEXT_PUBLIC_APP_URL` debe coincidir. Si está ocupado, falla en vez de moverse de puerto.

@@ -11,6 +11,7 @@ import {
 } from '@/features/recepcion/pantallas-estado'
 import { obtenerSesion } from '@/servidor/auth/sesion'
 import { registro } from '@/servidor/registro'
+import { listarCatalogo } from '@/servidor/registro/lecturas'
 import { huella } from '@/servidor/tokens'
 
 export const metadata: Metadata = { title: 'Recepción del espacio' }
@@ -20,11 +21,13 @@ type Props = { params: Promise<{ token: string }> }
 /** Máquina de pantallas del QR: cada estado de la asignación decide qué ve quien escanea. */
 export default async function Recepcion({ params }: Props) {
   const { token } = await params
-  const qr = await registro('qr.estado', { tokenSha256: huella(token) })
+  const [qr, sesion] = await Promise.all([
+    registro('qr.estado', { tokenSha256: huella(token) }),
+    obtenerSesion(),
+  ])
   if (!qr) return <PantallaExpirada />
 
   const { asignacion, vigencia } = qr
-  const sesion = await obtenerSesion()
   const esSuya =
     !!sesion && asignacion.receptor?.correo.toLowerCase() === sesion.correo.toLowerCase()
 
@@ -41,7 +44,7 @@ export default async function Recepcion({ params }: Props) {
     case 'EN_DILIGENCIAMIENTO': {
       if (!esSuya) return <PantallaExpirada />
       const [{ espacios, elementos }, terminos] = await Promise.all([
-        registro('catalogo.listar', {}),
+        listarCatalogo(),
         registro('terminos.vigentes', {}),
       ])
       const espacio = espacios.find((e) => e.id === asignacion.espacioId)
