@@ -1,4 +1,5 @@
 # Punto de retome — flujo por solicitud con enlace (2026-09-23, refrescado)
+n> Frontera: **limpia** — núcleo, correo y panel del gestor en commits; solo el agente (b) del solicitante sigue en vuelo (sus ficheros sin commit, ver punto 5).
 
 1. **Objetivo:** construir la spec `2026-09-23-flujo-solicitud-por-enlace.md` (esta carpeta) con los
    7 hallazgos del revisor cerrados. Leo delegó todas las decisiones («autonomía completa…
@@ -25,6 +26,13 @@
    `features/recepcion/flujo-recepcion.tsx`, nuevos `form-emitir-enlace.tsx`, `tarjeta-solicitud.tsx`,
    `features/solicitud/`, y **`features/auth/acciones.ts` (fuera del carril asignado: revisar por qué)**.
    Sus informes llegan como mensajes de agente; si se perdieron en la compactación, `git diff` manda.
+   **Agente (a) gestor TERMINADO y en commit `0a89e9c`** (check + build verdes). Decisiones:
+   `form-nueva-asignacion.tsx` sin mostrarse (`?nuevo=1` abre «Emitir enlace»); CSV gana «Cuenta
+   invitada» y «Motivo de corrección». **Deudas:** (1) 72 h escritas en la web
+   (`HORAS_VIGENCIA_INVITACION` en detalle-evento.tsx) porque `Asignacion` no expone `tokenVence` →
+   exponerlo en el contrato y usarlo; (2) e2e rotos: `e2e/centro-gestion.spec.ts:18,28,97` y
+   `e2e/entrega-y-recepcion.spec.ts:100,106` buscan «Crear evento» → reescribir al flujo por enlace.
+   Solo falta el agente (b) solicitante.
 6. **Pendiente, en orden:** (i) al volver (a) y (b): leer sus informes, comprobar rutas citadas,
    `pnpm check` + `pnpm --filter @check-auditorio/web build`; (ii) e2e nuevo
    `apps/web/e2e/solicitud-por-enlace.spec.ts` (intruso, diligenciar, devolver, corregir, aprobar,
