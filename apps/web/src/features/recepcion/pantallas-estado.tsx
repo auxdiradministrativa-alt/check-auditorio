@@ -1,15 +1,34 @@
-import { CalendarClock, Hourglass, LogIn, TimerOff } from 'lucide-react'
+import {
+  CalendarCheck,
+  CalendarClock,
+  ClipboardCheck,
+  FileClock,
+  Hourglass,
+  LockKeyhole,
+  LogIn,
+  TimerOff,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import type { Asignacion, Persona } from '@check-auditorio/shared'
+import { ETIQUETAS_ROL, type Asignacion, type Persona } from '@check-auditorio/shared'
 
 import { RefrescoAutomatico } from '@/components/refresco-automatico'
 import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
+import { cerrarSesion } from '@/features/auth/acciones'
 import { Ingreso } from '@/features/auth/ingreso'
+import { BotonConfirmarRecepcion } from '@/features/solicitud/boton-confirmar'
 import { formatearFechaLarga, formatearFranja, formatearHora } from '@/lib/fechas'
 
 import { BotonSolicitar } from './boton-solicitar'
+
+/**
+ * Minutos antes del inicio en que se habilita la recepción. Es el valor por defecto de
+ * `minutos_vigencia_qr_antes` en `CFG_General`: la web no lo recibe del núcleo, así que solo se
+ * usa para el texto. La regla la aplica el núcleo (`vigencia` de `qr.estado`).
+ */
+const MINUTOS_QR_ANTES = 30
 
 function Pantalla({
   icono,
@@ -53,6 +72,43 @@ function TarjetaPersona({ persona }: { persona: Persona }) {
           <p className="truncate font-semibold">{persona.nombre}</p>
           <p className="truncate text-sm text-muted-foreground">{persona.correo}</p>
         </div>
+      </CardBody>
+    </Card>
+  )
+}
+
+/** Resumen de lo que diligenció quien solicita: evento, franja y sus datos. */
+function TarjetaSolicitud({ asignacion }: { asignacion: Asignacion }) {
+  const s = asignacion.solicitud
+  return (
+    <Card className="w-full max-w-sm text-left">
+      <CardBody className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-muted-foreground">Tu solicitud</p>
+          <p className="text-card-title">{asignacion.evento}</p>
+          <p className="text-sm text-muted-foreground first-letter:uppercase">
+            {formatearFechaLarga(asignacion.inicio)} ·{' '}
+            <span className="tabular">{formatearFranja(asignacion.inicio, asignacion.fin)}</span>
+          </p>
+        </div>
+        {s && (
+          <dl className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
+            <div className="col-span-2">
+              <dt className="text-muted-foreground">Rol y dependencia</dt>
+              <dd className="font-medium">
+                {ETIQUETAS_ROL[s.rol]} · {s.dependencia}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Celular</dt>
+              <dd className="font-medium tabular">{s.celular}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Asistentes</dt>
+              <dd className="font-medium tabular">{s.asistentesEstimados}</dd>
+            </div>
+          </dl>
+        )}
       </CardBody>
     </Card>
   )
@@ -138,7 +194,8 @@ export function PantallaAunNoVigente({ asignacion }: { asignacion: Asignacion })
       titulo="Aún no puedes recibir"
     >
       <p className="max-w-sm text-muted-foreground">
-        Este QR se habilita 30 minutos antes del inicio ({formatearHora(asignacion.inicio)}).
+        Este QR se habilita {MINUTOS_QR_ANTES} minutos antes del inicio (
+        {formatearHora(asignacion.inicio)}).
       </p>
       <TarjetaEvento asignacion={asignacion} />
     </Pantalla>
@@ -155,6 +212,118 @@ export function PantallaExpirada() {
         Venció, fue anulado o ya se usó para otra recepción. Pide a Infraestructura que genere uno
         nuevo.
       </p>
+    </Pantalla>
+  )
+}
+
+/* ───────────────────────── Flujo por enlace personal ───────────────────────── */
+
+/** Sin sesión: no se muestra nada del evento, porque aún no se sabe quién abrió el enlace. */
+export function PantallaIngresarPersonal({ destino }: { destino: string }) {
+  return (
+    <Pantalla
+      icono={icono(<LogIn className="size-9 text-primary-strong" aria-hidden />, 'bg-primary-soft')}
+      titulo="Identifícate para continuar"
+    >
+      <p className="max-w-sm text-muted-foreground">
+        Este enlace es personal. Inicia sesión con la cuenta institucional a la que Infraestructura
+        te lo envió.
+      </p>
+      <div className="w-full max-w-sm text-left">
+        <Ingreso destino={destino} />
+      </div>
+    </Pantalla>
+  )
+}
+
+/** Otra cuenta con el enlace: ni evento, ni franja, ni a quién se envió. */
+export function PantallaPersonal({ sesion, destino }: { sesion: Persona; destino: string }) {
+  return (
+    <Pantalla
+      icono={icono(
+        <LockKeyhole className="size-9 text-muted-foreground" aria-hidden />,
+        'bg-border',
+      )}
+      titulo="Este enlace es personal"
+    >
+      <p className="max-w-sm text-muted-foreground">
+        Solo lo puede abrir la cuenta a la que Infraestructura lo envió. Iniciaste sesión como{' '}
+        <span className="font-medium text-foreground">{sesion.correo}</span>.
+      </p>
+      <form action={cerrarSesion}>
+        <input type="hidden" name="destino" value={destino} />
+        <Button type="submit" variante="secundario">
+          Entrar con otra cuenta
+        </Button>
+      </form>
+    </Pantalla>
+  )
+}
+
+export function PantallaEnRevision({ asignacion }: { asignacion: Asignacion }) {
+  return (
+    <Pantalla
+      icono={icono(
+        <FileClock className="size-9 text-attention" aria-hidden />,
+        'bg-attention-soft ring-1 ring-attention-accent/40',
+      )}
+      titulo="Solicitud en revisión"
+    >
+      <RefrescoAutomatico ms={30_000} />
+      <p className="max-w-sm text-muted-foreground">
+        Infraestructura revisará tu solicitud. Te avisaremos por correo cuando la apruebe o si
+        necesita que corrijas algo; también puedes volver a este enlace.
+      </p>
+      <TarjetaSolicitud asignacion={asignacion} />
+    </Pantalla>
+  )
+}
+
+export function PantallaAprobadaEsperando({ asignacion }: { asignacion: Asignacion }) {
+  const desde = new Date(new Date(asignacion.inicio).getTime() - MINUTOS_QR_ANTES * 60_000)
+  return (
+    <Pantalla
+      icono={icono(
+        <CalendarCheck className="size-9 text-success" aria-hidden />,
+        'bg-success-soft ring-1 ring-success/20',
+      )}
+      titulo="Solicitud aprobada"
+    >
+      <p className="max-w-sm text-muted-foreground">
+        Podrás confirmar la recepción del espacio desde las{' '}
+        <span className="font-medium text-foreground tabular">{formatearHora(desde)}</span> del{' '}
+        {formatearFechaLarga(desde)}, desde este mismo enlace. Te enviaremos un correo como
+        recordatorio.
+      </p>
+      <TarjetaSolicitud asignacion={asignacion} />
+    </Pantalla>
+  )
+}
+
+export function PantallaConfirmar({
+  asignacion,
+  sesion,
+  token,
+}: {
+  asignacion: Asignacion
+  sesion: Persona
+  token: string
+}) {
+  return (
+    <Pantalla
+      icono={icono(
+        <ClipboardCheck className="size-9 text-primary-strong" aria-hidden />,
+        'bg-primary-soft',
+      )}
+      titulo="Confirma la recepción"
+    >
+      <p className="max-w-sm text-muted-foreground">
+        Revisa el espacio y sus elementos. Si todo está bien, lo confirmas en un paso; si algo no lo
+        está, lo reportas con una foto. Tu cuenta queda como firma de la constancia.
+      </p>
+      <TarjetaEvento asignacion={asignacion} />
+      <TarjetaPersona persona={sesion} />
+      <BotonConfirmarRecepcion token={token} />
     </Pantalla>
   )
 }

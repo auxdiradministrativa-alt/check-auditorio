@@ -1,48 +1,46 @@
-# Punto de retome — flujo por solicitud con enlace (2026-09-23, refrescado)
-n> Frontera: **limpia** — núcleo, correo y panel del gestor en commits; solo el agente (b) del solicitante sigue en vuelo (sus ficheros sin commit, ver punto 5).
+# Punto de retome — flujo por solicitud con enlace (2026-09-23)
+
+> Frontera: **limpia** — construcción terminada por fases y en commits; falta la verificación de extremo a extremo (e2e) y la documentación.
 
 1. **Objetivo:** construir la spec `2026-09-23-flujo-solicitud-por-enlace.md` (esta carpeta) con los
    7 hallazgos del revisor cerrados. Leo delegó todas las decisiones («autonomía completa…
-   impecable, medida y probada») y otorgó +150k de ventana para terminar. Límites que NO cambian:
-   **sin push**; el permiso `script.send_mail` lo autoriza la cuenta dueña, no el agente; las
-   preguntas a Leo van por `AskUserQuestion` con opciones puntuales y entendibles.
+   impecable, medida y probada»). Límites que NO cambian: **sin push**; el permiso
+   `script.send_mail` lo autoriza la cuenta dueña, no el agente; las preguntas a Leo van por
+   `AskUserQuestion` con opciones puntuales y entendibles.
 2. **Dónde:** worktree `C:\Users\Leonardo Reales\check-auditorio-flujo`, rama `flujo-solicitud`
    sobre `main@077692e`. **No tocar** `C:\Users\Leonardo Reales\check-auditorio` (carril de diseño,
-   sesión `check-auditorio-d9`, ya terminado y en `main`; bitácora en su
-   `docs/superpowers/bitacora-carriles.md`).
-3. **Cerrado y verde (commits `870b731`, `4424fab`):** contrato shared (INVITADA/SOLICITADA/RECHAZADA,
-   esquemas, acciones `invitacion.crear`, `solicitud.diligenciar`, `solicitud.decidir`,
-   `recepcion.iniciar`); núcleo (`casos/solicitud.ts`, `casos/notificaciones.ts`, puerta vieja
-   `qr.reclamar`/`validacion.decidir` cerrada para filas con invitado); infra GAS (`correo-gas.ts`,
-   `procesarOutbox`, scope `send_mail`, migración de columnas y claves en `instalar()`, activador cada
-   10 min, `tabla-gas` estricto). Núcleo **30/30**, 7 mutaciones de seguridad en rojo verificadas.
-4. **Sin commit, verde:** agente (c) — `pruebas/correo.test.ts` (8 pruebas, 2 mutaciones verificadas),
-   `scripts/vista-correo.mjs` + script `vista-correo`, `apps/gas/tmp/` en `.gitignore`, HTML en
-   `apps/gas/tmp/*.html`. Prettier aplicado a `apps/gas`, `packages`, `docs`.
-5. **En curso:** agentes (a) web gestor — `features/panel/**`, `components/ui/badge.tsx`; (b) web
-   solicitante — `app/r/**`, `app/mi-solicitud/**`, `features/solicitud/**`, `features/recepcion/**`.
-   Al compactar (commit `c007a16`), `git status` mostraba sin commit: `badge.tsx`,
-   `features/panel/{acciones,centro-gestion,exportar-registro,linea-tiempo,operacion-eventos,tabla-eventos,utilidades-qr}`,
-   `features/recepcion/flujo-recepcion.tsx`, nuevos `form-emitir-enlace.tsx`, `tarjeta-solicitud.tsx`,
-   `features/solicitud/`, y **`features/auth/acciones.ts` (fuera del carril asignado: revisar por qué)**.
-   Sus informes llegan como mensajes de agente; si se perdieron en la compactación, `git diff` manda.
-   **Agente (a) gestor TERMINADO y en commit `0a89e9c`** (check + build verdes). Decisiones:
-   `form-nueva-asignacion.tsx` sin mostrarse (`?nuevo=1` abre «Emitir enlace»); CSV gana «Cuenta
-   invitada» y «Motivo de corrección». **Deudas:** (1) 72 h escritas en la web
-   (`HORAS_VIGENCIA_INVITACION` en detalle-evento.tsx) porque `Asignacion` no expone `tokenVence` →
-   exponerlo en el contrato y usarlo; (2) e2e rotos: `e2e/centro-gestion.spec.ts:18,28,97` y
-   `e2e/entrega-y-recepcion.spec.ts:100,106` buscan «Crear evento» → reescribir al flujo por enlace.
-   Solo falta el agente (b) solicitante.
-6. **Pendiente, en orden:** (i) al volver (a) y (b): leer sus informes, comprobar rutas citadas,
-   `pnpm check` + `pnpm --filter @check-auditorio/web build`; (ii) e2e nuevo
-   `apps/web/e2e/solicitud-por-enlace.spec.ts` (intruso, diligenciar, devolver, corregir, aprobar,
-   confirmar en ventana, atajo, RECIBIDA, `/verificar` íntegra) y ajustar los e2e existentes si el panel
-   cambió; `pnpm e2e`; (iii) revisión final `feature-dev:code-reviewer`; (iv) actualizar spec (§4
-   columnas reales `solicitud_*`, `notif_decision|confirmacion|vencida_*`, `autoriza_datos_*`; §6
+   sesión `check-auditorio-d9`, terminado y en `main`).
+3. **Hecho y en commits** (`870b731`, `4424fab`, `c007a16`, `0a89e9c`, `305d6bc`): contrato; núcleo
+   30/30 con 7 mutaciones de seguridad y 2 de correo verificadas; bandeja de correo desde Apps Script
+   (4 correos, reintentos, cuota, reserva fuera del bloqueo); `instalar()` migra columnas y crea el
+   activador; `tabla-gas` estricto; plantillas Sage Garden + vista previa (`pnpm --filter
+   @check-auditorio/gas vista-correo` → `apps/gas/tmp/index.html`); panel del gestor (emitir enlace,
+   aprobar/devolver con versión, estados nuevos en tabla, línea de tiempo, CSV).
+4. **Sin commit al cerrar (el agente del solicitante terminó, check + build verdes):** `app/r/[token]/page.tsx`
+   (rama `enlacePersonal`), `app/mi-solicitud/{layout,[id]/page}.tsx`, `features/solicitud/{acciones,form-solicitud,boton-confirmar}`,
+   `features/recepcion/{pantallas-estado,flujo-recepcion}` (precarga + «Todo en buen estado»),
+   `features/auth/acciones.ts` (a propósito: `cerrarSesion` acepta `destino`). **Primer paso de la sesión
+   nueva:** `git -C <worktree> status` y commitear esto como «Solicitante: formulario por enlace,
+   confirmar recepción y /mi-solicitud». Borrar `/tmp/fix.cjs` si existe.
+5. **Deudas conocidas (arreglar antes de cerrar):** (1) 72 h escritas en la web
+   (`HORAS_VIGENCIA_INVITACION`, detalle-evento.tsx) → exponer `tokenVence` en `Asignacion`;
+   (2) `MINUTOS_QR_ANTES = 30` escrito en la web → `qr.estado` debe devolver `habilitadaDesde`;
+   (3) `/mi-solicitud` solo reconoce filas con invitado (las del flujo anterior ven «personal»:
+   aceptable, o comparar con `receptor.correo`); (4) e2e rotos que buscan «Crear evento»:
+   `e2e/centro-gestion.spec.ts:18,28,97` y `e2e/entrega-y-recepcion.spec.ts:100,106`.
+6. **Pendiente, en orden:** (i) commit del punto 4; `pnpm check` + `pnpm --filter
+   @check-auditorio/web build`; (ii) arreglar deudas 1-2; (iii) e2e nuevo
+   `apps/web/e2e/solicitud-por-enlace.spec.ts` (intruso «personal», diligenciar, devolver con motivo,
+   corregir, aprobar, confirmar solo en ventana, atajo, RECIBIDA, `/verificar` íntegra) y reescribir
+   los e2e rotos al flujo por enlace; `pnpm e2e` (puerto 3100; el carril de diseño ya terminó);
+   (iv) revisión final con `feature-dev:code-reviewer` y comprobar sus hallazgos; (v) actualizar spec
+   (§4 columnas reales `solicitud_*`, `notif_decision|confirmacion|vencida_*`, `autoriza_datos_*`; §6
    correo de decisión y bandejas separadas; §10 orden de despliegue) y `CLAUDE.md` (§1 flujo, §2 sin
-   n8n en notificaciones, §3 costuras nuevas, §5 columnas, §6.6); (v) commits por fase; informe a Leo.
+   n8n en notificaciones, §3 costuras nuevas, §5 columnas, §6.6); (vi) informe a Leo con micro-lección
+   y una pregunta de comprobación (skill `leo-ingeniero`), y completar el «Resultado» en
+   `~/.claude/skills/leo-ingeniero/datos/decisiones.md`.
 7. **Despliegue (lo hace Leo / la cuenta dueña, en este orden):** `pnpm --filter @check-auditorio/gas
-push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mail`, añade columnas y
+   push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mail`, añade columnas y
    claves, crea el activador) → nueva VERSIÓN de la implementación → `probar-gas` → merge a `main` y
    push (Vercel). Publicar la versión antes de autorizar el scope tumba todos los `doPost`.
    Condición de producción: texto de autorización de Jurídica.
@@ -53,6 +51,5 @@ push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mai
   enlazan a `/mi-solicitud/[id]`, que exige la sesión invitada y redirige al paso que toca.
 - `contenidoRecepcion` (sello) toma el `RegistroRecepcion` entero: la bandeja de la constancia vive
   fuera de ese registro; REC-000001 sigue íntegra.
-- `tabla-gas` ignoraba columnas ausentes del encabezado; ahora falla con «Faltan columnas… Ejecuta
-  instalar()». Hasta ejecutar `instalar()` en el libro real, TODA escritura de asignaciones falla
-  (a propósito): por eso el orden del punto 7.
+- `tabla-gas` falla con «Faltan columnas… Ejecuta instalar()» si falta una columna: hasta ejecutar
+  `instalar()` en el libro real, toda escritura de asignaciones falla a propósito (orden del punto 7).

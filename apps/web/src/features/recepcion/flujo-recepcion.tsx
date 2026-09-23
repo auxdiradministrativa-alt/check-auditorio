@@ -67,12 +67,16 @@ export function FlujoRecepcion({
   const router = useRouter()
   const [paso, setPaso] = useState(0)
   const [claveIdempotencia] = useState(uuid)
-  const [datos, setDatos] = useState<DatosReceptor>({
-    rol: null,
-    dependencia: '',
-    cargo: '',
-    celular: '',
-    asistentesEstimados: '',
+  // Flujo por enlace: lo diligenciado en la solicitud se precarga y la persona solo lo revisa.
+  const [datos, setDatos] = useState<DatosReceptor>(() => {
+    const s = asignacion.solicitud
+    return {
+      rol: s?.rol ?? null,
+      dependencia: s?.dependencia ?? '',
+      cargo: s?.cargo ?? '',
+      celular: s?.celular ?? '',
+      asistentesEstimados: s ? String(s.asistentesEstimados) : '',
+    }
   })
   const [items, setItems] = useState<Record<string, ItemEstado>>(() =>
     Object.fromEntries(
@@ -89,6 +93,7 @@ export function FlujoRecepcion({
   const [errorTerminos, setErrorTerminos] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [reautenticar, setReautenticar] = useState(false)
+  const [avisoTodoConforme, setAvisoTodoConforme] = useState<string | null>(null)
 
   const elementos = catalogo.filter((e) => e.categoria !== 'ESPACIO')
   const condiciones = catalogo.filter((e) => e.categoria === 'ESPACIO')
@@ -136,6 +141,30 @@ export function FlujoRecepcion({
       return next
     })
     setErroresItems({})
+  }
+
+  /**
+   * Atajo «Todo en buen estado»: todos los elementos y condiciones (los dos pasos) quedan CONFORME
+   * con la cantidad esperada. No pisa una novedad ya descrita con sus fotos: esa se conserva.
+   * Cualquiera puede volver a cambiarse a Novedad después.
+   */
+  function marcarTodoEnBuenEstado() {
+    const conNovedad = catalogo.filter((el) => items[el.id]?.estado === 'NOVEDAD').length
+    setItems((prev) => {
+      const next = { ...prev }
+      for (const el of catalogo) {
+        const actual = next[el.id]
+        if (!actual || actual.estado === 'NOVEDAD') continue
+        next[el.id] = { ...actual, estado: 'CONFORME', cantidadRecibida: el.cantidadEsperada }
+      }
+      return next
+    })
+    setErroresItems({})
+    setAvisoTodoConforme(
+      conNovedad
+        ? `Marcamos el resto como conforme y conservamos ${conNovedad} con novedad. Revisa y continúa.`
+        : 'Marcamos todo como conforme. Si algo no está bien, cámbialo a Novedad.',
+    )
   }
 
   function continuar() {
@@ -373,6 +402,26 @@ export function FlujoRecepcion({
               Marcar pendientes conformes
             </Button>
           </div>
+          {paso === 2 && (
+            <div className="flex flex-col gap-3 rounded-xl border border-success/20 bg-success-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-0.5 text-sm">
+                <p className="font-semibold text-success">¿Todo está en buen estado?</p>
+                <p className="text-foreground">
+                  Marca como conformes todos los elementos y condiciones con la cantidad esperada.
+                  Después puedes cambiar cualquiera a Novedad.
+                </p>
+              </div>
+              <Button variante="secundario" className="shrink-0" onClick={marcarTodoEnBuenEstado}>
+                <BadgeCheck aria-hidden />
+                Todo en buen estado
+              </Button>
+            </div>
+          )}
+          {paso === 2 && avisoTodoConforme && (
+            <p role="status" className="text-sm text-muted-foreground">
+              {avisoTodoConforme}
+            </p>
+          )}
           <p className="text-sm font-medium text-primary-strong tabular" aria-live="polite">
             {revisados} de {grupoActual.length} revisados
           </p>
@@ -519,6 +568,7 @@ export function FlujoRecepcion({
           )}
           {reautenticar && (
             <form action={cerrarSesion}>
+              <input type="hidden" name="destino" value={`/r/${token}`} />
               <Button type="submit" variante="secundario">
                 Volver a iniciar sesión
               </Button>
