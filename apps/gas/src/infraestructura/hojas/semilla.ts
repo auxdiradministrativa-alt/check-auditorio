@@ -63,7 +63,7 @@ export function semilla(sha256Hex: (t: string) => string): { [H in NombreHoja]?:
       {
         id: 'esp-auditorio',
         nombre: 'Auditorio Principal',
-        ubicacion: 'Sede Prado',
+        ubicacion: 'Sede Cosmos',
         capacidad: '150',
         activo: 'SI',
       },
