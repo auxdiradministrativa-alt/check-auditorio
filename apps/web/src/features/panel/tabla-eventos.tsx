@@ -15,15 +15,26 @@ type Orden = { campo: Campo; dir: 'asc' | 'desc' } | null
 
 /** Orden del flujo, no alfabético: ordenar por estado agrupa lo que está en el mismo punto. */
 const FLUJO: EstadoAsignacion[] = [
+  'SOLICITADA',
   'EN_VALIDACION',
   'DEVOLUCION_VENCIDA',
   'EN_DILIGENCIAMIENTO',
+  'RECHAZADA',
+  'INVITADA',
   'PROGRAMADA',
   'RECIBIDA',
   'DEVUELTA',
   'EXPIRADA',
   'ANULADA',
 ]
+
+const ACCION_POR_ESTADO: Partial<Record<EstadoAsignacion, string>> = {
+  INVITADA: 'Compartir enlace',
+  SOLICITADA: 'Revisar solicitud',
+  RECHAZADA: 'Ver motivo',
+  PROGRAMADA: 'Abrir QR',
+  EN_VALIDACION: 'Validar identidad',
+}
 
 const comparar: Record<Campo, (a: Asignacion, b: Asignacion) => number> = {
   evento: (a, b) => a.evento.localeCompare(b.evento, 'es', { sensitivity: 'base' }),
@@ -99,15 +110,33 @@ export function TablaEventos({
           <p className="mt-1 text-xs text-muted-foreground">
             {espacios.find((e) => e.id === a.espacioId)?.nombre ?? a.espacioId}
           </p>
-          {historial && (
+          {historial ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              {a.receptor?.nombre ?? 'Sin receptor'}
+              {a.receptor?.nombre ?? a.invitadoCorreo ?? 'Sin receptor'}
             </p>
+          ) : (
+            a.invitadoCorreo &&
+            !a.receptor && (
+              <p className="mt-1 text-xs break-all text-muted-foreground">
+                Para {a.invitadoCorreo}
+              </p>
+            )
           )}
         </td>
         <td className="text-sm tabular md:px-3 md:py-4">
-          <p>{formatearFechaCorta(a.inicio)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{formatearFranja(a.inicio, a.fin)}</p>
+          {a.estado === 'INVITADA' ? (
+            <>
+              <p>Por definir</p>
+              <p className="mt-1 text-xs text-muted-foreground">La propone quien solicita</p>
+            </>
+          ) : (
+            <>
+              <p>{formatearFechaCorta(a.inicio)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {formatearFranja(a.inicio, a.fin)}
+              </p>
+            </>
+          )}
         </td>
         <td className="text-right md:px-3 md:py-4 md:text-left">
           <EstadoBadge estado={a.estado} />
@@ -128,12 +157,10 @@ export function TablaEventos({
               prefetch={false}
               className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary-strong hover:underline md:min-h-0"
             >
-              {a.estado === 'PROGRAMADA' && <QrCode className="size-4" aria-hidden />}
-              {a.estado === 'PROGRAMADA'
-                ? 'Abrir QR'
-                : a.estado === 'EN_VALIDACION'
-                  ? 'Validar identidad'
-                  : 'Gestionar'}
+              {(a.estado === 'PROGRAMADA' || a.estado === 'INVITADA') && (
+                <QrCode className="size-4" aria-hidden />
+              )}
+              {ACCION_POR_ESTADO[a.estado] ?? 'Gestionar'}
             </Link>
           )}
         </td>
@@ -212,7 +239,7 @@ export function TablaEventos({
           <p className="mt-1 text-sm text-muted-foreground">
             {hayRegistros
               ? 'Revisa los filtros o consulta el registro histórico.'
-              : 'Crea el primer evento para reservar el espacio y generar su QR.'}
+              : 'Emite el primer enlace para que alguien solicite el espacio.'}
           </p>
         </div>
       )}

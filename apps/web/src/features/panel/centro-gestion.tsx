@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Download, UserRoundCheck } from 'lucide-react'
-import { type Asignacion, type Espacio, type ElementoCatalogo } from '@check-auditorio/shared'
+import { type Asignacion, type Espacio } from '@check-auditorio/shared'
 
 import { Button } from '@/components/ui/button'
 import { formatearHoraExacta } from '@/lib/fechas'
@@ -16,7 +16,20 @@ import { exportarRegistro } from './exportar-registro'
 import { FiltrosRegistro, FILTROS_VACIOS } from './filtros-registro'
 
 const CERRADAS = new Set(['DEVUELTA', 'ANULADA', 'EXPIRADA'])
-const ATENCION = new Set(['EN_VALIDACION', 'DEVOLUCION_VENCIDA'])
+const ATENCION = new Set(['SOLICITADA', 'EN_VALIDACION', 'DEVOLUCION_VENCIDA'])
+/** Estados que aún pueden cambiar sin que el gestor haga nada: justifican el refresco de ~30 s. */
+const ABIERTOS = [
+  'INVITADA',
+  'SOLICITADA',
+  'RECHAZADA',
+  'PROGRAMADA',
+  'EN_VALIDACION',
+  'EN_DILIGENCIAMIENTO',
+  'RECIBIDA',
+  'DEVOLUCION_VENCIDA',
+]
+/** Evento abierto que espera a otra persona (diligenciar, corregir, escanear): refresco de ~4 s. */
+const ESPERANDO = ['INVITADA', 'RECHAZADA', 'PROGRAMADA', 'EN_VALIDACION', 'EN_DILIGENCIAMIENTO']
 const normalizar = (texto: string) =>
   texto
     .normalize('NFD')
@@ -26,7 +39,6 @@ const normalizar = (texto: string) =>
 export function CentroGestion({
   asignaciones,
   espacios,
-  elementos,
   eventoId,
   nuevo,
   detalle,
@@ -34,7 +46,6 @@ export function CentroGestion({
 }: {
   asignaciones: Asignacion[]
   espacios: Espacio[]
-  elementos: ElementoCatalogo[]
   eventoId: string | undefined
   nuevo: boolean
   detalle: ReactNode
@@ -54,7 +65,7 @@ export function CentroGestion({
     () =>
       asignaciones.filter((a) => {
         const texto = normalizar(
-          `${a.evento} ${a.receptor?.nombre ?? ''} ${a.receptor?.correo ?? ''} ${a.consecutivo ?? ''}`,
+          `${a.evento} ${a.receptor?.nombre ?? ''} ${a.receptor?.correo ?? ''} ${a.invitadoCorreo ?? ''} ${a.consecutivo ?? ''}`,
         )
         const fecha = a.inicio.slice(0, 10)
         return (
@@ -79,19 +90,14 @@ export function CentroGestion({
     .filter((a) => !soloConstancias || a.consecutivo)
     .sort((a, b) => b.inicio.localeCompare(a.inicio))
   const pendientes = asignaciones.filter((a) => ATENCION.has(a.estado)).length
-  const seguimiento = asignaciones.some((a) =>
-    [
-      'PROGRAMADA',
-      'EN_VALIDACION',
-      'EN_DILIGENCIAMIENTO',
-      'RECIBIDA',
-      'DEVOLUCION_VENCIDA',
-    ].includes(a.estado),
-  )
+  const seguimiento = asignaciones.some((a) => ABIERTOS.includes(a.estado))
 
-  const porValidar = asignaciones.filter((a) => a.estado === 'EN_VALIDACION')
-  // Si el evento que espera ya está abierto, su tarjeta de validación basta.
-  const avisoValidacion = porValidar.some((a) => a.id === eventoId) ? [] : porValidar
+  // Solicitudes que esperan al gestor: por aprobar (flujo por enlace) o por validar (anterior).
+  const porRevisar = asignaciones.filter(
+    (a) => a.estado === 'SOLICITADA' || a.estado === 'EN_VALIDACION',
+  )
+  // Si el evento que espera ya está abierto, su tarjeta basta.
+  const avisoValidacion = porRevisar.filter((a) => a.id !== eventoId)
   const primeraPorValidar = avisoValidacion[0]
   const activos =
     Object.values(filtros).filter(Boolean).length + Number(soloAtencion) + Number(soloConstancias)
@@ -116,12 +122,7 @@ export function CentroGestion({
       {seguimiento && (
         <RefrescoAutomatico
           ms={
-            eventoId &&
-            asignaciones.some(
-              (a) =>
-                a.id === eventoId &&
-                ['PROGRAMADA', 'EN_VALIDACION', 'EN_DILIGENCIAMIENTO'].includes(a.estado),
-            )
+            eventoId && asignaciones.some((a) => a.id === eventoId && ESPERANDO.includes(a.estado))
               ? 4000
               : 30_000
           }
@@ -139,13 +140,14 @@ export function CentroGestion({
                     <strong className="font-semibold">
                       {primeraPorValidar.receptor?.nombre ?? 'Una persona'}
                     </strong>{' '}
-                    escaneó el QR de «{primeraPorValidar.evento}» y espera que confirmes su
-                    identidad.
+                    {primeraPorValidar.estado === 'SOLICITADA'
+                      ? `envió la solicitud de «${primeraPorValidar.evento}» y espera tu aprobación.`
+                      : `escaneó el QR de «${primeraPorValidar.evento}» y espera que confirmes su identidad.`}
                   </>
                 ) : (
                   <>
-                    <strong className="font-semibold">{avisoValidacion.length} personas</strong>{' '}
-                    esperan que confirmes su identidad.
+                    <strong className="font-semibold">{avisoValidacion.length} solicitudes</strong>{' '}
+                    esperan tu revisión.
                   </>
                 )}
               </span>
@@ -155,19 +157,17 @@ export function CentroGestion({
               prefetch={false}
               className="inline-flex min-h-11 items-center rounded-lg bg-attention-accent px-4 text-sm font-semibold text-foreground transition-colors hover:bg-attention-accent/85 active:bg-attention-accent/75 sm:min-h-9"
             >
-              {avisoValidacion.length === 1 ? 'Validar ahora' : 'Validar la primera'}
+              {avisoValidacion.length === 1
+                ? primeraPorValidar.estado === 'SOLICITADA'
+                  ? 'Revisar ahora'
+                  : 'Validar ahora'
+                : 'Revisar la primera'}
             </Link>
           </div>
         )}
       </div>
 
-      <OperacionEventos
-        espacios={espacios}
-        elementos={elementos}
-        eventoId={eventoId}
-        nuevo={nuevo}
-        detalle={detalle}
-      />
+      <OperacionEventos eventoId={eventoId} nuevo={nuevo} detalle={detalle} />
 
       <div className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 sm:p-6">
         <dl className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">

@@ -20,6 +20,11 @@
    `apps/gas/tmp/*.html`. Prettier aplicado a `apps/gas`, `packages`, `docs`.
 5. **En curso:** agentes (a) web gestor — `features/panel/**`, `components/ui/badge.tsx`; (b) web
    solicitante — `app/r/**`, `app/mi-solicitud/**`, `features/solicitud/**`, `features/recepcion/**`.
+   Al compactar (commit `c007a16`), `git status` mostraba sin commit: `badge.tsx`,
+   `features/panel/{acciones,centro-gestion,exportar-registro,linea-tiempo,operacion-eventos,tabla-eventos,utilidades-qr}`,
+   `features/recepcion/flujo-recepcion.tsx`, nuevos `form-emitir-enlace.tsx`, `tarjeta-solicitud.tsx`,
+   `features/solicitud/`, y **`features/auth/acciones.ts` (fuera del carril asignado: revisar por qué)**.
+   Sus informes llegan como mensajes de agente; si se perdieron en la compactación, `git diff` manda.
 6. **Pendiente, en orden:** (i) al volver (a) y (b): leer sus informes, comprobar rutas citadas,
    `pnpm check` + `pnpm --filter @check-auditorio/web build`; (ii) e2e nuevo
    `apps/web/e2e/solicitud-por-enlace.spec.ts` (intruso, diligenciar, devolver, corregir, aprobar,
@@ -29,7 +34,7 @@
    correo de decisión y bandejas separadas; §10 orden de despliegue) y `CLAUDE.md` (§1 flujo, §2 sin
    n8n en notificaciones, §3 costuras nuevas, §5 columnas, §6.6); (v) commits por fase; informe a Leo.
 7. **Despliegue (lo hace Leo / la cuenta dueña, en este orden):** `pnpm --filter @check-auditorio/gas
-   push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mail`, añade columnas y
+push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mail`, añade columnas y
    claves, crea el activador) → nueva VERSIÓN de la implementación → `probar-gas` → merge a `main` y
    push (Vercel). Publicar la versión antes de autorizar el scope tumba todos los `doPost`.
    Condición de producción: texto de autorización de Jurídica.

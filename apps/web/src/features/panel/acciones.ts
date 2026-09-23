@@ -5,7 +5,13 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { nuevaAsignacionInputSchema, type NuevaAsignacionInput } from '@check-auditorio/shared'
+import {
+  decisionSolicitudInputSchema,
+  invitacionInputSchema,
+  nuevaAsignacionInputSchema,
+  type InvitacionInput,
+  type NuevaAsignacionInput,
+} from '@check-auditorio/shared'
 
 import type { Resultado } from '@/lib/resultado'
 import { ejecutarAccion } from '@/servidor/accion'
@@ -30,6 +36,48 @@ export async function programarAsignacion(
     })
     revalidatePath('/panel', 'layout')
     return { id }
+  })
+}
+
+/**
+ * Flujo por enlace: Infraestructura emite un enlace personal amarrado al correo de quien solicita.
+ * El token se deriva del id igual que el QR del flujo anterior; la hoja guarda solo su huella.
+ */
+export async function emitirEnlace(entrada: InvitacionInput): Promise<Resultado<{ id: string }>> {
+  return ejecutarAccion(async () => {
+    const sesion = await requerirEntregador()
+    const datos = invitacionInputSchema.parse(entrada)
+    const id = randomUUID()
+    await registro('invitacion.crear', {
+      ...datos,
+      id,
+      entregadoPor: persona(sesion),
+      tokenSha256: huella(tokenQr(id)),
+    })
+    revalidatePath('/panel', 'layout')
+    return { id }
+  })
+}
+
+/**
+ * Aprueba o devuelve una solicitud. `version` es el `solicitadaEn` que vio el gestor: si quien
+ * solicita la corrigió entre medias, el núcleo responde ESTADO_INVALIDO y no se decide a ciegas.
+ */
+export async function decidirSolicitud(
+  id: string,
+  decision: 'APROBAR' | 'RECHAZAR',
+  version: string,
+  motivo = '',
+): Promise<Resultado> {
+  return ejecutarAccion(async () => {
+    const sesion = await requerirEntregador()
+    const datos = decisionSolicitudInputSchema.parse({ decision, version, motivo })
+    await registro('solicitud.decidir', {
+      ...datos,
+      id: z.uuid().parse(id),
+      actor: persona(sesion),
+    })
+    revalidatePath('/panel', 'layout')
   })
 }
 

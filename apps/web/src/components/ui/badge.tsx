@@ -38,6 +38,12 @@ export function Badge({
 }
 
 const TONO_POR_ESTADO: Record<EstadoAsignacion, TonoBadge> = {
+  // Espera a quien solicita: en marcha, sin acción de Infraestructura.
+  INVITADA: 'primario',
+  // Espera la decisión de Infraestructura: atención.
+  SOLICITADA: 'oro',
+  // Devuelta con un motivo: destructivo suave, distinto de lo que espera al gestor.
+  RECHAZADA: 'peligro',
   PROGRAMADA: 'primario',
   EN_VALIDACION: 'oro',
   EN_DILIGENCIAMIENTO: 'oro',

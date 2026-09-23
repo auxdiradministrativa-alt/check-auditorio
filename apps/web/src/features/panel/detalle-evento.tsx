@@ -1,17 +1,90 @@
-import { CalendarDays, Clock, ExternalLink, MapPin, ShieldCheck, UserRound } from 'lucide-react'
+import {
+  CalendarDays,
+  Clock,
+  ExternalLink,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Undo2,
+  UserRound,
+} from 'lucide-react'
 import type { Asignacion, Espacio, ElementoCatalogo } from '@check-auditorio/shared'
+import { ETIQUETAS_ROL } from '@check-auditorio/shared'
 
+import { Alert } from '@/components/ui/alert'
 import { EstadoBadge } from '@/components/ui/badge'
 import { ButtonLink } from '@/components/ui/button'
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { BotonAnular } from '@/features/panel/boton-anular'
 import { LineaTiempo } from '@/features/panel/linea-tiempo'
 import { ResumenCatalogo } from '@/features/panel/resumen-catalogo'
+import {
+  ListaDatos,
+  TarjetaSolicitud,
+  type DatoSolicitud,
+} from '@/features/panel/tarjeta-solicitud'
 import { TarjetaValidacion } from '@/features/panel/tarjeta-validacion'
-import { formatearFechaLarga, formatearFranja } from '@/lib/fechas'
+import { formatearFechaHora, formatearFechaLarga, formatearFranja } from '@/lib/fechas'
 import { qrSvg } from '@/servidor/qr'
 import { UtilidadesQr } from './utilidades-qr'
 import { urlRecepcion } from '@/servidor/tokens'
+
+/**
+ * Vigencia por defecto del enlace (`CFG_General.horas_vigencia_invitacion`). El registro no expone
+ * `token_vence`, así que el mensaje usa el valor por defecto de la spec; si Infraestructura lo
+ * cambia en la hoja, este texto debe cambiar también.
+ */
+const HORAS_VIGENCIA_INVITACION = 72
+
+const ANULABLES = [
+  'INVITADA',
+  'SOLICITADA',
+  'RECHAZADA',
+  'PROGRAMADA',
+  'EN_VALIDACION',
+  'EN_DILIGENCIAMIENTO',
+]
+
+/** Lo que diligenció quien solicita, ya formateado en hora de Bogotá. */
+function datosSolicitud(a: Asignacion, espacio: Espacio | undefined): DatoSolicitud[] {
+  const s = a.solicitud
+  return [
+    { etiqueta: 'Evento', valor: a.evento },
+    { etiqueta: 'Espacio', valor: espacio?.nombre ?? a.espacioId },
+    { etiqueta: 'Fecha', valor: formatearFechaLarga(a.inicio) },
+    { etiqueta: 'Franja', valor: formatearFranja(a.inicio, a.fin) },
+    ...(s
+      ? [
+          { etiqueta: 'Rol', valor: ETIQUETAS_ROL[s.rol] },
+          { etiqueta: 'Dependencia', valor: s.dependencia },
+          { etiqueta: 'Cargo', valor: s.cargo },
+          { etiqueta: 'Celular', valor: s.celular },
+          { etiqueta: 'Asistentes estimados', valor: String(s.asistentesEstimados) },
+        ]
+      : []),
+    ...(a.solicitadaEn ? [{ etiqueta: 'Enviada', valor: formatearFechaHora(a.solicitadaEn) }] : []),
+  ]
+}
+
+/** Texto para pegar en WhatsApp o en un correo, con todo lo que la persona necesita saber. */
+function mensajeInvitacion(a: Asignacion, correo: string, enlace: string) {
+  const vence = formatearFechaHora(
+    new Date(new Date(a.creadaEn).getTime() + HORAS_VIGENCIA_INVITACION * 3_600_000),
+  )
+  const referencia = a.evento !== 'Por definir' ? ` para «${a.evento}»` : ''
+  return [
+    'Hola,',
+    '',
+    `Te comparto el enlace para solicitar el auditorio de la Corporación Universitaria Americana${referencia}. Allí registras el nombre del evento, la fecha, el horario y tus datos; Infraestructura revisa la solicitud y te confirma.`,
+    '',
+    `Entra con tu cuenta institucional ${correo}: el enlace solo funciona con esa cuenta.`,
+    `El enlace vence en ${HORAS_VIGENCIA_INVITACION} horas (${vence}).`,
+    '',
+    enlace,
+    '',
+    'Infraestructura',
+  ].join('\n')
+}
 
 /** Datos ya autorizados y leídos por el centro de gestión; no repite consultas remotas. */
 export async function DetalleEvento({
@@ -25,11 +98,31 @@ export async function DetalleEvento({
 }) {
   const espacio = espacios.find((e) => e.id === asignacion.espacioId)
   const catalogo = elementos.filter((e) => e.espacioId === asignacion.espacioId)
-  const { id, evento, inicio, fin, estado, receptor, consecutivo, entregadoPor } = asignacion
-  const muestraQr = estado === 'PROGRAMADA'
+  const {
+    id,
+    evento,
+    inicio,
+    fin,
+    estado,
+    receptor,
+    consecutivo,
+    entregadoPor,
+    invitadoCorreo,
+    solicitadaEn,
+    motivoRechazo,
+  } = asignacion
+  const porEnlace = invitadoCorreo !== null
+  // Una invitación aún no tiene franja: inicio = fin = hora de emisión.
+  const sinFranja = estado === 'INVITADA'
+  // En el flujo por enlace, el mismo enlace sirve para diligenciar, corregir y confirmar la recepción.
+  const muestraQr = porEnlace
+    ? ['INVITADA', 'RECHAZADA', 'PROGRAMADA'].includes(estado)
+    : estado === 'PROGRAMADA'
   const enlace = urlRecepcion(id)
   const svg = muestraQr ? await qrSvg(enlace) : null
-  const anulable = ['PROGRAMADA', 'EN_VALIDACION', 'EN_DILIGENCIAMIENTO'].includes(estado)
+  const anulable = ANULABLES.includes(estado)
+  const solicitante =
+    receptor ?? (invitadoCorreo ? { nombre: invitadoCorreo, correo: invitadoCorreo } : null)
 
   return (
     <>
@@ -54,25 +147,64 @@ export async function DetalleEvento({
             <dt>
               <CalendarDays className="size-4" aria-label="Fecha" />
             </dt>
-            <dd className="first-letter:uppercase">{formatearFechaLarga(inicio)}</dd>
+            <dd className="first-letter:uppercase">
+              {sinFranja ? 'Por definir' : formatearFechaLarga(inicio)}
+            </dd>
           </div>
           <div className="flex items-center gap-1.5">
             <dt>
               <Clock className="size-4" aria-label="Horario" />
             </dt>
-            <dd className="tabular">{formatearFranja(inicio, fin)}</dd>
+            <dd className="tabular">{sinFranja ? 'Por definir' : formatearFranja(inicio, fin)}</dd>
           </div>
+          {invitadoCorreo && (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <dt>
+                <Mail className="size-4" aria-label="Solicitante" />
+              </dt>
+              <dd className="break-all">Para {invitadoCorreo}</dd>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             <dt>
-              <UserRound className="size-4" aria-label="Entrega" />
+              <UserRound className="size-4" aria-label={porEnlace ? 'Emitido por' : 'Entrega'} />
             </dt>
-            <dd>Entrega {entregadoPor.nombre}</dd>
+            <dd>
+              {porEnlace ? 'Emitido por' : 'Entrega'} {entregadoPor.nombre}
+            </dd>
           </div>
         </dl>
       </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
+          {estado === 'SOLICITADA' && solicitante && solicitadaEn && (
+            <TarjetaSolicitud
+              asignacionId={id}
+              version={solicitadaEn}
+              solicitante={solicitante}
+              datos={datosSolicitud(asignacion, espacio)}
+            />
+          )}
+
+          {estado === 'RECHAZADA' && (
+            <Card>
+              <CardHeader>
+                <CardTitle as="h4">Devuelta para corregir</CardTitle>
+                <CardDescription>
+                  {solicitante?.nombre ?? 'Quien solicita'} verá este motivo al abrir su enlace.
+                  Cuando corrija, la solicitud volverá a quedar por aprobar.
+                </CardDescription>
+              </CardHeader>
+              <CardBody className="flex flex-col gap-5">
+                <Alert tono="peligro" icono={<Undo2 aria-hidden />} titulo="Motivo">
+                  {motivoRechazo || 'Sin motivo registrado.'}
+                </Alert>
+                <ListaDatos datos={datosSolicitud(asignacion, espacio)} />
+              </CardBody>
+            </Card>
+          )}
+
           {estado === 'EN_VALIDACION' && receptor && (
             <TarjetaValidacion asignacionId={id} solicitante={receptor} />
           )}
@@ -91,27 +223,60 @@ export async function DetalleEvento({
           {svg && (
             <Card>
               <CardHeader>
-                <CardTitle as="h4">QR de recepción</CardTitle>
+                <CardTitle as="h4">{porEnlace ? 'Enlace personal' : 'QR de recepción'}</CardTitle>
                 <CardDescription>
-                  Muéstralo a la persona que recibe. Es de un solo uso y funciona desde 30 minutos
-                  antes del inicio hasta el fin del evento.
+                  {porEnlace
+                    ? `Envíalo a ${invitadoCorreo} por WhatsApp, correo o el canal que uses. Solo esa cuenta puede abrirlo.`
+                    : 'Muéstralo a la persona que recibe. Es de un solo uso y funciona desde 30 minutos antes del inicio hasta el fin del evento.'}
                 </CardDescription>
               </CardHeader>
               <CardBody className="flex flex-wrap items-start gap-6">
                 <div
                   role="img"
-                  aria-label={`Código QR para recibir ${evento}`}
+                  aria-label={
+                    porEnlace
+                      ? `Código QR del enlace para ${invitadoCorreo}`
+                      : `Código QR para recibir ${evento}`
+                  }
                   className="aspect-square w-full max-w-60 shrink-0 rounded-2xl border border-border bg-card p-3 [&_svg]:size-full"
                   // SVG generado en servidor a partir de una URL propia.
                   dangerouslySetInnerHTML={{ __html: svg }}
                 />
                 <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-3 text-sm text-muted-foreground">
-                  <ul className="flex flex-col gap-2">
-                    <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
-                    <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
-                    <li>• Si rechazas, el QR queda libre de nuevo.</li>
-                  </ul>
-                  <UtilidadesQr svg={svg} enlace={enlace} evento={evento} />
+                  {porEnlace ? (
+                    <ul className="flex flex-col gap-2">
+                      {estado === 'PROGRAMADA' ? (
+                        <>
+                          <li>• Con este mismo enlace confirma la recepción del espacio.</li>
+                          <li>• El botón se habilita 30 minutos antes del inicio.</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>• Quien solicita propone el evento, la fecha y el horario.</li>
+                          <li>
+                            • Vence {HORAS_VIGENCIA_INVITACION} horas después de emitido si no se
+                            diligencia.
+                          </li>
+                          <li>• Tú apruebas o devuelves la solicitud desde este panel.</li>
+                        </>
+                      )}
+                    </ul>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      <li>• Quien escanee debe iniciar sesión con su cuenta institucional.</li>
+                      <li>• Tú confirmas su identidad antes de que diligencie la constancia.</li>
+                      <li>• Si rechazas, el QR queda libre de nuevo.</li>
+                    </ul>
+                  )}
+                  <UtilidadesQr
+                    svg={svg}
+                    enlace={enlace}
+                    evento={evento}
+                    {...(invitadoCorreo && estado !== 'PROGRAMADA'
+                      ? { mensaje: mensajeInvitacion(asignacion, invitadoCorreo, enlace) }
+                      : {})}
+                  />
+                  <p className="break-all text-foreground tabular">{enlace}</p>
                   <a
                     href={enlace}
                     target="_blank"
@@ -119,9 +284,20 @@ export async function DetalleEvento({
                     className="inline-flex items-center gap-1.5 font-semibold break-all text-primary-strong hover:text-foreground"
                   >
                     <ExternalLink className="size-4 shrink-0" aria-hidden />
-                    Abrir enlace de recepción
+                    {porEnlace ? 'Abrir enlace' : 'Abrir enlace de recepción'}
                   </a>
                 </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {porEnlace && estado === 'PROGRAMADA' && asignacion.solicitud && (
+            <Card>
+              <CardHeader>
+                <CardTitle as="h4">Solicitud aprobada</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <ListaDatos datos={datosSolicitud(asignacion, espacio)} />
               </CardBody>
             </Card>
           )}
@@ -159,7 +335,7 @@ export async function DetalleEvento({
               <CardTitle as="h4">Seguimiento</CardTitle>
             </CardHeader>
             <CardBody>
-              <LineaTiempo estado={estado} />
+              <LineaTiempo estado={estado} porEnlace={porEnlace} />
             </CardBody>
           </Card>
           {anulable && <BotonAnular asignacionId={id} />}
