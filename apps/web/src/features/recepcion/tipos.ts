@@ -4,7 +4,6 @@ import type { FotoLocal } from '@/features/fotos/tipos'
 
 export type ItemEstado = {
   estado: EstadoElemento | null
-  cantidadRecibida: number
   observacion: string
   fotos: FotoLocal[]
 }
@@ -19,6 +18,4 @@ export type DatosReceptor = {
   asistentesEstimados: string
 }
 
-export type ErroresItem = Partial<
-  Record<'estado' | 'cantidadRecibida' | 'observacion' | 'fotoIds', string>
->
+export type ErroresItem = Partial<Record<'estado' | 'observacion' | 'fotoIds', string>>

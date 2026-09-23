@@ -8,7 +8,7 @@ import type { RegistroDetalle } from './entidades'
 import { fallar } from './errores'
 
 /**
- * Cruza lo que declaró el receptor con el catálogo vigente. Las cantidades esperadas salen
+ * Cruza lo que declaró el receptor con el catálogo vigente: los aspectos y sus nombres salen
  * del catálogo, nunca del cliente.
  */
 export function construirDetalle(
@@ -22,21 +22,13 @@ export function construirDetalle(
   return elementos.map((el) => {
     const it =
       items.get(el.id) ?? fallar('DATOS_INVALIDOS', `Falta «${el.nombre}» en el checklist.`)
-    const esEspacio = el.categoria === 'ESPACIO'
-    const esperada = esEspacio ? 1 : el.cantidadEsperada
-    const recibida = esEspacio ? 1 : it.cantidadRecibida
     const observacion = (it.observacion ?? '').trim()
     const fotoIds = it.fotoIds ?? []
-    if (it.estado === 'CONFORME' && recibida !== esperada)
-      fallar('DATOS_INVALIDOS', `«${el.nombre}»: la cantidad no coincide; márcalo como novedad.`)
     if (it.estado === 'NOVEDAD' && (!observacion || fotoIds.length === 0))
       fallar('DATOS_INVALIDOS', `«${el.nombre}»: la novedad necesita observación y foto.`)
     return {
       elementoId: el.id,
       elementoNombre: el.nombre,
-      categoria: el.categoria,
-      cantidadEsperada: esperada,
-      cantidadRecibida: recibida,
       estado: it.estado,
       observacion: it.estado === 'NOVEDAD' ? observacion : '',
       fotoIds: it.estado === 'NOVEDAD' ? fotoIds : [],

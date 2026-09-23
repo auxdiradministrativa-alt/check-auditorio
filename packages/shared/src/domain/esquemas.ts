@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 import { DOMINIO_INSTITUCIONAL, LIMITES } from './constantes'
 import {
-  CATEGORIAS_ELEMENTO,
   ESTADOS_ASIGNACION,
   ESTADOS_ELEMENTO,
   RESULTADOS_DEVOLUCION,
@@ -25,8 +24,6 @@ export const elementoCatalogoSchema = z.object({
   id: z.string().min(1),
   espacioId: z.string().min(1),
   nombre: z.string().min(1),
-  categoria: z.enum(CATEGORIAS_ELEMENTO),
-  cantidadEsperada: z.number().int().nonnegative(),
   orden: z.number().int(),
 })
 export type ElementoCatalogo = z.infer<typeof elementoCatalogoSchema>
@@ -149,15 +146,14 @@ export const decisionSolicitudInputSchema = z
 export type DecisionSolicitudInput = z.infer<typeof decisionSolicitudInputSchema>
 
 /* ───────────────────────── Recepción (lo que envía el navegador) ─────────────────────────
- * Solo contiene lo que la persona decide. Identidad, hora, espacio, cantidades esperadas,
+ * Solo contiene lo que la persona decide. Identidad, hora, espacio, aspectos del catálogo,
  * versión de términos y sello los agrega el servidor.
  */
 
 export const checklistItemInputSchema = z
   .object({
     elementoId: z.string().min(1),
-    cantidadRecibida: z.number().int().nonnegative(),
-    estado: z.enum(ESTADOS_ELEMENTO, { error: 'Marca el estado del elemento.' }),
+    estado: z.enum(ESTADOS_ELEMENTO, { error: 'Marca el estado de este aspecto.' }),
     observacion: texto(LIMITES.observacionMax).default(''),
     fotoIds: z.array(z.string().min(1)).max(LIMITES.fotosPorNovedadMax).default([]),
   })

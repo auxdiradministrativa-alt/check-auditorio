@@ -206,7 +206,8 @@ export async function DetalleEvento({
               <CardHeader>
                 <CardTitle as="h4">Diligenciando la constancia</CardTitle>
                 <CardDescription>
-                  {receptor.nombre} ({receptor.correo}) está revisando los elementos en su celular.
+                  {receptor.nombre} ({receptor.correo}) está revisando el estado del espacio en su
+                  celular.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -317,7 +318,7 @@ export async function DetalleEvento({
 
           <Card>
             <CardHeader>
-              <CardTitle as="h4">Elementos del espacio</CardTitle>
+              <CardTitle as="h4">Checklist del espacio</CardTitle>
             </CardHeader>
             <CardBody>
               <ResumenCatalogo catalogo={catalogo} />

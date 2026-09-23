@@ -1,7 +1,5 @@
 'use client'
 
-import { Minus, Plus } from 'lucide-react'
-
 import type { ElementoCatalogo, EstadoElemento } from '@check-auditorio/shared'
 import { LIMITES } from '@check-auditorio/shared'
 
@@ -31,7 +29,6 @@ export function ItemChecklist({
   errores?: ErroresItem | undefined
   onCambio: CambioItem
 }) {
-  const cuantificable = elemento.categoria !== 'ESPACIO'
   const set = (parcial: Partial<ItemEstado>) => onCambio((previo) => ({ ...previo, ...parcial }))
   const idObs = `obs-${elemento.id}`
 
@@ -44,57 +41,7 @@ export function ItemChecklist({
         errores?.estado && 'border-destructive/50',
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col">
-          <span className="font-semibold text-foreground">{elemento.nombre}</span>
-          {cuantificable && (
-            <span className="text-sm text-muted-foreground">
-              Se entregan{' '}
-              <strong className="text-foreground tabular">{elemento.cantidadEsperada}</strong>
-            </span>
-          )}
-        </div>
-        {cuantificable && (
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-xs font-medium text-muted-foreground" id={`cant-${elemento.id}`}>
-              Recibes
-            </span>
-            <div
-              className="flex items-center rounded-lg border border-border-strong"
-              role="group"
-              aria-labelledby={`cant-${elemento.id}`}
-            >
-              <button
-                type="button"
-                className="grid size-9 place-items-center text-primary-strong disabled:text-border-strong"
-                onClick={() => set({ cantidadRecibida: Math.max(0, valor.cantidadRecibida - 1) })}
-                disabled={valor.cantidadRecibida <= 0}
-                aria-label="Restar uno"
-              >
-                <Minus className="size-4" aria-hidden />
-              </button>
-              <input
-                inputMode="numeric"
-                aria-label={`Cantidad recibida de ${elemento.nombre}`}
-                className="h-9 w-12 border-x border-border-strong text-center text-sm font-semibold text-foreground tabular focus:outline-none"
-                value={valor.cantidadRecibida}
-                onChange={(e) => {
-                  const n = Number.parseInt(e.target.value.replace(/\D/g, '') || '0', 10)
-                  set({ cantidadRecibida: Math.min(n, 9999) })
-                }}
-              />
-              <button
-                type="button"
-                className="grid size-9 place-items-center text-primary-strong"
-                onClick={() => set({ cantidadRecibida: valor.cantidadRecibida + 1 })}
-                aria-label="Sumar uno"
-              >
-                <Plus className="size-4" aria-hidden />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <span className="font-semibold text-foreground">{elemento.nombre}</span>
 
       <Segmented
         nombre={`estado-${elemento.id}`}
@@ -103,9 +50,9 @@ export function ItemChecklist({
         valor={valor.estado}
         onCambio={(estado) => set({ estado })}
       />
-      {(errores?.estado || errores?.cantidadRecibida) && (
+      {errores?.estado && (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {errores.estado ?? errores.cantidadRecibida}
+          {errores.estado}
         </p>
       )}
 
@@ -119,7 +66,7 @@ export function ItemChecklist({
               id={idObs}
               rows={2}
               maxLength={LIMITES.observacionMax}
-              placeholder="Ej. Le falta el control remoto; enciende pero no proyecta."
+              placeholder="Ej. Hay una mancha de humedad en el muro izquierdo, junto a la puerta."
               value={valor.observacion}
               onChange={(e) => set({ observacion: e.target.value })}
               aria-invalid={!!errores?.observacion}

@@ -30,9 +30,6 @@ export type EstadoAsignacion = (typeof ESTADOS_ASIGNACION)[number]
 export const ESTADOS_ELEMENTO = ['CONFORME', 'NOVEDAD'] as const
 export type EstadoElemento = (typeof ESTADOS_ELEMENTO)[number]
 
-export const CATEGORIAS_ELEMENTO = ['EQUIPO', 'MOBILIARIO', 'ESPACIO'] as const
-export type CategoriaElemento = (typeof CATEGORIAS_ELEMENTO)[number]
-
 export const ROLES_RECEPTOR = ['DOCENTE', 'ADMINISTRATIVO'] as const
 export type RolReceptor = (typeof ROLES_RECEPTOR)[number]
 
@@ -51,12 +48,6 @@ export const ETIQUETAS_ESTADO_ASIGNACION: Record<EstadoAsignacion, string> = {
   DEVOLUCION_VENCIDA: 'Devolución vencida',
   ANULADA: 'Anulada',
   EXPIRADA: 'Expirada',
-}
-
-export const ETIQUETAS_CATEGORIA: Record<CategoriaElemento, string> = {
-  EQUIPO: 'Equipos',
-  MOBILIARIO: 'Mobiliario',
-  ESPACIO: 'Condiciones del espacio',
 }
 
 export const ETIQUETAS_ROL: Record<RolReceptor, string> = {

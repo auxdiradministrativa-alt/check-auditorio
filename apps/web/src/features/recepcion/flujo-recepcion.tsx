@@ -5,7 +5,6 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarDays,
-  CheckCheck,
   Clock,
   Loader2,
   MapPin,
@@ -47,7 +46,7 @@ import { ItemChecklist } from './item-checklist'
 import type { DatosReceptor, ErroresItem, ItemEstado } from './tipos'
 import { aItemInput, validarDatos, validarItems, type ErroresDatos } from './validacion'
 
-const PASOS = ['Identidad', 'Tus datos', 'Elementos', 'Condiciones', 'Términos', 'Revisar'] as const
+const PASOS = ['Identidad', 'Tus datos', 'Estado del auditorio', 'Términos', 'Revisar'] as const
 
 export function FlujoRecepcion({
   token,
@@ -79,12 +78,7 @@ export function FlujoRecepcion({
     }
   })
   const [items, setItems] = useState<Record<string, ItemEstado>>(() =>
-    Object.fromEntries(
-      catalogo.map((el) => [
-        el.id,
-        { estado: null, cantidadRecibida: el.cantidadEsperada, observacion: '', fotos: [] },
-      ]),
-    ),
+    Object.fromEntries(catalogo.map((el) => [el.id, { estado: null, observacion: '', fotos: [] }])),
   )
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [autorizaDatos, setAutorizaDatos] = useState(false)
@@ -94,10 +88,6 @@ export function FlujoRecepcion({
   const [enviando, setEnviando] = useState(false)
   const [reautenticar, setReautenticar] = useState(false)
   const [avisoTodoConforme, setAvisoTodoConforme] = useState<string | null>(null)
-
-  const elementos = catalogo.filter((e) => e.categoria !== 'ESPACIO')
-  const condiciones = catalogo.filter((e) => e.categoria === 'ESPACIO')
-  const grupoActual = paso === 2 ? elementos : paso === 3 ? condiciones : []
 
   // Libera las vistas previas de fotos al salir del flujo.
   const itemsRef = useRef(items)
@@ -129,24 +119,9 @@ export function FlujoRecepcion({
     }
   }
 
-  function marcarTodoConforme() {
-    setItems((prev) => {
-      const next = { ...prev }
-      for (const el of grupoActual) {
-        const actual = next[el.id]
-        if (actual && actual.estado === null) {
-          next[el.id] = { ...actual, estado: 'CONFORME', cantidadRecibida: el.cantidadEsperada }
-        }
-      }
-      return next
-    })
-    setErroresItems({})
-  }
-
   /**
-   * Atajo «Todo en buen estado»: todos los elementos y condiciones (los dos pasos) quedan CONFORME
-   * con la cantidad esperada. No pisa una novedad ya descrita con sus fotos: esa se conserva.
-   * Cualquiera puede volver a cambiarse a Novedad después.
+   * Atajo «Todo en buen estado»: todos los aspectos quedan CONFORME. No pisa una novedad ya
+   * descrita con sus fotos: esa se conserva. Cualquiera puede volver a cambiarse a Novedad.
    */
   function marcarTodoEnBuenEstado() {
     const conNovedad = catalogo.filter((el) => items[el.id]?.estado === 'NOVEDAD').length
@@ -155,7 +130,7 @@ export function FlujoRecepcion({
       for (const el of catalogo) {
         const actual = next[el.id]
         if (!actual || actual.estado === 'NOVEDAD') continue
-        next[el.id] = { ...actual, estado: 'CONFORME', cantidadRecibida: el.cantidadEsperada }
+        next[el.id] = { ...actual, estado: 'CONFORME' }
       }
       return next
     })
@@ -173,8 +148,8 @@ export function FlujoRecepcion({
       setErroresDatos(e)
       if (Object.keys(e).length) return
     }
-    if (paso === 2 || paso === 3) {
-      const e = validarItems(grupoActual, items)
+    if (paso === 2) {
+      const e = validarItems(catalogo, items)
       setErroresItems(e)
       const primero = Object.keys(e)[0]
       if (primero) {
@@ -184,7 +159,7 @@ export function FlujoRecepcion({
         return
       }
     }
-    if (paso === 4) {
+    if (paso === 3) {
       if (!aceptaTerminos || !autorizaDatos) {
         setErrorTerminos(
           'Debes aceptar los términos y autorizar el tratamiento de datos para continuar.',
@@ -226,7 +201,7 @@ export function FlujoRecepcion({
   }
 
   const novedades = catalogo.filter((el) => items[el.id]?.estado === 'NOVEDAD')
-  const revisados = grupoActual.filter((el) => items[el.id]?.estado !== null).length
+  const revisados = catalogo.filter((el) => items[el.id]?.estado !== null).length
 
   return (
     <div className="flex flex-col gap-6 pb-28">
@@ -237,8 +212,8 @@ export function FlujoRecepcion({
           <div className="flex flex-col gap-2">
             <h1 className="text-page sm:text-page-lg">Recepción del espacio</h1>
             <p className="text-muted-foreground">
-              Vas a dejar constancia de que recibes el espacio y sus elementos. Tu cuenta
-              institucional funciona como firma.
+              Vas a dejar constancia del estado en que recibes el espacio. Tu cuenta institucional
+              funciona como firma.
             </p>
           </div>
           <Card>
@@ -384,49 +359,38 @@ export function FlujoRecepcion({
         </Card>
       )}
 
-      {(paso === 2 || paso === 3) && (
+      {paso === 2 && (
         <section className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-section">
-                {paso === 2 ? 'Elementos que recibes' : 'Condiciones del espacio'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {paso === 2
-                  ? 'Cuenta y revisa cada elemento. Si algo falta o falla, marca Novedad y toma una foto.'
-                  : 'Revisa cómo está el espacio al recibirlo.'}
+          <div className="flex flex-col gap-1">
+            <h2 className="text-section">Estado del auditorio</h2>
+            <p className="text-sm text-muted-foreground">
+              Revisa cada aspecto del espacio al recibirlo. Si algo está dañado o no funciona, marca
+              Novedad y toma una foto.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 rounded-xl border border-success/20 bg-success-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-0.5 text-sm">
+              <p className="font-semibold text-success">¿Todo está en buen estado?</p>
+              <p className="text-foreground">
+                Marca como conformes todos los aspectos. Después puedes cambiar cualquiera a
+                Novedad.
               </p>
             </div>
-            <Button variante="secundario" tamano="sm" onClick={marcarTodoConforme}>
-              <CheckCheck aria-hidden />
-              Marcar pendientes conformes
+            <Button variante="secundario" className="shrink-0" onClick={marcarTodoEnBuenEstado}>
+              <BadgeCheck aria-hidden />
+              Todo en buen estado
             </Button>
           </div>
-          {paso === 2 && (
-            <div className="flex flex-col gap-3 rounded-xl border border-success/20 bg-success-soft p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-col gap-0.5 text-sm">
-                <p className="font-semibold text-success">¿Todo está en buen estado?</p>
-                <p className="text-foreground">
-                  Marca como conformes todos los elementos y condiciones con la cantidad esperada.
-                  Después puedes cambiar cualquiera a Novedad.
-                </p>
-              </div>
-              <Button variante="secundario" className="shrink-0" onClick={marcarTodoEnBuenEstado}>
-                <BadgeCheck aria-hidden />
-                Todo en buen estado
-              </Button>
-            </div>
-          )}
-          {paso === 2 && avisoTodoConforme && (
+          {avisoTodoConforme && (
             <p role="status" className="text-sm text-muted-foreground">
               {avisoTodoConforme}
             </p>
           )}
           <p className="text-sm font-medium text-primary-strong tabular" aria-live="polite">
-            {revisados} de {grupoActual.length} revisados
+            {revisados} de {catalogo.length} revisados
           </p>
           <ul className="flex flex-col gap-3">
-            {grupoActual.map((el) => (
+            {catalogo.map((el) => (
               <ItemChecklist
                 key={el.id}
                 asignacionId={asignacion.id}
@@ -440,7 +404,7 @@ export function FlujoRecepcion({
         </section>
       )}
 
-      {paso === 4 && (
+      {paso === 3 && (
         <Card>
           <CardHeader>
             <CardTitle>Términos y condiciones de la entrega</CardTitle>
@@ -487,7 +451,7 @@ export function FlujoRecepcion({
         </Card>
       )}
 
-      {paso === 5 && (
+      {paso === 4 && (
         <>
           <div className="flex flex-col gap-2">
             <h2 className="text-section">Revisa y envía</h2>
@@ -517,7 +481,7 @@ export function FlujoRecepcion({
                   <dd className="font-semibold tabular">{datos.asistentesEstimados}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Elementos verificados</dt>
+                  <dt className="text-muted-foreground">Aspectos verificados</dt>
                   <dd className="font-semibold tabular">
                     {catalogo.length - novedades.length} conformes · {novedades.length} con novedad
                   </dd>

@@ -10,12 +10,7 @@ import type {
   RecepcionInput,
   SolicitudInput,
 } from './domain/esquemas'
-import type {
-  CategoriaElemento,
-  EstadoElemento,
-  ResultadoDevolucion,
-  RolReceptor,
-} from './domain/estados'
+import type { EstadoElemento, ResultadoDevolucion, RolReceptor } from './domain/estados'
 
 /*
  * Contrato entre la web (Vercel) y el núcleo (Apps Script, o memoria en local).
@@ -38,9 +33,6 @@ export interface Terminos {
 export interface DetalleRecepcion {
   elementoId: string
   elementoNombre: string
-  categoria: CategoriaElemento
-  cantidadEsperada: number
-  cantidadRecibida: number
   estado: EstadoElemento
   observacion: string
   fotoIds: string[]

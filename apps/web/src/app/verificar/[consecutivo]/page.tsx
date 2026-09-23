@@ -109,7 +109,7 @@ export default async function Verificar({ params }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Elementos recibidos</CardTitle>
+          <CardTitle>Estado del espacio al recibirlo</CardTitle>
         </CardHeader>
         <CardBody>
           <ul className="flex flex-col divide-y divide-border text-sm">
@@ -119,11 +119,10 @@ export default async function Verificar({ params }: Props) {
                   <span className="font-medium text-foreground">{d.elementoNombre}</span>
                   <span
                     className={cn(
-                      'text-xs font-semibold tabular',
+                      'text-xs font-semibold',
                       d.estado === 'CONFORME' ? 'text-success' : 'text-destructive',
                     )}
                   >
-                    {d.categoria !== 'ESPACIO' && `${d.cantidadRecibida}/${d.cantidadEsperada} · `}
                     {d.estado === 'CONFORME' ? 'Conforme' : 'Novedad'}
                   </span>
                 </div>

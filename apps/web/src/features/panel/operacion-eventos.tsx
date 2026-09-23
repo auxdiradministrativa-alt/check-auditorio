@@ -94,8 +94,8 @@ export function OperacionEventos({
       ) : (
         <CardBody className="flex flex-wrap items-center justify-between gap-4">
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Selecciona una reserva para compartir su enlace, revisar la solicitud, consultar sus
-            elementos o administrar la entrega.
+            Selecciona una reserva para compartir su enlace, revisar la solicitud, consultar su
+            checklist o administrar la entrega.
           </p>
           <a href="#reservas" className="text-sm font-semibold text-primary-strong hover:underline">
             Ver reservas

@@ -174,9 +174,6 @@ const deRecepcion = (r: RegistroRecepcion): Fila<'Recepciones'> => ({
 const aDetalle = (f: Fila<'Recepcion_Detalle'>): RegistroDetalle => ({
   elementoId: f.elemento_id,
   elementoNombre: f.elemento_nombre,
-  categoria: f.categoria as RegistroDetalle['categoria'],
-  cantidadEsperada: entero(f.cantidad_esperada),
-  cantidadRecibida: entero(f.cantidad_recibida),
   estado: f.estado as RegistroDetalle['estado'],
   observacion: f.observacion,
   fotoIds: lista(f.foto_ids),
@@ -186,9 +183,6 @@ const deDetalle = (consecutivo: string, d: RegistroDetalle): Fila<'Recepcion_Det
   consecutivo,
   elemento_id: d.elementoId,
   elemento_nombre: d.elementoNombre,
-  categoria: d.categoria,
-  cantidad_esperada: String(d.cantidadEsperada),
-  cantidad_recibida: String(d.cantidadRecibida),
   estado: d.estado,
   observacion: d.observacion,
   foto_ids: d.fotoIds.join(','),
@@ -329,8 +323,6 @@ export function crearContexto(tabla: Tabla, srv: Servicios): Contexto {
             id: f.id,
             espacioId: f.espacio_id,
             nombre: f.nombre,
-            categoria: f.categoria.trim().toUpperCase() as ElementoCatalogo['categoria'],
-            cantidadEsperada: entero(f.cantidad_esperada),
             orden: entero(f.orden),
           }))
           .sort((a, b) => a.orden - b.orden),

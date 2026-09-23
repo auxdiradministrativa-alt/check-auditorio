@@ -170,18 +170,20 @@ test('solicitud por enlace: devolver, corregir, aprobar, confirmar, sellar y dev
     await expect(recibe.getByLabel('Dependencia o programa')).toHaveValue('Contaduría Pública')
     await expect(recibe.getByLabel('Celular')).toHaveValue('3001234567')
     await recibe.getByRole('button', { name: 'Continuar' }).click()
-    await expect(recibe.getByRole('heading', { name: 'Elementos que recibes' })).toBeVisible()
+    await expect(recibe.getByRole('heading', { name: 'Estado del auditorio' })).toBeVisible()
   })
 
   await test.step('Checklist: las reglas se cumplen y el atajo respeta la novedad', async () => {
-    const sillas = recibe.locator('#item-el-sillas')
+    const sillas = recibe.locator('#item-as-sillas')
 
-    // CONFORME con una cantidad distinta de la esperada → rechazado.
-    await sillas.getByRole('button', { name: 'Restar uno' }).click()
-    await sillas.getByText('Conforme', { exact: true }).click()
-    await recibe.getByRole('button', { name: 'Marcar pendientes conformes' }).click()
+    // Solo aspectos de infraestructura: nada de equipos ni cantidades.
+    await expect(recibe.getByText('0 de 10 revisados')).toBeVisible()
+    await expect(recibe.getByText('Micrófono')).toHaveCount(0)
+    await expect(sillas.getByRole('button', { name: 'Restar uno' })).toHaveCount(0)
+
+    // Sin marcar → rechazado.
     await recibe.getByRole('button', { name: 'Continuar' }).click()
-    await expect(sillas.getByRole('alert')).toContainText('La cantidad no coincide')
+    await expect(sillas.getByRole('alert')).toContainText('Marca si está conforme o con novedad.')
 
     // NOVEDAD sin observación ni foto → rechazado.
     await sillas.getByText('Novedad', { exact: true }).click()
@@ -189,24 +191,23 @@ test('solicitud por enlace: devolver, corregir, aprobar, confirmar, sellar y dev
     await expect(sillas.getByText('Describe la novedad.')).toBeVisible()
     await expect(sillas.getByText('Adjunta al menos una foto de la novedad.')).toBeVisible()
 
-    await sillas.getByLabel('¿Qué novedad encontraste?').fill('Falta una silla; hay 149 en sala.')
+    await sillas
+      .getByLabel('¿Qué novedad encontraste?')
+      .fill('Tres sillas de la fila 4 con el espaldar roto.')
     await sillas.locator('input[type=file]').setInputFiles(await foto(recibe))
     await expect(sillas.getByRole('img', { name: 'Foto: novedad.png' })).toBeVisible()
     await expect(sillas.getByLabel('Subiendo foto')).toHaveCount(0)
 
-    // «Todo en buen estado» marca el resto, también las condiciones, sin pisar la novedad.
+    // «Todo en buen estado» marca el resto sin pisar la novedad.
     await recibe.getByRole('button', { name: 'Todo en buen estado' }).click()
     await expect(
       recibe.getByRole('status').filter({ hasText: 'conservamos 1 con novedad' }),
     ).toBeVisible()
     await expect(sillas.getByLabel('¿Qué novedad encontraste?')).toHaveValue(
-      'Falta una silla; hay 149 en sala.',
+      'Tres sillas de la fila 4 con el espaldar roto.',
     )
-    await expect(recibe.getByText('6 de 6 revisados')).toBeVisible()
+    await expect(recibe.getByText('10 de 10 revisados')).toBeVisible()
     await revisarVista('checklist-atajo')
-    await recibe.getByRole('button', { name: 'Continuar' }).click()
-    await expect(recibe.getByRole('heading', { name: 'Condiciones del espacio' })).toBeVisible()
-    await expect(recibe.getByText('11 de 11 revisados')).toBeVisible()
     await recibe.getByRole('button', { name: 'Continuar' }).click()
   })
 
@@ -224,7 +225,7 @@ test('solicitud por enlace: devolver, corregir, aprobar, confirmar, sellar y dev
   })
 
   await test.step('El servidor sella la constancia y se verifica íntegra', async () => {
-    await expect(recibe.getByText('16 conformes · 1 con novedad')).toBeVisible()
+    await expect(recibe.getByText('9 conformes · 1 con novedad')).toBeVisible()
     await recibe.getByRole('button', { name: 'Confirmar recepción' }).click()
     await expect(recibe).toHaveURL(/\/r\/[\w-]+\/confirmada$/)
     await expect(recibe.getByRole('heading', { name: 'Recepción confirmada' })).toBeVisible()
@@ -236,7 +237,7 @@ test('solicitud por enlace: devolver, corregir, aprobar, confirmar, sellar y dev
     await expect(recibe).toHaveURL(new RegExp(`/verificar/${consecutivo}$`))
     await expect(recibe.getByRole('heading', { name: 'Constancia íntegra' })).toBeVisible()
     await expect(recibe.getByText(`${SOLICITANTE.nombre} (${SOLICITANTE.correo})`)).toBeVisible()
-    await expect(recibe.getByText('149/150 · Novedad')).toBeVisible()
+    await expect(recibe.locator('li', { hasText: 'Sillas y mobiliario' })).toContainText('Novedad')
     await expect(recibe.getByRole('heading', { level: 1 })).toHaveCSS('font-size', '28px')
     await revisarVista('constancia')
   })
@@ -272,10 +273,10 @@ test('solicitud por enlace: devolver, corregir, aprobar, confirmar, sellar y dev
     await recibe.getByRole('button', { name: 'Declarar devolución' }).click()
     await expect(recibe.getByText('• Debes confirmar la declaración.')).toBeVisible()
     await recibe.getByText('Con novedades', { exact: true }).click()
-    await recibe.getByRole('checkbox', { name: 'Video beam' }).check()
+    await recibe.getByRole('checkbox', { name: 'Muros y pintura' }).check()
     await recibe
-      .getByLabel('Novedad de Video beam')
-      .fill('Uno de los video beam quedó sin control.')
+      .getByLabel('Novedad de Muros y pintura')
+      .fill('Quedó una mancha de cinta en el muro del escenario.')
     await recibe.locator('input[type=file]').setInputFiles(await foto(recibe))
     await expect(recibe.getByRole('img', { name: 'Foto: novedad.png' })).toBeVisible()
     await expect(recibe.getByLabel('Subiendo foto')).toHaveCount(0)

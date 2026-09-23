@@ -114,7 +114,7 @@ export function FormDevolucion({
           <CardHeader>
             <CardTitle>¿Qué presenta novedad?</CardTitle>
             <CardDescription>
-              Selecciona los elementos y describe qué pasó, con foto.
+              Selecciona los aspectos afectados y describe qué pasó, con foto.
             </CardDescription>
           </CardHeader>
           <CardBody className="flex flex-col gap-2">

@@ -5,26 +5,27 @@ import type { Fila, NombreHoja } from './esquema'
  * y la memoria local. Después Infraestructura lo mantiene directamente en el Sheet.
  */
 
-const elemento = (
-  id: string,
-  nombre: string,
-  categoria: 'EQUIPO' | 'MOBILIARIO' | 'ESPACIO',
-  cantidad: number,
-  orden: number,
-): Fila<'CAT_Elementos'> => ({
-  id,
-  espacio_id: 'esp-auditorio',
-  nombre,
-  categoria,
-  cantidad_esperada: String(cantidad),
-  orden: String(orden),
-  activo: 'SI',
-})
+/**
+ * Aspectos de infraestructura que valida quien recibe, en el orden del proceso manual
+ * (lista oficial de Infraestructura, 2026-09-23). Sin equipos electrónicos ni cantidades.
+ */
+const ASPECTOS: [id: string, nombre: string][] = [
+  ['as-estado-general', 'Estado general del auditorio'],
+  ['as-pisos', 'Pisos'],
+  ['as-muros', 'Muros y pintura'],
+  ['as-puertas', 'Puertas y accesos'],
+  ['as-iluminacion', 'Iluminación'],
+  ['as-aire', 'Sistema de aire acondicionado'],
+  ['as-sillas', 'Sillas y mobiliario'],
+  ['as-electricas', 'Tomas e instalaciones eléctricas visibles'],
+  ['as-aseo', 'Condiciones de aseo y organización'],
+  ['as-condiciones', 'Condiciones generales del espacio'],
+]
 
 const CLAUSULAS_BORRADOR = [
-  'Recibo el espacio y los elementos relacionados para uso exclusivo del evento y en el horario indicados en esta constancia.',
-  'Verifiqué el estado y la cantidad de cada elemento. Lo registrado como “conforme” corresponde a lo que recibí; las novedades quedaron descritas y con foto.',
-  'Durante el préstamo soy responsable de la custodia del espacio y de sus elementos. No retiraré elementos del espacio ni permitiré su traslado sin autorización de Infraestructura.',
+  'Recibo el espacio para uso exclusivo del evento y en el horario indicados en esta constancia.',
+  'Verifiqué el estado de cada aspecto del espacio. Lo registrado como “conforme” corresponde a lo que recibí; las novedades quedaron descritas y con foto.',
+  'Durante el préstamo soy responsable de la custodia del espacio, sus instalaciones y su mobiliario. No retiraré mobiliario del espacio ni permitiré su traslado sin autorización de Infraestructura.',
   'Reportaré de inmediato a Infraestructura cualquier daño, pérdida o falla que ocurra durante el uso.',
   'Al terminar el evento declararé la devolución desde el enlace de mi constancia, indicando si el espacio se entrega en buenas condiciones o con novedades.',
   'Las diferencias que se detecten en la siguiente entrega del espacio y que no hayan sido reportadas podrán asociarse a este préstamo.',
@@ -67,31 +68,19 @@ export function semilla(sha256Hex: (t: string) => string): { [H in NombreHoja]?:
         activo: 'SI',
       },
     ],
-    CAT_Elementos: [
-      elemento('el-microfono', 'Micrófono', 'EQUIPO', 1, 1),
-      elemento('el-computador', 'Computador', 'EQUIPO', 1, 2),
-      elemento('el-pantallas', 'Pantallas', 'EQUIPO', 3, 3),
-      elemento('el-videobeam', 'Video beam', 'EQUIPO', 2, 4),
-      elemento('el-consola', 'Consola', 'EQUIPO', 1, 5),
-      elemento('el-sillas', 'Sillas', 'MOBILIARIO', 150, 6),
-      elemento('es-piso', 'Piso', 'ESPACIO', 1, 10),
-      elemento('es-paredes', 'Paredes', 'ESPACIO', 1, 11),
-      elemento('es-techo', 'Techo', 'ESPACIO', 1, 12),
-      elemento('es-puertas', 'Puertas', 'ESPACIO', 1, 13),
-      elemento('es-iluminacion', 'Iluminación', 'ESPACIO', 1, 14),
-      elemento('es-aire', 'Aire acondicionado', 'ESPACIO', 1, 15),
-      elemento('es-limpieza', 'Limpieza general', 'ESPACIO', 1, 16),
-      elemento('es-mesas', 'Mesas', 'ESPACIO', 1, 17),
-      elemento('es-tarima', 'Tarima / escenario', 'ESPACIO', 1, 18),
-      elemento('es-cortinas', 'Cortinas', 'ESPACIO', 1, 19),
-      elemento('es-senalizacion', 'Señalización', 'ESPACIO', 1, 20),
-    ],
+    CAT_Elementos: ASPECTOS.map(([id, nombre], i) => ({
+      id,
+      espacio_id: 'esp-auditorio',
+      nombre,
+      orden: String(i + 1),
+      activo: 'SI',
+    })),
     CFG_Entregadores: [
       { correo: 'auxdiradministrativa@americana.edu.co', nombre: 'Infraestructura', activo: 'SI' },
     ],
     CFG_Terminos: [
       {
-        version: 'v0.1-borrador',
+        version: 'v0.2-borrador',
         texto_clausulas: clausulas,
         texto_datos: DATOS_BORRADOR,
         sha256: huellaTerminos(sha256Hex, clausulas, DATOS_BORRADOR),

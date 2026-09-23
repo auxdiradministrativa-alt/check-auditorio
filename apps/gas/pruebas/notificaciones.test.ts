@@ -185,7 +185,6 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
         asistentesEstimados: 80,
         checklist: elementos.map((e) => ({
           elementoId: e.id,
-          cantidadRecibida: e.cantidadEsperada,
           estado: 'CONFORME' as const,
           observacion: '',
           fotoIds: [],
@@ -235,7 +234,6 @@ test('constancia al sellar y alerta de devolución vencida; nada para registros 
         asistentesEstimados: 80,
         checklist: elementos.map((e) => ({
           elementoId: e.id,
-          cantidadRecibida: e.cantidadEsperada,
           estado: 'CONFORME' as const,
           observacion: '',
           fotoIds: [],

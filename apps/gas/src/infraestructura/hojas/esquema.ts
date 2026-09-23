@@ -4,15 +4,7 @@
  */
 export const HOJAS = {
   CAT_Espacios: ['id', 'nombre', 'ubicacion', 'capacidad', 'activo'],
-  CAT_Elementos: [
-    'id',
-    'espacio_id',
-    'nombre',
-    'categoria',
-    'cantidad_esperada',
-    'orden',
-    'activo',
-  ],
+  CAT_Elementos: ['id', 'espacio_id', 'nombre', 'orden', 'activo'],
   CFG_Entregadores: ['correo', 'nombre', 'activo'],
   CFG_Destinatarios: ['correo', 'nombre', 'evento', 'activo'],
   CFG_Terminos: ['version', 'texto_clausulas', 'texto_datos', 'sha256', 'vigente'],
@@ -80,9 +72,6 @@ export const HOJAS = {
     'consecutivo',
     'elemento_id',
     'elemento_nombre',
-    'categoria',
-    'cantidad_esperada',
-    'cantidad_recibida',
     'estado',
     'observacion',
     'foto_ids',

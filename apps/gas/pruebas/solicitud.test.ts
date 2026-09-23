@@ -66,7 +66,6 @@ function preparar(inicioReloj = '2026-09-15T08:00:00-05:00') {
   const checklist = () =>
     ok(nucleo.ejecutar('catalogo.listar', {})).elementos.map((e) => ({
       elementoId: e.id,
-      cantidadRecibida: e.cantidadEsperada,
       estado: 'CONFORME' as const,
       observacion: '',
       fotoIds: [],
@@ -289,7 +288,7 @@ test('la autorización guarda versión y huella del texto aceptado (Ley 1581)', 
   const { a } = p.invitar()
   ok(p.diligenciar(a.id))
   const fila = p.tabla.leer('Asignaciones').find((f) => f.id === a.id)!
-  assert.equal(fila.autoriza_datos_version, 'v0.1-borrador')
+  assert.equal(fila.autoriza_datos_version, 'v0.2-borrador')
   assert.match(fila.autoriza_datos_sha256, /^[0-9a-f]{64}$/)
   assert.equal(fila.autoriza_datos_en, fila.solicitada_en)
 })

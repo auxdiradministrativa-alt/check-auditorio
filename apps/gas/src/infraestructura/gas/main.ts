@@ -4,6 +4,7 @@ import { serviciosGas } from './servicios-gas'
 import { tablaGas } from './tabla-gas'
 
 export { instalar } from './instalar'
+export { reiniciarRegistroDePrueba } from './reiniciar'
 
 /* Entradas globales de la web app. `build.mjs` las expone como funciones de nivel superior. */
 

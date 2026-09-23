@@ -52,7 +52,6 @@ function preparar() {
       asistentesEstimados: 80,
       checklist: catalogo.elementos.map((e) => ({
         elementoId: e.id,
-        cantidadRecibida: e.cantidadEsperada,
         estado: 'CONFORME' as const,
         observacion: '',
         fotoIds: [],
@@ -126,14 +125,33 @@ test('editar a mano el detalle deja la constancia «Alterada»', () => {
     '2026-09-15T12:00:00-05:00',
   )
   const sello = ok(recibir(a.id, tokenSha256).registrar())
-  tabla.actualizar('Recepcion_Detalle', 'elemento_id', 'el-sillas', { cantidad_recibida: '140' })
+  tabla.actualizar('Recepcion_Detalle', 'elemento_id', 'as-sillas', { estado: 'NOVEDAD' })
   assert.equal(
     ok(nucleo.ejecutar('constancia.obtener', { consecutivo: sello.consecutivo }))?.integra,
     false,
   )
 })
 
-test('CONFORME con cantidad distinta y novedad sin foto se rechazan', () => {
+test('el catálogo sembrado es la lista oficial de infraestructura, en su orden', () => {
+  const { nucleo } = preparar()
+  assert.deepEqual(
+    ok(nucleo.ejecutar('catalogo.listar', {})).elementos.map((e) => e.nombre),
+    [
+      'Estado general del auditorio',
+      'Pisos',
+      'Muros y pintura',
+      'Puertas y accesos',
+      'Iluminación',
+      'Sistema de aire acondicionado',
+      'Sillas y mobiliario',
+      'Tomas e instalaciones eléctricas visibles',
+      'Condiciones de aseo y organización',
+      'Condiciones generales del espacio',
+    ],
+  )
+})
+
+test('novedad sin foto u observación se rechaza', () => {
   const { nucleo, programar, recibir } = preparar()
   const { a, tokenSha256 } = programar(
     'Foro',
@@ -149,16 +167,16 @@ test('CONFORME con cantidad distinta y novedad sin foto se rechazan', () => {
       userAgent: '',
     })
 
-  datos.checklist[5]!.cantidadRecibida = 149
-  const r1 = enviar()
-  assert.equal(r1.ok, false)
-
-  datos.checklist[5] = {
-    ...datos.checklist[5]!,
+  datos.checklist[6] = {
+    ...datos.checklist[6]!,
     estado: 'NOVEDAD',
-    observacion: 'Falta una',
+    observacion: 'Hay tres sillas con el espaldar roto',
     fotoIds: [],
   }
+  const r1 = enviar()
+  assert.equal(r1.ok || r1.codigo, 'DATOS_INVALIDOS')
+
+  datos.checklist[6] = { ...datos.checklist[6]!, observacion: '', fotoIds: ['foto-1'] }
   const r2 = enviar()
   assert.equal(r2.ok || r2.codigo, 'DATOS_INVALIDOS')
 })

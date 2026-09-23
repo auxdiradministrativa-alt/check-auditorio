@@ -42,13 +42,6 @@ export function validarItems(
       continue
     }
     const e: ErroresItem = {}
-    if (
-      el.categoria !== 'ESPACIO' &&
-      item.estado === 'CONFORME' &&
-      item.cantidadRecibida !== el.cantidadEsperada
-    ) {
-      e.cantidadRecibida = 'La cantidad no coincide con lo entregado: marca Novedad y descríbela.'
-    }
     if (item.estado === 'NOVEDAD' && haySubidasPendientes(item.fotos)) {
       e.fotoIds = 'Espera a que terminen de subir las fotos.'
     }
@@ -67,7 +60,6 @@ export function validarItems(
 export function aItemInput(el: ElementoCatalogo, item: ItemEstado) {
   return {
     elementoId: el.id,
-    cantidadRecibida: el.categoria === 'ESPACIO' ? 1 : item.cantidadRecibida,
     estado: item.estado,
     observacion: item.estado === 'NOVEDAD' ? item.observacion : '',
     fotoIds: item.estado === 'NOVEDAD' ? idsSubidos(item.fotos) : [],

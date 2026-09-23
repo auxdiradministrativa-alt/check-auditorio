@@ -228,7 +228,7 @@ export function correoDecision(
       titulo: 'Tu reserva está aprobada',
       parrafos: [
         `Hola, ${e.nombre}. Infraestructura aprobó tu solicitud del espacio.`,
-        'El día del evento te enviaremos un correo para que confirmes la recepción del espacio y el estado de sus elementos.',
+        'El día del evento te enviaremos un correo para que confirmes la recepción del espacio y su estado.',
       ],
       ficha: fichaEvento(e),
       nota: {
@@ -258,7 +258,7 @@ export function correoConfirmacion(e: DatosEvento & { para: string; nombre: stri
     etiqueta: 'Hoy es tu evento',
     titulo: 'Confirma que recibiste el espacio',
     parrafos: [
-      `Hola, ${e.nombre}. Tu evento ya empezó. Revisa el espacio y sus elementos y confirma su estado.`,
+      `Hola, ${e.nombre}. Tu evento ya empezó. Revisa el estado del espacio y confírmalo.`,
       'Tu confirmación queda como constancia de la entrega, con consecutivo y código de verificación.',
     ],
     ficha: fichaEvento(e),

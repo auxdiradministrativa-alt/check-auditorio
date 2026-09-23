@@ -314,7 +314,7 @@ export function PantallaConfirmar({
       titulo="Confirma la recepción"
     >
       <p className="max-w-sm text-muted-foreground">
-        Revisa el espacio y sus elementos. Si todo está bien, lo confirmas en un paso; si algo no lo
+        Revisa el estado del espacio. Si todo está bien, lo confirmas en un paso; si algo no lo
         está, lo reportas con una foto. Tu cuenta queda como firma de la constancia.
       </p>
       <TarjetaEvento asignacion={asignacion} />
