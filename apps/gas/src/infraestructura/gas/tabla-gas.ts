@@ -53,6 +53,18 @@ const sinFila = (f: Record<string, string>) => {
   return resto
 }
 
+/**
+ * Un dato con valor en una columna que la pestaña no tiene se perdería en silencio: se falla antes
+ * de escribir nada. Pasa cuando se despliega código con columnas nuevas sin ejecutar `instalar()`.
+ */
+function exigirColumnas(nombre: NombreHoja, cols: string[], datos: object) {
+  const faltan = Object.entries(datos)
+    .filter(([c, v]) => !cols.includes(c) && String(v ?? '') !== '')
+    .map(([c]) => c)
+  if (faltan.length)
+    throw new Error(`Faltan columnas en ${nombre}: ${faltan.join(', ')}. Ejecuta instalar().`)
+}
+
 export const tablaGas: Tabla = {
   leer: <H extends NombreHoja>(nombre: H) => leerCrudo(nombre).map((f) => sinFila(f) as Fila<H>),
 
@@ -60,6 +72,7 @@ export const tablaGas: Tabla = {
     if (!filas.length) return
     const h = hoja(nombre)
     const cols = encabezados(h)
+    for (const f of filas) exigirColumnas(nombre, cols, f)
     const valores = filas.map((f) =>
       cols.map((c) => escapar((f as Record<string, string>)[c] ?? '')),
     )
@@ -75,6 +88,7 @@ export const tablaGas: Tabla = {
     const objetivo = leerCrudo(nombre).find((f) => f[columna as string] === valor)
     if (!objetivo) return
     const fila = Number(objetivo.__fila)
+    exigirColumnas(nombre, cols, cambios)
     for (const [c, v] of Object.entries(cambios)) {
       const j = cols.indexOf(c)
       if (j >= 0)
