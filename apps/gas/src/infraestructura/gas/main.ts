@@ -16,8 +16,12 @@ export function doPost(e: GoogleAppsScript.Events.DoPost) {
   return json(nucleo.atenderSobre(e.postData?.contents ?? ''))
 }
 
+/** La escribe `build.mjs` al final del bundle: identifica el código que sirve esta URL. */
+declare const CHECK_AUDITORIO_HUELLA: string | undefined
+
 export function doGet() {
-  return json({ ok: true, servicio: 'check-auditorio' })
+  const huella = typeof CHECK_AUDITORIO_HUELLA === 'string' ? CHECK_AUDITORIO_HUELLA : null
+  return json({ ok: true, servicio: 'check-auditorio', huella })
 }
 
 /** Lo invoca el activador de tiempo que crea `instalar()` (cada 10 min). */

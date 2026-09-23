@@ -1,4 +1,5 @@
-import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 
 import { build } from 'esbuild'
 
@@ -43,6 +44,11 @@ if (pruebas) {
     },
     logLevel: 'warning',
   })
+  // Huella del código compilado: `doGet` la devuelve y `publicar` la compara con la URL publicada,
+  // así una implementación que sirve otra versión se detecta en vez de pasar en silencio.
+  const codigo = readFileSync('dist/codigo.js', 'utf8')
+  const huella = createHash('sha256').update(codigo).digest('hex').slice(0, 16)
+  writeFileSync('dist/codigo.js', `${codigo}\nvar CHECK_AUDITORIO_HUELLA = '${huella}'\n`)
   copyFileSync('appsscript.json', 'dist/appsscript.json')
-  console.log('dist/ listo para clasp push')
+  console.log(`dist/ listo para clasp push · huella ${huella}`)
 }

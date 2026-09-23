@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto'
+import { setDefaultResultOrder } from 'node:dns'
 
 /*
  * Sonda de la conexión Vercel ↔ Apps Script, sin levantar la web:
@@ -7,6 +8,9 @@ import { createHash, createHmac, randomUUID } from 'node:crypto'
  * 2) POST firmado `catalogo.listar` → el secreto HMAC coincide y el script abre el libro.
  * La firma replica `cadenaAFirmar` de packages/shared/src/protocolo.ts.
  */
+
+// En esta red Node se cuelga por IPv6 al conectar con Google; curl no (medido 2026-09-23).
+setDefaultResultOrder('ipv4first')
 
 const url = process.env.GAS_WEBAPP_URL
 const secreto = process.env.GAS_HMAC_SECRET

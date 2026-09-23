@@ -14,7 +14,8 @@
     "login": "clasp -u duena login",
     "cuenta": "clasp -u duena show-authorized-user",
     "crear": "node build.mjs && clasp -u duena create-script --type standalone --title \"Check Auditorio\" --rootDir dist",
-    "push": "node build.mjs && clasp -u duena push -f"
+    "push": "node build.mjs && clasp -u duena push -f",
+    "publicar": "node scripts/publicar.mjs"
   },
   "dependencies": {
     "@check-auditorio/shared": "workspace:*"
