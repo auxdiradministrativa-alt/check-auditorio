@@ -14,7 +14,7 @@
    30/30 con 7 mutaciones de seguridad y 2 de correo verificadas; bandeja de correo desde Apps Script
    (4 correos, reintentos, cuota, reserva fuera del bloqueo); `instalar()` migra columnas y crea el
    activador; `tabla-gas` estricto; plantillas Sage Garden + vista previa (`pnpm --filter
-   @check-auditorio/gas vista-correo` → `apps/gas/tmp/index.html`); panel del gestor (emitir enlace,
+@check-auditorio/gas vista-correo` → `apps/gas/tmp/index.html`); panel del gestor (emitir enlace,
    aprobar/devolver con versión, estados nuevos en tabla, línea de tiempo, CSV).
 4. **Sin commit al cerrar (el agente del solicitante terminó, check + build verdes):** `app/r/[token]/page.tsx`
    (rama `enlacePersonal`), `app/mi-solicitud/{layout,[id]/page}.tsx`, `features/solicitud/{acciones,form-solicitud,boton-confirmar}`,
@@ -29,7 +29,7 @@
    aceptable, o comparar con `receptor.correo`); (4) e2e rotos que buscan «Crear evento»:
    `e2e/centro-gestion.spec.ts:18,28,97` y `e2e/entrega-y-recepcion.spec.ts:100,106`.
 6. **Pendiente, en orden:** (i) commit del punto 4; `pnpm check` + `pnpm --filter
-   @check-auditorio/web build`; (ii) arreglar deudas 1-2; (iii) e2e nuevo
+@check-auditorio/web build`; (ii) arreglar deudas 1-2; (iii) e2e nuevo
    `apps/web/e2e/solicitud-por-enlace.spec.ts` (intruso «personal», diligenciar, devolver con motivo,
    corregir, aprobar, confirmar solo en ventana, atajo, RECIBIDA, `/verificar` íntegra) y reescribir
    los e2e rotos al flujo por enlace; `pnpm e2e` (puerto 3100; el carril de diseño ya terminó);
@@ -40,7 +40,7 @@
    y una pregunta de comprobación (skill `leo-ingeniero`), y completar el «Resultado» en
    `~/.claude/skills/leo-ingeniero/datos/decisiones.md`.
 7. **Despliegue (lo hace Leo / la cuenta dueña, en este orden):** `pnpm --filter @check-auditorio/gas
-   push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mail`, añade columnas y
+push` → `instalar()` ejecutado por `auxdiradministrativa@` (autoriza `send_mail`, añade columnas y
    claves, crea el activador) → nueva VERSIÓN de la implementación → `probar-gas` → merge a `main` y
    push (Vercel). Publicar la versión antes de autorizar el scope tumba todos los `doPost`.
    Condición de producción: texto de autorización de Jurídica.

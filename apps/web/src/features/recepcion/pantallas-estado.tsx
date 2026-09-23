@@ -23,13 +23,6 @@ import { formatearFechaLarga, formatearFranja, formatearHora } from '@/lib/fecha
 
 import { BotonSolicitar } from './boton-solicitar'
 
-/**
- * Minutos antes del inicio en que se habilita la recepción. Es el valor por defecto de
- * `minutos_vigencia_qr_antes` en `CFG_General`: la web no lo recibe del núcleo, así que solo se
- * usa para el texto. La regla la aplica el núcleo (`vigencia` de `qr.estado`).
- */
-const MINUTOS_QR_ANTES = 30
-
 function Pantalla({
   icono,
   titulo,
@@ -194,8 +187,11 @@ export function PantallaAunNoVigente({ asignacion }: { asignacion: Asignacion })
       titulo="Aún no puedes recibir"
     >
       <p className="max-w-sm text-muted-foreground">
-        Este QR se habilita {MINUTOS_QR_ANTES} minutos antes del inicio (
-        {formatearHora(asignacion.inicio)}).
+        Este QR se habilita a las{' '}
+        <span className="font-medium text-foreground tabular">
+          {formatearHora(asignacion.recepcionDesde)}
+        </span>
+        , antes del inicio ({formatearHora(asignacion.inicio)}).
       </p>
       <TarjetaEvento asignacion={asignacion} />
     </Pantalla>
@@ -280,7 +276,7 @@ export function PantallaEnRevision({ asignacion }: { asignacion: Asignacion }) {
 }
 
 export function PantallaAprobadaEsperando({ asignacion }: { asignacion: Asignacion }) {
-  const desde = new Date(new Date(asignacion.inicio).getTime() - MINUTOS_QR_ANTES * 60_000)
+  const desde = asignacion.recepcionDesde
   return (
     <Pantalla
       icono={icono(

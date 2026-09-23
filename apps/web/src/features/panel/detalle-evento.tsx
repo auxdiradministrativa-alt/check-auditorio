@@ -29,13 +29,6 @@ import { qrSvg } from '@/servidor/qr'
 import { UtilidadesQr } from './utilidades-qr'
 import { urlRecepcion } from '@/servidor/tokens'
 
-/**
- * Vigencia por defecto del enlace (`CFG_General.horas_vigencia_invitacion`). El registro no expone
- * `token_vence`, así que el mensaje usa el valor por defecto de la spec; si Infraestructura lo
- * cambia en la hoja, este texto debe cambiar también.
- */
-const HORAS_VIGENCIA_INVITACION = 72
-
 const ANULABLES = [
   'INVITADA',
   'SOLICITADA',
@@ -68,9 +61,6 @@ function datosSolicitud(a: Asignacion, espacio: Espacio | undefined): DatoSolici
 
 /** Texto para pegar en WhatsApp o en un correo, con todo lo que la persona necesita saber. */
 function mensajeInvitacion(a: Asignacion, correo: string, enlace: string) {
-  const vence = formatearFechaHora(
-    new Date(new Date(a.creadaEn).getTime() + HORAS_VIGENCIA_INVITACION * 3_600_000),
-  )
   const referencia = a.evento !== 'Por definir' ? ` para «${a.evento}»` : ''
   return [
     'Hola,',
@@ -78,7 +68,7 @@ function mensajeInvitacion(a: Asignacion, correo: string, enlace: string) {
     `Te comparto el enlace para solicitar el auditorio de la Corporación Universitaria Americana${referencia}. Allí registras el nombre del evento, la fecha, el horario y tus datos; Infraestructura revisa la solicitud y te confirma.`,
     '',
     `Entra con tu cuenta institucional ${correo}: el enlace solo funciona con esa cuenta.`,
-    `El enlace vence en ${HORAS_VIGENCIA_INVITACION} horas (${vence}).`,
+    `El enlace vence el ${formatearFechaHora(a.tokenVence)}.`,
     '',
     enlace,
     '',
@@ -110,6 +100,8 @@ export async function DetalleEvento({
     invitadoCorreo,
     solicitadaEn,
     motivoRechazo,
+    tokenVence,
+    recepcionDesde,
   } = asignacion
   const porEnlace = invitadoCorreo !== null
   // Una invitación aún no tiene franja: inicio = fin = hora de emisión.
@@ -227,7 +219,7 @@ export async function DetalleEvento({
                 <CardDescription>
                   {porEnlace
                     ? `Envíalo a ${invitadoCorreo} por WhatsApp, correo o el canal que uses. Solo esa cuenta puede abrirlo.`
-                    : 'Muéstralo a la persona que recibe. Es de un solo uso y funciona desde 30 minutos antes del inicio hasta el fin del evento.'}
+                    : `Muéstralo a la persona que recibe. Es de un solo uso y funciona desde el ${formatearFechaHora(recepcionDesde)} hasta el fin del evento.`}
                 </CardDescription>
               </CardHeader>
               <CardBody className="flex flex-wrap items-start gap-6">
@@ -248,14 +240,18 @@ export async function DetalleEvento({
                       {estado === 'PROGRAMADA' ? (
                         <>
                           <li>• Con este mismo enlace confirma la recepción del espacio.</li>
-                          <li>• El botón se habilita 30 minutos antes del inicio.</li>
+                          <li>
+                            • El botón se habilita el{' '}
+                            <span className="tabular">{formatearFechaHora(recepcionDesde)}</span>.
+                          </li>
                         </>
                       ) : (
                         <>
                           <li>• Quien solicita propone el evento, la fecha y el horario.</li>
                           <li>
-                            • Vence {HORAS_VIGENCIA_INVITACION} horas después de emitido si no se
-                            diligencia.
+                            • Vence el{' '}
+                            <span className="tabular">{formatearFechaHora(tokenVence)}</span> si no
+                            se {estado === 'RECHAZADA' ? 'corrige' : 'diligencia'}.
                           </li>
                           <li>• Tú apruebas o devuelves la solicitud desde este panel.</li>
                         </>

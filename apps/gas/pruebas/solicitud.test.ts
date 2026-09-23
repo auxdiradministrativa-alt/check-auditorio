@@ -242,6 +242,32 @@ test('vencimientos: la invitación caduca a las 72 h; la solicitud vive hasta el
   assert.equal(codigo(q.decidir(b.a.id, 'APROBAR', v)), 'ESTADO_INVALIDO')
 })
 
+test('la vista trae los plazos que decide la hoja: la web no los repite', () => {
+  const p = preparar()
+  // Infraestructura cambia los plazos en CFG_General: la web debe mostrar estos, no 72 h ni 30 min.
+  p.tabla.actualizar('CFG_General', 'clave', 'horas_vigencia_invitacion', { valor: '48' })
+  p.tabla.actualizar('CFG_General', 'clave', 'minutos_vigencia_qr_antes', { valor: '15' })
+  const { a } = p.invitar()
+  assert.equal(a.tokenVence, '2026-09-17T08:00:00-05:00', 'invitada: emisión + 48 h')
+
+  const s = ok(p.diligenciar(a.id))
+  assert.equal(s.tokenVence, '2026-09-15T10:00:00-05:00', 'solicitada: hasta el inicio propuesto')
+  assert.equal(s.recepcionDesde, '2026-09-15T09:45:00-05:00', 'inicio − 15 min')
+
+  const aprobada = ok(p.decidir(a.id, 'APROBAR', s.solicitadaEn!))
+  assert.equal(aprobada.tokenVence, '2026-09-15T12:00:00-05:00', 'aprobada: hasta el fin')
+
+  // La hora que se muestra es la misma en que el núcleo abre la recepción.
+  const qr = ok(p.nucleo.ejecutar('asignacion.obtener', { id: a.id }))!
+  p.mover(new Date(new Date(qr.recepcionDesde).getTime() - 1000).toISOString())
+  assert.equal(
+    codigo(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura })),
+    'QR_NO_VIGENTE',
+  )
+  p.mover(qr.recepcionDesde)
+  ok(p.nucleo.ejecutar('recepcion.iniciar', { id: a.id, receptor: laura }))
+})
+
 test('confirmar la recepción solo dentro de la vigencia; entrar dos veces es idempotente', () => {
   const p = preparar()
   const { a } = p.invitar()

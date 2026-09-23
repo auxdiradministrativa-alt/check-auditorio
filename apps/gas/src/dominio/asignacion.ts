@@ -1,4 +1,9 @@
-import type { Asignacion, EstadoAsignacion, VigenciaQr } from '@check-auditorio/shared/sin-zod'
+import {
+  isoBogota,
+  type Asignacion,
+  type EstadoAsignacion,
+  type VigenciaQr,
+} from '@check-auditorio/shared/sin-zod'
 
 import type { Config, Entregador, RegistroAsignacion } from './entidades'
 import { fallar } from './errores'
@@ -19,10 +24,14 @@ export function estadoEfectivo(a: RegistroAsignacion, ahora: Date, cfg: Config):
   return a.estado
 }
 
+/** Desde cuándo se puede recibir; la web lo muestra tal cual, sin repetir la regla. */
+const recepcionDesdeMs = (a: RegistroAsignacion, cfg: Config) =>
+  ms(a.inicio) - cfg.minutosQrAntes * 60_000
+
 /** El QR vale desde `inicio − N min` hasta el `fin` del evento. */
 export function vigenciaQr(a: RegistroAsignacion, ahora: Date, cfg: Config): VigenciaQr {
   const t = ahora.getTime()
-  if (t < ms(a.inicio) - cfg.minutosQrAntes * 60_000) return 'ANTES'
+  if (t < recepcionDesdeMs(a, cfg)) return 'ANTES'
   if (t > ms(a.fin)) return 'VENCIDO'
   return 'VIGENTE'
 }
@@ -106,6 +115,8 @@ export function aVista(
     receptor: a.receptor ? { correo: a.receptor.correo, nombre: a.receptor.nombre } : null,
     consecutivo: a.consecutivo,
     creadaEn: a.creadaEn,
+    tokenVence: a.tokenVence,
+    recepcionDesde: isoBogota(new Date(recepcionDesdeMs(a, cfg))),
     invitadoCorreo: a.invitadoCorreo,
     solicitadaEn: a.solicitadaEn,
     motivoRechazo: a.motivoRechazo,

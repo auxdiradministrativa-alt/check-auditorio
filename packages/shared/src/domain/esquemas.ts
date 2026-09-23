@@ -52,6 +52,13 @@ export const asignacionSchema = z.object({
   receptor: personaSchema.nullable(),
   consecutivo: z.string().nullable(),
   creadaEn: z.iso.datetime({ offset: true }),
+  /**
+   * Hasta cuándo vale el enlace. Lo fija el núcleo según el estado: al invitar,
+   * `horas_vigencia_invitacion`; al diligenciar, el `inicio` propuesto; al aprobar, el `fin`.
+   */
+  tokenVence: z.string(),
+  /** Desde cuándo se puede confirmar la recepción: `inicio − minutos_vigencia_qr_antes`. */
+  recepcionDesde: z.string(),
   /** Flujo por enlace: la única cuenta que puede diligenciar y recibir. Nulo en el flujo anterior. */
   invitadoCorreo: z.string().nullable(),
   /** Marca de la última versión diligenciada: el gestor aprueba exactamente la que vio. */
