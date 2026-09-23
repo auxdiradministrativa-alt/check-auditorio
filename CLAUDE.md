@@ -111,6 +111,7 @@ Costuras que no se ven leyendo un solo fichero:
 - **`solicitadaEn` es la versión de la solicitud**: `solicitud.decidir` exige la que el gestor vio. Si quien solicita corrigió entre medias, la aprobación falla y hay que volver a revisar.
 - **`tabla-gas` es estricto con las columnas**: si falta una, falla con «Faltan columnas… Ejecuta instalar()». Tras un cambio de esquema, toda escritura falla hasta ejecutar `instalar()` en el libro real — a propósito, para no escribir filas a medias.
 - **La bandeja de correo reserva con bloqueo y envía sin él**: las firmas de los usuarios esperan el bloqueo 20 s y `MailApp` tarda segundos. Hueco aceptado: si Apps Script muere entre enviar y marcar, ese correo sale dos veces.
+- **Publicar el núcleo = `pnpm --filter @check-auditorio/gas publicar`, nunca a mano en el editor**: una «Nueva implementación» crea otra URL y la web se queda en la versión vieja sin error visible (pasó el 2026-09-23). `doGet` devuelve la `huella` del bundle; `publicar` falla si la URL de la web no sirve la recién compilada. Las sondas fuerzan IPv4 (en esta red Node se cuelga por IPv6 con Google).
 - **Si `pnpm e2e` llena el log de `unhandledRejection: JSON.parse` sin stack**, es `.next-e2e/dev/cache/next-devtools-config.json` escrito a medias (bytes nulos) por una corrida interrumpida: se borra y Next lo regenera. No es código nuestro (medido el 2026-09-23).
 
 ## 4. Reglas del código
@@ -235,7 +236,8 @@ pnpm --filter @check-auditorio/gas build     # → apps/gas/dist/codigo.js
 pnpm --filter @check-auditorio/gas login     # clasp -u duena login (credencial nombrada en ~/.clasprc.json)
 pnpm --filter @check-auditorio/gas cuenta    # debe decir auxdiradministrativa@
 pnpm --filter @check-auditorio/gas crear     # una vez: crea el script independiente y .clasp.json
-pnpm --filter @check-auditorio/gas push      # build + clasp push (luego: nueva VERSIÓN de la implementación)
+pnpm --filter @check-auditorio/gas publicar  # ÚNICA forma de publicar: build, push, versión, apunta la implementación de GAS_WEBAPP_URL y verifica su huella
+pnpm --filter @check-auditorio/gas push      # solo build + clasp push (no cambia lo que sirve la web)
 pnpm --filter @check-auditorio/web probar-gas  # GET + POST firmado contra GAS_WEBAPP_URL de .env.local
 
 # Por paquete

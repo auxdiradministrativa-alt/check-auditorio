@@ -109,6 +109,8 @@ En el editor: **Implementar → Nueva implementación → ⚙ Tipo: Aplicación 
 
 Copia la **URL de la aplicación web** (termina en `/exec`) en `GAS_WEBAPP_URL` de `.env.local`.
 
+> **Desde el 2026-09-23 esto lo hace `pnpm --filter @check-auditorio/gas publicar`** (y verifica la huella que sirve la URL); el paso manual queda como respaldo.
+>
 > **Actualizar sin cambiar la URL:** tras un `push`, _Implementar → Gestionar implementaciones →
 > ✏ → Versión: Nueva versión → Implementar_. Una «Nueva implementación» genera **otra** URL y
 > obliga a cambiar `GAS_WEBAPP_URL` en todas partes.
