@@ -96,7 +96,7 @@ export function SelectorFotos({
             {foto.estado === 'subiendo' && (
               <span className="absolute inset-0 grid place-items-center bg-foreground/45">
                 <LoaderCircle
-                  className="size-6 animate-spin text-card-title"
+                  className="size-6 animate-spin text-primary-strong-foreground"
                   aria-label="Subiendo foto"
                 />
               </span>
@@ -105,7 +105,7 @@ export function SelectorFotos({
               <button
                 type="button"
                 onClick={() => reintentar(foto)}
-                className="absolute inset-0 grid place-items-center bg-destructive/75 text-card-title"
+                className="absolute inset-0 grid place-items-center bg-destructive/75 text-primary-strong-foreground"
                 aria-label={`Reintentar subir ${foto.nombre}`}
               >
                 <RotateCw className="size-6" aria-hidden />
@@ -114,7 +114,7 @@ export function SelectorFotos({
             <button
               type="button"
               onClick={() => quitar(foto)}
-              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-foreground/80 text-card-title"
+              className="absolute top-1 right-1 grid size-7 place-items-center rounded-full bg-foreground/80 text-primary-strong-foreground"
               aria-label={`Quitar ${foto.nombre}`}
             >
               <X className="size-3.5" aria-hidden />

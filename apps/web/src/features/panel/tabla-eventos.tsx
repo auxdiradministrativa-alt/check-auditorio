@@ -55,7 +55,7 @@ function Encabezado({
       <button
         type="button"
         onClick={() => onOrdenar(campo)}
-        className="-mx-1.5 inline-flex items-center gap-1 rounded px-1.5 py-1 font-medium transition-colors hover:bg-border/60 hover:text-foreground"
+        className="-mx-1.5 inline-flex min-h-7 items-center gap-1 rounded px-1.5 py-1 font-medium transition-colors hover:bg-border/60 hover:text-foreground"
       >
         {children}
         <Icono
