@@ -55,8 +55,10 @@ export async function ingresarLocal(
   return resultado
 }
 
-export async function cerrarSesion() {
+/** Con un `destino` en el formulario, vuelve al ingreso con retorno a él (cambiar de cuenta). */
+export async function cerrarSesion(formData?: FormData) {
   if (entorno().auth === 'local') await cerrarSesionLocal()
   else await auth().api.signOut({ headers: await headers() })
-  redirect('/')
+  const destino = formData?.get('destino')
+  redirect(destino ? `/?destino=${encodeURIComponent(destinoSeguro(destino))}` : '/')
 }

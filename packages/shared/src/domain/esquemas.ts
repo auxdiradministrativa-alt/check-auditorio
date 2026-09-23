@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { LIMITES } from './constantes'
+import { DOMINIO_INSTITUCIONAL, LIMITES } from './constantes'
 import {
   CATEGORIAS_ELEMENTO,
   ESTADOS_ASIGNACION,
@@ -52,6 +52,27 @@ export const asignacionSchema = z.object({
   receptor: personaSchema.nullable(),
   consecutivo: z.string().nullable(),
   creadaEn: z.iso.datetime({ offset: true }),
+  /**
+   * Hasta cuándo vale el enlace. Lo fija el núcleo según el estado: al invitar,
+   * `horas_vigencia_invitacion`; al diligenciar, el `inicio` propuesto; al aprobar, el `fin`.
+   */
+  tokenVence: z.string(),
+  /** Desde cuándo se puede confirmar la recepción: `inicio − minutos_vigencia_qr_antes`. */
+  recepcionDesde: z.string(),
+  /** Flujo por enlace: la única cuenta que puede diligenciar y recibir. Nulo en el flujo anterior. */
+  invitadoCorreo: z.string().nullable(),
+  /** Marca de la última versión diligenciada: el gestor aprueba exactamente la que vio. */
+  solicitadaEn: z.string().nullable(),
+  motivoRechazo: z.string().nullable(),
+  solicitud: z
+    .object({
+      rol: z.enum(ROLES_RECEPTOR),
+      dependencia: z.string(),
+      cargo: z.string(),
+      celular: z.string(),
+      asistentesEstimados: z.number().int(),
+    })
+    .nullable(),
 })
 export type Asignacion = z.infer<typeof asignacionSchema>
 
@@ -68,6 +89,64 @@ export const nuevaAsignacionInputSchema = z
     error: 'La hora de fin debe ser posterior al inicio.',
   })
 export type NuevaAsignacionInput = z.infer<typeof nuevaAsignacionInputSchema>
+
+/* ───────────────────────── Solicitud por enlace ───────────────────────── */
+
+/** Datos de quien recibe: se piden en la solicitud y se confirman en la recepción. */
+const camposSolicitante = {
+  rol: z.enum(ROLES_RECEPTOR, { error: 'Selecciona tu rol.' }),
+  dependencia: texto(LIMITES.dependenciaMax).min(2, 'Escribe tu dependencia.'),
+  cargo: texto(LIMITES.cargoMax).default(''),
+  celular: z
+    .string()
+    .trim()
+    .regex(/^3\d{9}$/, 'Celular colombiano de 10 dígitos (ej. 3001234567).'),
+  asistentesEstimados: z.number().int().positive('Indica cuántas personas asistirán.'),
+}
+
+const correoInstitucional = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email({ error: 'Escribe un correo válido.' }))
+  .refine((c) => c.endsWith(`@${DOMINIO_INSTITUCIONAL}`), {
+    error: `El correo debe ser @${DOMINIO_INSTITUCIONAL}.`,
+  })
+
+/** Lo que diligencia Infraestructura al emitir el enlace: a quién va y una referencia opcional. */
+export const invitacionInputSchema = z.object({
+  correoSolicitante: correoInstitucional,
+  referencia: texto(LIMITES.eventoMax).default(''),
+})
+export type InvitacionInput = z.infer<typeof invitacionInputSchema>
+
+/** Lo que diligencia quien solicita. Espacio, hora del registro e identidad los pone el servidor. */
+export const solicitudInputSchema = z
+  .object({
+    evento: texto(LIMITES.eventoMax).min(3, 'Escribe el nombre del evento.'),
+    inicio: z.iso.datetime({ offset: true, error: 'Fecha y hora de inicio inválidas.' }),
+    fin: z.iso.datetime({ offset: true, error: 'Fecha y hora de fin inválidas.' }),
+    ...camposSolicitante,
+    autorizaDatos: z.literal(true, { error: 'Debes autorizar el tratamiento de datos.' }),
+  })
+  .refine((d) => new Date(d.fin) > new Date(d.inicio), {
+    path: ['fin'],
+    error: 'La hora de fin debe ser posterior al inicio.',
+  })
+export type SolicitudInput = z.infer<typeof solicitudInputSchema>
+
+export const decisionSolicitudInputSchema = z
+  .object({
+    decision: z.enum(['APROBAR', 'RECHAZAR']),
+    motivo: texto(LIMITES.motivoMax).default(''),
+    /** `solicitadaEn` de la versión que vio el gestor. */
+    version: z.string().min(1),
+  })
+  .refine((d) => d.decision === 'APROBAR' || d.motivo.length >= LIMITES.motivoMin, {
+    path: ['motivo'],
+    error: 'Explica qué debe corregir.',
+  })
+export type DecisionSolicitudInput = z.infer<typeof decisionSolicitudInputSchema>
 
 /* ───────────────────────── Recepción (lo que envía el navegador) ─────────────────────────
  * Solo contiene lo que la persona decide. Identidad, hora, espacio, cantidades esperadas,
@@ -103,14 +182,7 @@ export type ChecklistItemInput = z.infer<typeof checklistItemInputSchema>
 
 export const recepcionInputSchema = z.object({
   claveIdempotencia: z.uuid(),
-  rol: z.enum(ROLES_RECEPTOR, { error: 'Selecciona tu rol.' }),
-  dependencia: texto(LIMITES.dependenciaMax).min(2, 'Escribe tu dependencia.'),
-  cargo: texto(LIMITES.cargoMax).default(''),
-  celular: z
-    .string()
-    .trim()
-    .regex(/^3\d{9}$/, 'Celular colombiano de 10 dígitos (ej. 3001234567).'),
-  asistentesEstimados: z.number().int().positive('Indica cuántas personas asistirán.'),
+  ...camposSolicitante,
   checklist: z.array(checklistItemInputSchema).min(1),
   aceptaTerminos: z.literal(true, { error: 'Debes aceptar los términos y condiciones.' }),
   autorizaDatos: z.literal(true, { error: 'Debes autorizar el tratamiento de datos.' }),

@@ -1,4 +1,5 @@
 import { crearNucleo } from '../../nucleo'
+import { correoGas } from './correo-gas'
 import { serviciosGas } from './servicios-gas'
 import { tablaGas } from './tabla-gas'
 
@@ -17,4 +18,9 @@ export function doPost(e: GoogleAppsScript.Events.DoPost) {
 
 export function doGet() {
   return json({ ok: true, servicio: 'check-auditorio' })
+}
+
+/** Lo invoca el activador de tiempo que crea `instalar()` (cada 10 min). */
+export function procesarOutbox() {
+  console.log(JSON.stringify(nucleo.procesarNotificaciones(correoGas)))
 }

@@ -1,6 +1,7 @@
 import { isoBogota, type Entrada, type Salida } from '@check-auditorio/shared/sin-zod'
 
 import { exigirAnulable, exigirSinCruce } from '../../dominio/asignacion'
+import { SIN_NOTIFICACION } from '../../dominio/entidades'
 import { fallar } from '../../dominio/errores'
 import type { Contexto } from '../puertos'
 import { exigirAsignacion, marcaDeTiempo, releer, vista } from './comun'
@@ -52,6 +53,14 @@ export function crearAsignacion(
       tokenVence: fin,
       receptor: null,
       consecutivo: null,
+      invitadoCorreo: null,
+      solicitadaEn: null,
+      motivoRechazo: null,
+      solicitud: null,
+      autorizacion: null,
+      notifDecision: SIN_NOTIFICACION,
+      notifConfirmacion: SIN_NOTIFICACION,
+      notifVencida: SIN_NOTIFICACION,
     })
     ctx.bitacora.registrar('asignacion.crear', id, e.entregadoPor.correo, { evento: e.evento })
     return releer(ctx, id)

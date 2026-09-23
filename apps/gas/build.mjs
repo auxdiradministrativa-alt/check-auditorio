@@ -9,7 +9,7 @@ import { build } from 'esbuild'
  */
 
 const pruebas = process.argv.includes('--pruebas')
-const GLOBALES = ['doGet', 'doPost', 'instalar']
+const GLOBALES = ['doGet', 'doPost', 'instalar', 'procesarOutbox']
 
 if (pruebas) {
   rmSync('dist-pruebas', { recursive: true, force: true })

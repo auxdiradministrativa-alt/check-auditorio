@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { CalendarPlus, X } from 'lucide-react'
-import type { Espacio, ElementoCatalogo } from '@check-auditorio/shared'
+import { Link2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardBody } from '@/components/ui/card'
 
-const FormNuevaAsignacion = dynamic(
-  () => import('./form-nueva-asignacion').then((m) => m.FormNuevaAsignacion),
+/*
+ * Flujo por enlace (spec 2026-09-23): la acción principal es emitir un enlace personal. La web ya
+ * no crea eventos directamente: esas filas pasarían por EN_VALIDACION, y la spec fija que ninguna
+ * fila nueva entre en ese estado. Las filas históricas siguen su camino con el mismo panel.
+ */
+const FormEmitirEnlace = dynamic(
+  () => import('./form-emitir-enlace').then((m) => m.FormEmitirEnlace),
   {
     loading: () => (
       <p role="status" className="py-6">
@@ -20,19 +24,15 @@ const FormNuevaAsignacion = dynamic(
 )
 
 export function OperacionEventos({
-  espacios,
-  elementos,
   eventoId,
   nuevo,
   detalle,
 }: {
-  espacios: Espacio[]
-  elementos: ElementoCatalogo[]
   eventoId: string | undefined
   nuevo: boolean
   detalle: ReactNode
 }) {
-  const [crear, setCrear] = useState(nuevo)
+  const [emitir, setEmitir] = useState(nuevo)
   const detalleRef = useRef<HTMLDivElement>(null)
 
   // Al abrir otro evento, el foco llega a su detalle; los refrescos automáticos no lo mueven.
@@ -47,34 +47,29 @@ export function OperacionEventos({
             Operación de eventos
           </h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Reserva el espacio, entrega el QR y da seguimiento a la recepción.
+            Emite el enlace de solicitud, aprueba lo que te envían y da seguimiento a la recepción.
           </p>
         </div>
         <Button
           variante="primario"
-          onClick={() => setCrear(!crear)}
-          aria-expanded={crear}
-          aria-controls="nuevo-evento"
+          onClick={() => setEmitir(!emitir)}
+          aria-expanded={emitir}
+          aria-controls="emitir-enlace"
         >
-          <CalendarPlus aria-hidden />
-          {crear ? 'Cerrar formulario' : 'Crear evento'}
+          {emitir ? <X aria-hidden /> : <Link2 aria-hidden />}
+          {emitir ? 'Cerrar formulario' : 'Emitir enlace'}
         </Button>
       </CardHeader>
-      {crear && (
-        <CardBody id="nuevo-evento" className="border-b border-border">
+      {emitir && (
+        <CardBody id="emitir-enlace" className="border-b border-border">
           <div className="mb-5">
-            <h3 className="text-card-title">Nuevo evento y QR</h3>
+            <h3 className="text-card-title">Nuevo enlace de solicitud</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Define el espacio y la franja reservada. Al guardar podrás compartir el enlace o
-              descargar el QR.
+              Quien solicita abre el enlace con su cuenta institucional, propone fecha y horario y
+              diligencia sus datos. Tú apruebas o devuelves la solicitud desde aquí.
             </p>
           </div>
-          <FormNuevaAsignacion
-            key={eventoId ?? 'nuevo'}
-            espacios={espacios}
-            elementos={elementos}
-            onCreada={() => setCrear(false)}
-          />
+          <FormEmitirEnlace key={eventoId ?? 'nuevo'} onEmitido={() => setEmitir(false)} />
         </CardBody>
       )}
       {detalle ? (
@@ -99,8 +94,8 @@ export function OperacionEventos({
       ) : (
         <CardBody className="flex flex-wrap items-center justify-between gap-4">
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Selecciona una reserva para abrir su QR, validar al solicitante, consultar sus elementos
-            o administrar la entrega.
+            Selecciona una reserva para compartir su enlace, revisar la solicitud, consultar sus
+            elementos o administrar la entrega.
           </p>
           <a href="#reservas" className="text-sm font-semibold text-primary-strong hover:underline">
             Ver reservas

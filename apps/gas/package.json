@@ -10,6 +10,7 @@
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit",
     "prueba": "node build.mjs --pruebas && node --test \"dist-pruebas/*.test.mjs\"",
+    "vista-correo": "node scripts/vista-correo.mjs",
     "login": "clasp -u duena login",
     "cuenta": "clasp -u duena show-authorized-user",
     "crear": "node build.mjs && clasp -u duena create-script --type standalone --title \"Check Auditorio\" --rootDir dist",

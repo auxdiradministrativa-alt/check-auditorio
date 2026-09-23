@@ -27,7 +27,6 @@ async function Gestion({ searchParams }: { searchParams: Consulta }) {
     <CentroGestion
       asignaciones={asignaciones}
       espacios={catalogo.espacios}
-      elementos={catalogo.elementos}
       eventoId={eventoId}
       nuevo={consulta.nuevo === '1'}
       leidoEn={new Date().toISOString()}
@@ -59,7 +58,7 @@ export default function Panel({ searchParams }: { searchParams: Consulta }) {
     <>
       <PageHeader
         titulo="Gestión de espacios"
-        descripcion="Crea eventos, comparte su QR y controla cada reserva hasta su devolución. Todo el registro en un solo lugar."
+        descripcion="Emite enlaces de solicitud, aprueba reservas y controla cada una hasta su devolución. Todo el registro en un solo lugar."
       />
       <Suspense
         fallback={

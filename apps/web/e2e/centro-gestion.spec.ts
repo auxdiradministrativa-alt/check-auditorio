@@ -1,44 +1,50 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 
-test('gestión por reservas: evento futuro, QR, filtros locales, exportación y anulación', async ({
+import { ENTREGADOR, ahoraBogota, ingresar, sinDesborde } from './apoyo'
+
+test('gestión por enlace: emitir, compartir, filtros locales, exportación y anulación', async ({
   page,
 }, testInfo) => {
   const errores: string[] = []
   page.on('pageerror', (error) => errores.push(error.message))
+  // Empieza por «=»: el CSV debe neutralizarlo para que Excel no lo ejecute como fórmula.
   const evento = `=Encuentro académico de investigación y planeación institucional con docentes y administrativos ${Date.now()}`
+  const correo = `docente.${Date.now().toString(36)}@americana.edu.co`
   await page.goto('/')
-  await page.getByLabel('Nombre').fill('Infraestructura')
-  await page.getByLabel('Correo institucional').fill('auxdiradministrativa@americana.edu.co')
-  await page.getByRole('button', { name: 'Ingresar (modo local)' }).click()
+  await ingresar(page, ENTREGADOR)
   await expect(page.getByRole('heading', { name: 'Gestión de espacios' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Hoy', exact: true })).toHaveCount(0)
 
   const operacion = page.getByRole('region', { name: 'Operación de eventos' })
-  await operacion.getByRole('button', { name: 'Crear evento', exact: true }).click()
-  await operacion.getByLabel('Evento o actividad').fill(evento)
-  await operacion.getByLabel('Fecha', { exact: true }).fill('2035-06-15')
-  await operacion.getByLabel('Hora de inicio').fill('09:00')
-  await operacion.getByLabel('Hora de fin').fill('11:00')
+  await operacion.getByRole('button', { name: 'Emitir enlace' }).click()
+  const campoCorreo = operacion.getByLabel('Correo de quien solicita')
+
+  // Solo cuentas del dominio: el enlace se amarra a una cuenta institucional.
+  await campoCorreo.fill('alguien@gmail.com')
+  await operacion.getByRole('button', { name: 'Emitir enlace' }).click()
+  await expect(operacion.getByText('El correo debe ser @americana.edu.co.')).toBeVisible()
+  await expect(campoCorreo).toHaveAttribute('aria-invalid', 'true')
+
+  await campoCorreo.fill(correo)
+  await operacion.getByLabel('Referencia').fill(evento)
   for (const width of [320, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    expect(await sinDesborde(page)).toBe(true)
     await page.screenshot({ path: testInfo.outputPath(`formulario-${width}.png`), fullPage: true })
   }
-  await operacion.getByRole('button', { name: 'Crear evento y generar QR' }).click()
+  await operacion.getByRole('button', { name: 'Emitir enlace' }).click()
   await expect(
-    operacion.getByRole('img', { name: `Código QR para recibir ${evento}` }),
+    operacion.getByRole('img', { name: `Código QR del enlace para ${correo}` }),
   ).toBeVisible()
   const id = new URL(page.url()).searchParams.get('evento')!
   expect(id).toMatch(/^[0-9a-f-]{36}$/)
-  await expect(operacion.getByRole('heading', { name: 'QR de recepción' })).toHaveCSS(
-    'font-size',
-    '16px',
-  )
-  await expect(operacion.getByRole('heading', { name: 'QR de recepción' })).toHaveCSS(
-    'font-weight',
-    '600',
-  )
+  const titulo = operacion.getByRole('heading', { name: 'Enlace personal' })
+  await expect(titulo).toHaveCSS('font-size', '16px')
+  await expect(titulo).toHaveCSS('font-weight', '600')
+  // Una invitación aún no tiene franja: la propone quien solicita.
+  await expect(operacion.getByText('Por definir').first()).toBeVisible()
+  await expect(operacion.getByText('Por diligenciar', { exact: true })).toBeVisible()
 
   const qrDescarga = page.waitForEvent('download')
   await operacion.getByRole('button', { name: 'Descargar QR' }).click()
@@ -48,10 +54,16 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
   await operacion.getByRole('button', { name: 'Copiar enlace' }).click()
   await expect(operacion.getByRole('status')).toContainText('Enlace copiado')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('/r/')
+  await operacion.getByRole('button', { name: 'Copiar mensaje' }).click()
+  await expect(operacion.getByRole('status')).toContainText('Mensaje copiado')
+  const mensaje = await page.evaluate(() => navigator.clipboard.readText())
+  expect(mensaje).toContain(correo)
+  expect(mensaje).toMatch(/El enlace vence el .+\./)
+  expect(mensaje).toContain('/r/')
 
   for (const width of [320, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    expect(await sinDesborde(page)).toBe(true)
     await page.screenshot({ path: testInfo.outputPath(`detalle-${width}.png`), fullPage: true })
   }
 
@@ -62,7 +74,10 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
   await expect(operacion.getByRole('link', { name: 'Cerrar detalle' })).toHaveCount(0)
   const reservas = page.getByRole('region', { name: 'Reservas y seguimiento' })
   const historico = page.getByRole('region', { name: 'Registro histórico y constancias' })
-  await expect(reservas.getByRole('link', { name: evento, exact: true })).toBeVisible()
+  const fila = reservas.getByRole('row').filter({ hasText: evento })
+  await expect(fila.getByRole('link', { name: evento, exact: true })).toBeVisible()
+  await expect(fila.getByText('Por definir')).toBeVisible()
+  await expect(fila.getByRole('link', { name: 'Compartir enlace' })).toBeVisible()
 
   const lecturas: string[] = []
   page.on('request', (request) => {
@@ -71,33 +86,46 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
   const inicioFiltro = Date.now()
   await page.getByRole('searchbox').fill('no existe este evento')
   await expect(reservas.getByText('No hay eventos que coincidan')).toBeVisible()
+  // La búsqueda también encuentra por el correo al que se emitió el enlace.
+  await page.getByRole('searchbox').fill(correo)
+  await expect(reservas.getByRole('link', { name: evento, exact: true })).toBeVisible()
   await page.getByRole('searchbox').fill('encuentro academico')
   await expect(reservas.getByRole('link', { name: evento, exact: true })).toBeVisible()
   expect(lecturas).toHaveLength(0)
   await testInfo.attach('filtros-locales', {
     body: JSON.stringify({
-      duracionDosFiltrosMs: Date.now() - inicioFiltro,
+      duracionTresFiltrosMs: Date.now() - inicioFiltro,
       solicitudesRsc: lecturas.length,
     }),
     contentType: 'application/json',
   })
-  await page.getByLabel('Desde', { exact: true }).fill('2035-06-15')
-  await page.getByLabel('Hasta', { exact: true }).fill('2035-06-15')
+
+  // Los estados nuevos se filtran con su nombre para el gestor.
+  const estado = page.getByRole('combobox', { name: /^Estado/ })
+  await estado.selectOption({ label: 'Por aprobar' })
+  await expect(reservas.getByRole('link', { name: evento, exact: true })).toHaveCount(0)
+  await estado.selectOption({ label: 'Por diligenciar' })
+  await expect(reservas.getByRole('link', { name: evento, exact: true })).toBeVisible()
+
+  const hoy = ahoraBogota().fecha
+  await page.getByLabel('Desde', { exact: true }).fill(hoy)
+  await page.getByLabel('Hasta', { exact: true }).fill(hoy)
   await expect(reservas.getByRole('link', { name: evento, exact: true })).toBeVisible()
   const csvDescarga = page.waitForEvent('download')
   await historico.getByRole('button', { name: 'Exportar CSV' }).click()
-  const csv = await csvDescarga
-  expect(await readFile((await csv.path())!, 'utf8')).toContain(`"'${evento}"`)
+  const csv = await readFile((await (await csvDescarga).path())!, 'utf8')
+  const lineaCsv = csv.split('\n').find((l) => l.includes(evento))!
+  expect(lineaCsv).toContain(`"'${evento}"`)
+  expect(lineaCsv).toContain('Por definir')
+  expect(lineaCsv).toContain('Por diligenciar')
   await historico.getByLabel('Solo recepciones con constancia').check()
   await expect(historico.getByRole('link', { name: evento, exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Limpiar filtros' }).click()
 
   await page.screenshot({ path: testInfo.outputPath('gestion-desktop.png'), fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 })
-  await expect(page.getByRole('button', { name: 'Crear evento', exact: true })).toBeVisible()
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  )
+  await expect(operacion.getByRole('button', { name: 'Emitir enlace' })).toBeVisible()
+  expect(await sinDesborde(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('gestion-mobile.png'), fullPage: true })
 
   // Enlaces anteriores siguen abriendo la misma gestión, sin interfaces duplicadas.
@@ -114,6 +142,6 @@ test('gestión por reservas: evento futuro, QR, filtros locales, exportación y 
   await page.goto('/panel/asignaciones')
   await expect(page).toHaveURL(/\/panel#reservas$/)
   await page.goto('/panel/asignaciones/nueva')
-  await expect(operacion.getByLabel('Evento o actividad')).toBeVisible()
+  await expect(operacion.getByLabel('Correo de quien solicita')).toBeVisible()
   expect(errores).toEqual([])
 })

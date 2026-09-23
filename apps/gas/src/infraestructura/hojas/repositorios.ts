@@ -1,7 +1,9 @@
-import type { ElementoCatalogo } from '@check-auditorio/shared/sin-zod'
+import type { ElementoCatalogo, RolReceptor } from '@check-auditorio/shared/sin-zod'
 
 import type { Bitacora, Contexto, Servicios } from '../../aplicacion/puertos'
 import type {
+  EstadoNotificacion,
+  Notificacion,
   NovedadDevolucion,
   RegistroAsignacion,
   RegistroDetalle,
@@ -11,6 +13,7 @@ import type {
 import { isoBogota } from '@check-auditorio/shared/sin-zod'
 
 import type { Fila, Tabla } from './esquema'
+import { URL_APP_POR_DEFECTO } from './semilla'
 
 /*
  * Repositorios sobre cualquier `Tabla`: aquí, y solo aquí, se traduce columna ⇄ entidad.
@@ -24,6 +27,20 @@ const entero = (v: string | undefined, porDefecto = 0) => {
 const activo = (v: string) =>
   ['si', 'sí', 'true', 'verdadero', '1', 'x'].includes(v.trim().toLowerCase())
 const lista = (v: string) => (v ? v.split(',').filter(Boolean) : [])
+
+/** Las filas anteriores a una columna nueva no traen esa clave: se leen como vacías. */
+const t = (v: string | undefined) => v ?? ''
+const nulo = (v: string | undefined) => (v ? v : null)
+
+const aNotif = (
+  estado: string | undefined,
+  intentos: string | undefined,
+  reserva: string | undefined,
+): Notificacion => ({
+  estado: t(estado) as EstadoNotificacion,
+  intentos: entero(intentos),
+  reservaHasta: t(reserva),
+})
 
 /* ─── Asignaciones ─── */
 
@@ -42,6 +59,32 @@ const aAsignacion = (f: Fila<'Asignaciones'>): RegistroAsignacion => ({
     ? { correo: f.receptor_correo, nombre: f.receptor_nombre, sub: f.receptor_sub }
     : null,
   consecutivo: f.consecutivo || null,
+  invitadoCorreo: nulo(f.invitado_correo),
+  solicitadaEn: nulo(f.solicitada_en),
+  motivoRechazo: nulo(f.motivo_rechazo),
+  solicitud: f.solicitud_rol
+    ? {
+        rol: f.solicitud_rol as RolReceptor,
+        dependencia: t(f.solicitud_dependencia),
+        cargo: t(f.solicitud_cargo),
+        celular: t(f.solicitud_celular),
+        asistentes: entero(f.solicitud_asistentes),
+      }
+    : null,
+  autorizacion: f.autoriza_datos_en
+    ? {
+        en: f.autoriza_datos_en,
+        version: t(f.autoriza_datos_version),
+        sha256: t(f.autoriza_datos_sha256),
+      }
+    : null,
+  notifDecision: aNotif(f.notif_decision, f.notif_decision_intentos, f.notif_decision_reserva),
+  notifConfirmacion: aNotif(
+    f.notif_confirmacion,
+    f.notif_confirmacion_intentos,
+    f.notif_confirmacion_reserva,
+  ),
+  notifVencida: aNotif(f.notif_vencida, f.notif_vencida_intentos, f.notif_vencida_reserva),
 })
 
 const deAsignacion = (a: RegistroAsignacion): Fila<'Asignaciones'> => ({
@@ -59,6 +102,26 @@ const deAsignacion = (a: RegistroAsignacion): Fila<'Asignaciones'> => ({
   receptor_nombre: a.receptor?.nombre ?? '',
   receptor_sub: a.receptor?.sub ?? '',
   consecutivo: a.consecutivo ?? '',
+  invitado_correo: a.invitadoCorreo ?? '',
+  solicitada_en: a.solicitadaEn ?? '',
+  motivo_rechazo: a.motivoRechazo ?? '',
+  solicitud_rol: a.solicitud?.rol ?? '',
+  solicitud_dependencia: a.solicitud?.dependencia ?? '',
+  solicitud_cargo: a.solicitud?.cargo ?? '',
+  solicitud_celular: a.solicitud?.celular ?? '',
+  solicitud_asistentes: a.solicitud ? String(a.solicitud.asistentes) : '',
+  autoriza_datos_en: a.autorizacion?.en ?? '',
+  autoriza_datos_version: a.autorizacion?.version ?? '',
+  autoriza_datos_sha256: a.autorizacion?.sha256 ?? '',
+  notif_decision: a.notifDecision.estado,
+  notif_decision_intentos: String(a.notifDecision.intentos),
+  notif_decision_reserva: a.notifDecision.reservaHasta,
+  notif_confirmacion: a.notifConfirmacion.estado,
+  notif_confirmacion_intentos: String(a.notifConfirmacion.intentos),
+  notif_confirmacion_reserva: a.notifConfirmacion.reservaHasta,
+  notif_vencida: a.notifVencida.estado,
+  notif_vencida_intentos: String(a.notifVencida.intentos),
+  notif_vencida_reserva: a.notifVencida.reservaHasta,
 })
 
 /* ─── Recepciones ─── */
@@ -169,16 +232,16 @@ export function crearContexto(tabla: Tabla, srv: Servicios): Contexto {
       porId: (id) => asignaciones().find((a) => a.id === id) ?? null,
       porToken: (sha) => asignaciones().find((a) => a.tokenSha256 === sha) ?? null,
       agregar: (a) => tabla.agregar('Asignaciones', [deAsignacion(a)]),
+      // Se escriben solo las celdas que cambian: en Apps Script cada celda es una llamada.
       actualizar: (id, cambios) => {
+        const actual = asignaciones().find((a) => a.id === id)
+        if (!actual) return
+        const antes = deAsignacion(actual)
+        const despues = deAsignacion({ ...actual, ...cambios })
         const fila: Partial<Fila<'Asignaciones'>> = {}
-        if (cambios.estado) fila.estado = cambios.estado
-        if (cambios.consecutivo !== undefined) fila.consecutivo = cambios.consecutivo ?? ''
-        if (cambios.receptor !== undefined) {
-          fila.receptor_correo = cambios.receptor?.correo ?? ''
-          fila.receptor_nombre = cambios.receptor?.nombre ?? ''
-          fila.receptor_sub = cambios.receptor?.sub ?? ''
-        }
-        tabla.actualizar('Asignaciones', 'id', id, fila)
+        for (const k of Object.keys(despues) as (keyof Fila<'Asignaciones'>)[])
+          if (despues[k] !== antes[k]) fila[k] = despues[k]
+        if (Object.keys(fila).length) tabla.actualizar('Asignaciones', 'id', id, fila)
       },
     },
     recepciones: {
@@ -203,6 +266,17 @@ export function crearContexto(tabla: Tabla, srv: Servicios): Contexto {
         )
         tabla.agregar('Recepciones', [deRecepcion(r)])
       },
+      notificaciones: () =>
+        recepciones().map((f) => ({
+          consecutivo: f.consecutivo,
+          notif: aNotif(f.notificacion, f.notif_intentos, f.notif_reserva_hasta),
+        })),
+      marcarNotificacion: (consecutivo, n) =>
+        tabla.actualizar('Recepciones', 'consecutivo', consecutivo, {
+          notificacion: n.estado,
+          notif_intentos: String(n.intentos),
+          notif_reserva_hasta: n.reservaHasta,
+        }),
     },
     devoluciones: {
       porConsecutivo: (c) => {
@@ -280,11 +354,20 @@ export function crearContexto(tabla: Tabla, srv: Servicios): Contexto {
           nombre: f.nombre.trim(),
           activo: activo(f.activo),
         })),
+      destinatarios: (evento) =>
+        tabla
+          .leer('CFG_Destinatarios')
+          .filter((f) => activo(f.activo) && f.evento.trim().toLowerCase() === evento)
+          .map((f) => f.correo.trim())
+          .filter(Boolean),
       config: () => {
         const m = new Map(tabla.leer('CFG_General').map((f) => [f.clave.trim(), f.valor.trim()]))
         return {
           minutosQrAntes: entero(m.get('minutos_vigencia_qr_antes'), 30),
           horasDevolucion: entero(m.get('horas_plazo_devolucion'), 24),
+          horasVigenciaInvitacion: entero(m.get('horas_vigencia_invitacion'), 72),
+          urlApp: (m.get('url_app') || URL_APP_POR_DEFECTO).replace(/\/+$/, ''),
+          notificacionesDesde: m.get('notificaciones_desde') ?? '',
         }
       },
     },

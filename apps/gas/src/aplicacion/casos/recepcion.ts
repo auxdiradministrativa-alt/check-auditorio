@@ -77,7 +77,12 @@ export function registrarRecepcion(
     registro.sha256 = ctx.srv.sha256Hex(contenidoRecepcion(registro, detalle, a))
 
     ctx.recepciones.agregar(registro, detalle)
-    ctx.asignaciones.actualizar(a.id, { estado: 'RECIBIDA', consecutivo })
+    ctx.asignaciones.actualizar(a.id, {
+      estado: 'RECIBIDA',
+      consecutivo,
+      // Queda en la bandeja; el activador solo la envía si la devolución llega a vencer.
+      notifVencida: { estado: 'PENDIENTE', intentos: 0, reservaHasta: '' },
+    })
     ctx.bitacora.registrar('recepcion.registrar', consecutivo, receptor.correo, { asignacionId })
     return selloDe(registro)
   })

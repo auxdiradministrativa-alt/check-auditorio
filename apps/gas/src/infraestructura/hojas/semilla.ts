@@ -33,6 +33,21 @@ const CLAUSULAS_BORRADOR = [
 const DATOS_BORRADOR =
   'Autorizo a la Corporación Universitaria Americana a tratar mis datos de identificación y contacto, así como las fotografías que adjunte, con la finalidad de registrar y hacer seguimiento a la entrega y devolución del espacio, conforme a la Ley 1581 de 2012 y a la política de tratamiento de datos de la institución.'
 
+export const URL_APP_POR_DEFECTO = 'https://check-auditorio-web.vercel.app'
+
+/**
+ * Claves de `CFG_General`. `instalar()` añade a un libro existente las que le falten, con este
+ * valor; `notificaciones_desde` vacía la completa con la hora de la instalación.
+ */
+export const CFG_GENERAL: Fila<'CFG_General'>[] = [
+  { clave: 'minutos_vigencia_qr_antes', valor: '30' },
+  { clave: 'horas_plazo_devolucion', valor: '24' },
+  { clave: 'horas_vigencia_invitacion', valor: '72' },
+  { clave: 'url_app', valor: URL_APP_POR_DEFECTO },
+  { clave: 'notificaciones_desde', valor: '' },
+  { clave: 'carpeta_fotos_id', valor: '' },
+]
+
 /** Huella de los términos: la calcula quien siembra con su propia primitiva SHA-256. */
 export const huellaTerminos = (
   sha256Hex: (t: string) => string,
@@ -83,10 +98,6 @@ export function semilla(sha256Hex: (t: string) => string): { [H in NombreHoja]?:
         vigente: 'SI',
       },
     ],
-    CFG_General: [
-      { clave: 'minutos_vigencia_qr_antes', valor: '30' },
-      { clave: 'horas_plazo_devolucion', valor: '24' },
-      { clave: 'carpeta_fotos_id', valor: '' },
-    ],
+    CFG_General: CFG_GENERAL.map((f) => ({ ...f })),
   }
 }
